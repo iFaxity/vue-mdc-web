@@ -1006,6 +1006,8 @@ var Toolbars = Object.freeze({
 });
 
 //TODO: make option manager in mixins and other stuff...instead of having options in components
+//import Ripple from "./ripple";
+
 var DEFAULT_OPTS = {
   theme: null,
   typography: true

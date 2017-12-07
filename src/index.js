@@ -5,8 +5,7 @@ import * as Dialogs from "./Dialogs";
 import * as Inputs from "./Inputs";
 
 import * as Toolbars from "./Toolbars";
-
-import Ripple from "./ripple";
+//import Ripple from "./ripple";
 
 const DEFAULT_OPTS = {
   theme: null,
@@ -24,8 +23,6 @@ export default {
         Vue.component(component.name, component);
       });
     };
-
-    Vue.directive("ripple", Ripple);
 
     register(Buttons);
     register(Cards);
