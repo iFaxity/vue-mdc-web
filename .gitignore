@@ -59,7 +59,3 @@ typings/
 
 # VSCode files
 .vscode/
-
-# Test folders
-test/
-www/
