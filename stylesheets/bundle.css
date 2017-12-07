@@ -1,0 +1,22 @@
+.mdc-toolbar--flexible-default-behavior.mdc-toolbar--flexible-space-minimized .mdc-toolbar__row:first-child::after {
+  opacity: 0;
+}
+.mdc-toolbar--flexible-default-behavior .mdc-toolbar__row:first-child::after {
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  -webkit-transition: opacity 0.2s ease;
+  transition: opacity 0.2s ease;
+  opacity: 1;
+}
+.mdc-toolbar--flexible .mdc-toolbar__row:first-child::after {
+  position: absolute;
+  content: "";
+}
+.mdc-toolbar .mdc-toolbar__row:first-child::after {
+  background-image: url("../cover.jpg");
+  background-size: cover;
+  background-position: center;
+}
+

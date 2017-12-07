@@ -1,0 +1,38 @@
+{
+  "name": "mdc-vue",
+  "version": "0.1.0",
+  "description": "A fully Vue.js powered version Material Design Components",
+  "private": true,
+  "main": "dist/mdc-vue.common.js",
+  "module": "dist/mdc-vue.esm.js",
+  "scripts": {
+    "start": "node www/server.js",
+    "build": "rollup -c && rollup -c www/rollup.config.js",
+    "watch": "rollup -c && rollup -c -w www/rollup.config.js"
+  },
+  "keywords": [
+    "mdc",
+    "google",
+    "material",
+    "design",
+    "components",
+    "vue",
+    "vue.js"
+  ],
+  "author": "ifaxity",
+  "license": "MIT",
+  "dependencies": {
+    "vue": "^2.4.2"
+  },
+  "devDependencies": {
+    "material-components-web": "^0.25.0",
+    "rollup-plugin-buble": "^0.15.0",
+    "rollup-plugin-commonjs": "^8.0.2",
+    "rollup-plugin-json": "^2.3.0",
+    "rollup-plugin-node-globals": "^1.1.0",
+    "rollup-plugin-node-resolve": "^3.0.0",
+    "rollup-plugin-uglify": "^2.0.1",
+    "rollup-plugin-vue": "^2.4.1",
+    "vue-template-compiler": "^2.5.7"
+  }
+}
