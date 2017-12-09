@@ -33,170 +33,143 @@ const EVENTS = [
   { focus: "focus", blur: "blur" }
 ];
 
-const bindings = {
-  activate(e) {
-    const $el = e.currentTarget;
-  },
-  deactivate(e) {
-    const $el = e.currentTarget;
-  },
-  focus(e) {
-    const $el = e.currentTarget;
-    $el.classList.add(FOCUSED_CLASS);
-  },
-  blur(e) {
-    const $el = e.currentTarget;
-    $el.classList.remove(FOCUSED_CLASS);
-  }
-};
-function eachEvent(fn) {
+function eachEvents(ripple, fn) {
   EVENTS.forEach(event => {
-    Object.keys(event).forEach(name => fn(event[n], bindings[name]));
+    Object.keys(event).forEach(name => fn(event[n], ripple[name]));
   });
 }
 
-class MDCRipple {
-  constructor($el, surface = false) {
-    this.$el = $el;
-    this.surface = surface;
-    this.unbound = false;
-    this.updateFrame = null;
+function Ripple($el, surface = false) {
+  if (!(this instanceof Ripple)) { return new Ripple($el, surface); }
 
-    this.bind();
-  }
-  unbind() {
-    const { $el } = this;
-    // Remove listeners
-    eachEvent($el.removeEventListener);
-    window.removeEventListener("resize", this.update);
+  this.surface = surface;
+  this.$el = $el;
+  this.activation = null;
+  this.disabled = false;
+  this.unbounded = false;
 
-    $el.classList.remove(ROOT_CLASS);
-    $el.classList.remove(UNBOUNDED_CLASS);
+  // Bind all the methods
+  Oject.keys(methods).forEach(name => {
+    this[name] = methods[name].bind(this);
+  });
 
-    Object.keys(VARS).forEach(key => {
-      const name = VARS[key];
-      this.$el.style[name] = null;
-    });
-  }
+  this.bind();
+  return this;
+}
+
+// TODO: investigate the support of programmatic activation
+const methods = {
   bind() {
-    const { $el } = this;
-    // Add listeners
-    eachEvent($el.addEventListener);
-    window.addEventListener("resize", this.update);
+    const { $el, surface } = this;
+    eachEvents(this, $el.addEventListener);
+    window.addEventListener("resize", this.computeRect.bind(this));
 
     $el.classList.add(ROOT_CLASS);
-    this.update();
-  }
-
-  activate(e) {
-    const { $el } = this;
-    if (this.active) return;
-
-    requestAnimationFrame(() => {
-      // Wrap in rAF because web browser inconsistent behaviour
-      const activated = (e && e.type === "keydown") ? $el.matches(":active") : true;
-      if(activated) {
-        this.animateActivation(); 
+    if (surface) {
+      $el.classList.add(SURFACE_CLASS);
+      if (typeof surface === "string") {
+        $el.classList.add(`${SURFACE_CLASS}--${surface}`);
       }
+    }
+  },
+  unbind() {
+    const { $el, surface } = this;
+    eachEvents(this, $el.removeEventListener);
+    window.removeEventListener("resize", this.computeRect);
+
+    $el.classList.remove(ROOT_CLASS);
+    if (surface) {
+      $el.classList.remove(SURFACE_CLASS);
+      if (typeof surface === "string") {
+        $el.classList.remove(`${SURFACE_CLASS}--${surface}`);
+      }
+    }
+
+    Object.keys(VARS).forEach(name => {
+      $el.style[name] = null;
     });
-  }
-  animateActivation() {
+  },
+
+  computeRect() {
+    this.rect = this.$el.getClientBoundingRect();
+  },
+  focus() {
+    this.$el.classList.add(FOCUSED_CLASS);
+  },
+  blur() {
+    this.$el.classList.remove(FOCUSED_CLASS);
+  },
+  activate(e) {
+    if (this.disabled) return;
     const { $el } = this;
-    const translate = {
-      start: null, end: null
+
+    this.activation = {
+      event: e
     };
 
-    if(!this.unbound) {
-      // set translate stuff
-    }
-
-    $el.style[VARS.TRANSLATE_START] = translate.start;
-    $el.style[VARS.TRANSLATE_END] = translate.end;
-
-    $el.classList.remove(DEACTIVATION_CLASS);
-
-    this.rect = $el.getBoundingClientRect();
-    $el.classList.add(ACTIVE_FILL_CLASS);
-    $el.classList.add(ACTIVATION_CLASS);
-    //callback?
-    const activationTimer = setTimeout(() => {
-      const activationHasEnded = true;
-      
-    }, DEACTIVATION_MS)
-  }
-
-  deactivate(e) {
-    if(!this.activated) return;
-
-    // TODO: add programmatic
-
-    Object.keys(EVENTS).some(event => {
-      if (event.deactivate === e.type) {
-        pair = event.activate;
-        return true;
-      }
-    });
-
     requestAnimationFrame(() => {
-      //if(e.type === kek) {}
-      this.$el.classList.remove(FOCUSED_CLASS);
-    });
-  }
-  animateDeactivation() {
+      // animate activation
+      const translate = { start: null, end: null };
+      if(!this.unbounded) {
+        const {start, end} = this.getFgTranslationCoords();
+        translate.start = `${start.x} ${start.y}`;
+        translate.end = `${end.x}px ${end.y}`;
+      }
 
-  }
-  
-  focus(e) {
-    this.$el.classList.add(FOCUSED_CLASS);
-  }
-  blur(e) {
-    this.$el.classList.remove(FOCUSED_CLASS);
-  }
+      $el.style[VARS.TRANSLATE_START] = translate.start;
+      $el.style[VARS.TRANSLATE_END] = translate.end;
+      // TODO: clear all other animations
+    });
+  },
+  deactivate() {
+
+  },
 
   update() {
-    if (this.updateFrame) {
-      cancelAnimationFrame(this.update);
-    }
 
-    this.updateFrame = requestAnimationFrame(() => {
-      const { $el } = this;
-      this.rect = $el.getBoundingClientRect();
+  },
 
-      const { width, height } = this.rect;
-      const max = Math.max(height, width);
-      const diameter = Math.sqrt(Math.pow(width, 2) + Math.pow(height, 2));
+  translateEventCoords(e) {
+    const { pageX, pageY } = (e.changedTouches && e.changedTouches[0]) || e;
+    return {
+      x: pageX - (window.pageXOffset + this.rect.left),
+      y: pageY - (window.pageYOffset + this.rect.top)
+    };
+  },
+  getFgTranslationCoords() {
+    const { event } = this.activationState;
+    const halfInitialSize = this.initialSize / 2;
+    const start = translateEventCoords(event, this.rect);
 
-      const initialSize = max * 0.6;
-      const maxRadius = diameter + 10;
-      const fgScale = maxRadius / initialSize;
-      const xfDuration = 1000 * Math.sqrt(maxRadius / 1024);
-
-      // Update css vars
-      $el.style[VARS.SIZE] = `${initialSize}px`;
-      $el.style[VARS.SCALE] = fgScale;
-
-      if (this.unbound) {
-        const halfSize = (initialSize / 2);
-        const left = Math.round(width / 2 - halfSize);
-        const top = Math.round(height / 2 - halfSize);
-
-        $el.style[VARS.LEFT] = `${left}px`;
-        $el.style[VARS.TOP] = `${top}px`;
+    // Center the start and end coords
+    return { 
+      start: {
+        x: start.x - halfInitialSize,
+        y: start.y - halfInitialSize
+      }, 
+      end: {
+        x: this.rect.width / 2 - halfInitialSize,
+        y: this.rect.height / 2 - halfInitialSize
       }
-
-      this.updateFrame = null;
-    });
+    };
   }
-}
+};
 
 // Export the directive
 export default {
-  bind($el, binding, vnode) {
-    const { modifiers } = binding;
+  bind($el, { modifiers }, vnode) {
     if (cssVars) return;
 
-    const ripple = new MDCRipple($el, !!modifiers.surface);
-    $el.__mdcRipple__ = ripple;
+    let surface = !!modifiers.surface;
+    if(surface) {
+      if (modifiers.primary) {
+        surface = "primary";
+      } else if (modifiers.accent || modifiers.secondary) {
+        surface = "accent";
+      }
+    }
+
+    $el.__mdcRipple__ = new Ripple($el, surface);
   },
   componentUpdated($el, binding, vnode) {
     if(!vnode.functionalContext) return;
