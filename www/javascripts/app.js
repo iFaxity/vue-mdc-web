@@ -1,5 +1,5 @@
 import Vue from "vue";
-import VueMDC from "../../src";
+import VueMDC from "../../index";
 
 //SUI modules
 import Test from "./test.vue";

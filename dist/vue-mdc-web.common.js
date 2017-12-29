@@ -1,4 +1,3 @@
-(function () {
 'use strict';
 
 var global$1 = typeof global !== "undefined" ? global :
@@ -10790,6 +10789,4 @@ const vm = new Vue$3$1({
   el: "#app",
   render: h => h(Test)
 });
-
-}());
-//# sourceMappingURL=bundle.js.map
+//# sourceMappingURL=vue-mdc-web.common.js.map

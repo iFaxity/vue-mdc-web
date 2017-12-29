@@ -2,11 +2,16 @@ import vue from "rollup-plugin-vue";
 import nodeResolve from "rollup-plugin-node-resolve";
 import commonjs from "rollup-plugin-commonjs";
 import globals from "rollup-plugin-node-globals";
-//import buble from "rollup-plugin-buble";
 import uglify from "rollup-plugin-uglify";
 import sass from "rollup-plugin-sass";
 import autoprefixer from "autoprefixer";
 import postcss from "postcss";
+
+import path from "path";
+const SASS_OUTPUT = path.join(__dirname, "bundle.css");
+const SASS_INCLUDE_PATHS = [ path.join(__dirname, "../node_modules") ];
+const APP_INPUT = path.join(__dirname, "app.js");
+const APP_OUTPUT = path.join(__dirname, "bundle.js");
 
 const plugins = [
   nodeResolve({
@@ -16,21 +21,19 @@ const plugins = [
     preferBuiltins: true
   }),
   commonjs(),
-  //json(),
   globals(),
   vue(),
   sass({
-    output: "dist/styles.css",
+    output: SASS_OUTPUT,
     include: "**/*.scss",
     exclude: [],
     options: {
       sourceMap: true,
       outputStyle: "compressed",
-      includePaths: ["node_modules"]
+      includePaths: SASS_INCLUDE_PATHS
     },
-    processor: css => postcss([autoprefixer]).process(css).then(result => result.css)
+    processor: css => postcss([ autoprefixer ]).process(css).then(result => result.css)
   }),
-  //buble({ exclude: "node_modules/**" }),
 ];
 
 if (process.env.NODE_ENV === "production") {
@@ -38,23 +41,12 @@ if (process.env.NODE_ENV === "production") {
 }
 
 export default {
-  input: "www/javascripts/app.js",
+  input: APP_INPUT,
   sourcemap: true,
   plugins,
-  output: [
-    {
-      format: "es",
-      file: "dist/vue-mdc-web.esm.js"
-    },
-    {
-      format: "cjs",
-      file: "dist/vue-mdc-web.common.js"
-    },
-    {
-      format: "umd",
-      name: "VueMDC",
-      file: "dist/vue-mdc-web.js"
-    }
-  ]
+  output: {
+    format: "iife",
+    file: APP_OUTPUT
+  }
 };
 

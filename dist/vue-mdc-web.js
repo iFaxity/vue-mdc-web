@@ -1,5 +1,8 @@
-(function () {
-'use strict';
+(function (global, factory) {
+	typeof exports === 'object' && typeof module !== 'undefined' ? factory() :
+	typeof define === 'function' && define.amd ? define(factory) :
+	(factory());
+}(this, (function () { 'use strict';
 
 var global$1 = typeof global !== "undefined" ? global :
             typeof self !== "undefined" ? self :
@@ -10791,5 +10794,5 @@ const vm = new Vue$3$1({
   render: h => h(Test)
 });
 
-}());
-//# sourceMappingURL=bundle.js.map
+})));
+//# sourceMappingURL=vue-mdc-web.js.map

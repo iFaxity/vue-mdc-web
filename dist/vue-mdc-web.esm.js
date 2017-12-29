@@ -1,6 +1,3 @@
-(function () {
-'use strict';
-
 var global$1 = typeof global !== "undefined" ? global :
             typeof self !== "undefined" ? self :
             typeof window !== "undefined" ? window : {};
@@ -10790,6 +10787,4 @@ const vm = new Vue$3$1({
   el: "#app",
   render: h => h(Test)
 });
-
-}());
-//# sourceMappingURL=bundle.js.map
+//# sourceMappingURL=vue-mdc-web.esm.js.map
