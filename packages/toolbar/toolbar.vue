@@ -48,6 +48,7 @@ export default {
     const { $el } = this;
     const $title = () => $el.querySelector(".mdc-toolbar__title");
     const $row = () => $el.querySelector(".mdc-toolbar__row:first-child");
+    const $fixedAdjust = (typeof this.fixed === "string" && $el.nextElementSibling) || null;
 
     this.foundation = new Foundation({
       hasClass: className => $el.classList.contains(className),
@@ -66,8 +67,8 @@ export default {
       setStyleForTitleElement: (prop, value) => $title().style.setProperty(prop, value),
       setStyleForFlexibleRowElement: (prop, value) => $row().style.setProperty(prop, value),
       setStyleForFixedAdjustElement: (prop, value) => {
-        if (this.fixedAdjustElement != null) {
-          this.fixedAdjustElement.style.setProperty(prop, value);
+        if ($fixedAdjust) {
+          $fixedAdjust.style.setProperty(prop, value);
         }
       }
     });
@@ -75,13 +76,6 @@ export default {
   },
   beforeDestroy() {
     this.foundation.destroy();
-  },
-  methods: {
-    setFixedAdjustElement(el) {
-      // TODO: Find a better way to set the fixed adjust element
-      this.fixedAdjustElement = el;
-      this.foundation && this.foundation.updateAdjustElementStyles();
-    }
   }
 };
 </script>

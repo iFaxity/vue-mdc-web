@@ -1,6 +1,6 @@
 <template lang="pug">
 #app
-  mdc-toolbar(ref="toolbar" fixed="lastrow" waterfall flexible)
+  mdc-toolbar(fixed="lastrow" waterfall flexible)
     mdc-toolbar-row
       mdc-toolbar-section(align-start)
         mdc-toolbar-menu-icon(@click=`$refs.drawer.open()`)
@@ -58,9 +58,6 @@ export default {
       dialogResult: "<none>", sliderValue: 25, sliderInput: 0, myName: "Cooldude",
       checked: false, snackCount: 1
     };
-  },
-  mounted() {
-    this.$refs.toolbar.setFixedAdjustElement(this.$refs.main);
   },
   methods: {
     openDialog() {

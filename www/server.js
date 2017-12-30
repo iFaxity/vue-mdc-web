@@ -10,7 +10,7 @@ const readFile = promisify(fs.readFile);
 const stat = promisify(fs.stat);
 const PORT = 8080;
 
-const mimeType = {
+const mimeTypes = {
   ".ico": "image/x-icon",
   ".html": "text/html",
   ".js": "application/javascript",
@@ -31,17 +31,26 @@ const mimeType = {
 // Async is the best hooray
 async function serve(req, res) {
   let pathname = path.join(__dirname, url.parse(req.url).pathname);
-  let data;
+  let data, stats;
 
   try {
     // Get if we're trying to get a directory
-    let stats = await stat(pathname);
+    let extname = path.extname(pathname);
+
+    /*if(extname === "") {
+      pathname += ".html";
+      extname = ".html";
+    }*/
+
+    stats = await stat(pathname);
     if (stats.isDirectory()) {
       pathname += "index.html";
+      extname = ".html";
+      
       stats = await stat(pathname);
     }
 
-    const mime = mimeType[path.extname(pathname)] || "text/plain";
+    const mime = mimeTypes[extname] || "text/plain";
     data = await readFile(pathname);
 
     // Set response headers
@@ -63,16 +72,6 @@ server.listen(PORT, err => {
   if (err) {
     return console.log("Server did a dumdum", err);
   }
-  let cmd = "xdg-open";
-
-  if(process.platform === "win32") {
-    cmd = "start";
-  } else if(process.platform === "darwin") {
-    cmd = "open";
-  }
-
-  // Start default webbrowser
-  exec(`${cmd} http://localhost:${PORT}`);
 
   console.log(`Server is listening on ${PORT}`);
 });

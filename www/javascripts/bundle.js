@@ -10587,6 +10587,7 @@ var Toolbar$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _
     const { $el } = this;
     const $title = () => $el.querySelector(".mdc-toolbar__title");
     const $row = () => $el.querySelector(".mdc-toolbar__row:first-child");
+    const $fixedAdjust = (typeof this.fixed === "string" && $el.nextElementSibling) || null;
 
     this.foundation = new MDCToolbarFoundation({
       hasClass: className => $el.classList.contains(className),
@@ -10605,8 +10606,8 @@ var Toolbar$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _
       setStyleForTitleElement: (prop, value) => $title().style.setProperty(prop, value),
       setStyleForFlexibleRowElement: (prop, value) => $row().style.setProperty(prop, value),
       setStyleForFixedAdjustElement: (prop, value) => {
-        if (this.fixedAdjustElement != null) {
-          this.fixedAdjustElement.style.setProperty(prop, value);
+        if ($fixedAdjust) {
+          $fixedAdjust.style.setProperty(prop, value);
         }
       }
     });
@@ -10614,13 +10615,6 @@ var Toolbar$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _
   },
   beforeDestroy() {
     this.foundation.destroy();
-  },
-  methods: {
-    setFixedAdjustElement(el) {
-      // TODO: Find a better way to set the fixed adjust element
-      this.fixedAdjustElement = el;
-      this.foundation && this.foundation.updateAdjustElementStyles();
-    }
   }
 };
 
@@ -10748,16 +10742,13 @@ var VueMDC = {
   }
 };
 
-var Test = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{attrs:{"id":"app"}},[_c('mdc-toolbar',{ref:"toolbar",attrs:{"fixed":"lastrow","waterfall":"","flexible":""}},[_c('mdc-toolbar-row',[_c('mdc-toolbar-section',{attrs:{"align-start":""}},[_c('mdc-toolbar-menu-icon',{on:{"click":function($event){_vm.$refs.drawer.open();}}}),_c('mdc-toolbar-title',[_vm._v("Material Components In Vuejs")])],1)],1),_c('mdc-toolbar-row',[_c('mdc-toolbar-section',{attrs:{"align-end":""}},[_c('mdc-toolbar-icon',{attrs:{"aria-label":"Download","alt":"Download"}},[_vm._v("file_download ")]),_c('mdc-toolbar-icon',{attrs:{"aria-label":"Print this page","alt":"Print this page"}},[_vm._v("print")]),_c('mdc-toolbar-icon',{attrs:{"aria-label":"Bookmark this page","alt":"Bookmark this page"}},[_vm._v("bookmark")])],1)],1)],1),_c('main',{ref:"main",staticStyle:{"height":"100vh"}},[_c('h2',[_vm._v("Buttons")]),_c('mdc-button',[_vm._v("Click me")]),_c('mdc-button',{attrs:{"icon":"accessibility","raised":""}},[_vm._v("Icon Button")]),_c('mdc-button',{attrs:{"raised":""}},[_vm._v("Raised button")]),_c('h2',[_vm._v("Dialog")]),_c('mdc-button',{attrs:{"raised":""},on:{"click":_vm.openDialog}},[_vm._v("Show Dialog")]),_c('p',[_vm._v("Result: "+_vm._s(_vm.dialogResult))]),_c('mdc-dialog',{ref:"dialog",on:{"action":_vm.dialogAction}},[_c('mdc-dialog-title',{attrs:{"slot":"header"},slot:"header"},[_vm._v("Test dialog")]),_vm._v("This is just a test dialog click accept or decline to close the window")],1),_c('h2',[_vm._v("Checkbox")]),_c('mdc-checkbox',{attrs:{"indeterminate":""},model:{value:(_vm.checked),callback:function ($$v) {_vm.checked=$$v;},expression:"checked"}}),_c('p',[_vm._v("Checked: "+_vm._s(_vm.checked))])],1)],1)},staticRenderFns: [],
+var Test = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{attrs:{"id":"app"}},[_c('mdc-toolbar',{attrs:{"fixed":"lastrow","waterfall":"","flexible":""}},[_c('mdc-toolbar-row',[_c('mdc-toolbar-section',{attrs:{"align-start":""}},[_c('mdc-toolbar-menu-icon',{on:{"click":function($event){_vm.$refs.drawer.open();}}}),_c('mdc-toolbar-title',[_vm._v("Material Components In Vuejs")])],1)],1),_c('mdc-toolbar-row',[_c('mdc-toolbar-section',{attrs:{"align-end":""}},[_c('mdc-toolbar-icon',{attrs:{"aria-label":"Download","alt":"Download"}},[_vm._v("file_download ")]),_c('mdc-toolbar-icon',{attrs:{"aria-label":"Print this page","alt":"Print this page"}},[_vm._v("print")]),_c('mdc-toolbar-icon',{attrs:{"aria-label":"Bookmark this page","alt":"Bookmark this page"}},[_vm._v("bookmark")])],1)],1)],1),_c('main',{ref:"main",staticStyle:{"height":"100vh"}},[_c('h2',[_vm._v("Buttons")]),_c('mdc-button',[_vm._v("Click me")]),_c('mdc-button',{attrs:{"icon":"accessibility","raised":""}},[_vm._v("Icon Button")]),_c('mdc-button',{attrs:{"raised":""}},[_vm._v("Raised button")]),_c('h2',[_vm._v("Dialog")]),_c('mdc-button',{attrs:{"raised":""},on:{"click":_vm.openDialog}},[_vm._v("Show Dialog")]),_c('p',[_vm._v("Result: "+_vm._s(_vm.dialogResult))]),_c('mdc-dialog',{ref:"dialog",on:{"action":_vm.dialogAction}},[_c('mdc-dialog-title',{attrs:{"slot":"header"},slot:"header"},[_vm._v("Test dialog")]),_vm._v("This is just a test dialog click accept or decline to close the window")],1),_c('h2',[_vm._v("Checkbox")]),_c('mdc-checkbox',{attrs:{"indeterminate":""},model:{value:(_vm.checked),callback:function ($$v) {_vm.checked=$$v;},expression:"checked"}}),_c('p',[_vm._v("Checked: "+_vm._s(_vm.checked))])],1)],1)},staticRenderFns: [],
   name: "Test",
   data() {
     return { 
       dialogResult: "<none>", sliderValue: 25, sliderInput: 0, myName: "Cooldude",
       checked: false, snackCount: 1
     };
-  },
-  mounted() {
-    this.$refs.toolbar.setFixedAdjustElement(this.$refs.main);
   },
   methods: {
     openDialog() {
