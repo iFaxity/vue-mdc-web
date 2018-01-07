@@ -1,12 +1,11 @@
-import { default as MDCPermanentDrawer } from "./permanent.vue";
-import { default as MDCPersistentDrawer } from "./persistent.vue";
-import { default as MDCTemporaryDrawer } from "./temporary.vue";
-export { MDCPermanentDrawer, MDCPersistentDrawer, MDCTemporaryDrawer };
+import PermanentDrawer from "./permanent.vue";
+import PersistentDrawer from "./persistent.vue";
+import TemporaryDrawer from "./temporary.vue";
+import "@material/drawer/mdc-drawer.scss";
 
-export default {
-  install(Vue) {
-    Vue.component(MDCPermanentDrawer.name, MDCPermanentDrawer);
-    Vue.component(MDCPersistentDrawer.name, MDCPersistentDrawer);
-    Vue.component(MDCTemporaryDrawer.name, MDCTemporaryDrawer);
-  }
-};
+export { PermanentDrawer, PersistentDrawer, TemporaryDrawer };
+export function install(Vue) {
+  Vue.component(PermanentDrawer.name, PermanentDrawer);
+  Vue.component(PersistentDrawer.name, PersistentDrawer);
+  Vue.component(TemporaryDrawer.name, TemporaryDrawer);
+}

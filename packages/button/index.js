@@ -1,7 +1,7 @@
-import { default as MDCButton } from "./button.vue";
+import Button from "./button.vue";
 import "@material/button/mdc-button.scss";
 
-export { MDCButton };
+export { Button };
 export function install(Vue) {
-  Vue.component(MDCButton.name, MDCButton);
+  Vue.component(Button.name, Button);
 }

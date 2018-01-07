@@ -1,9 +1,9 @@
-import { default as MDCDialog } from "./dialog.vue";
-import { default as MDCDialogTitle } from "./title.vue";
+import Dialog from "./dialog.vue";
+import DialogTitle from "./title.vue";
 import "@material/dialog/mdc-dialog.scss";
 
-export { MDCDialog, MDCDialogTitle };
+export { Dialog, DialogTitle };
 export function install(Vue) {
-  Vue.component(MDCDialog.name, MDCDialog);
-  Vue.component(MDCDialogTitle.name, MDCDialogTitle);
+  Vue.component(Dialog.name, Dialog);
+  Vue.component(DialogTitle.name, DialogTitle);
 }

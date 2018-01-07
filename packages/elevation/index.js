@@ -1,8 +1,7 @@
-import { default as MDCElevation } from "./elevation";
-export { MDCElevation };
+import Elevation from "./elevation";
+import "@material/elevation/mdc-elevation.scss";
 
-export default {
-  install(Vue) {
-    Vue.component(MDCElevation.name, MDCElevation);
-  }
-};
+export { Elevation };
+export function install(Vue) {
+  Vue.component(Elevation.name, Elevation);
+}

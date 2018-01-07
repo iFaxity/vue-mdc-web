@@ -1,8 +1,7 @@
-import { default as MDFab } from "./fab.vue";
-export { MDCFab };
+import Fab from "./fab.vue";
+import "@material/fab/mdc-fab.scss";
 
-export default {
-  install(Vue) {
-    Vue.component(MDCFab.name, MDCFab);
-  }
-};
+export { Fab };
+export function install(Vue) {
+  Vue.component(Fab.name, Fab);
+}

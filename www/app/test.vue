@@ -19,8 +19,8 @@
     mdc-button(icon="accessibility" raised) Icon Button
     mdc-button(raised) Raised button
 
-    //mdc-fab(icon="add" label="Add")
-    //mdc-icon-toggle(:icon=`{on: "favorite", off: "favorite_border"}`, :label=`{on: "Remove from favorites", off: "Add to favorites"}`)
+    mdc-fab(icon="add" label="Add")
+    mdc-icon-toggle(:on=`{content: "favorite", label: "Remove from favorites"}`, :off=`{content: "favorite_border", label: "Add to favorites"}`)
 
     // Dialog
     h2 Dialog

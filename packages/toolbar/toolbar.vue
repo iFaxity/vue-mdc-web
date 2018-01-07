@@ -46,9 +46,9 @@ export default {
   },
   mounted() {
     const { $el } = this;
-    const $title = () => $el.querySelector(".mdc-toolbar__title");
-    const $row = () => $el.querySelector(".mdc-toolbar__row:first-child");
-    const $fixedAdjust = (typeof this.fixed === "string" && $el.nextElementSibling) || null;
+    const findTitle = () => $el.querySelector(".mdc-toolbar__title");
+    const findRow = () => $el.querySelector(".mdc-toolbar__row:first-child");
+    const findFixedAdjust = () => (typeof this.fixed === "string" && $el.nextElementSibling) || null;
 
     this.foundation = new Foundation({
       hasClass: className => $el.classList.contains(className),
@@ -61,12 +61,13 @@ export default {
       getViewportWidth: () => window.innerWidth,
       getViewportScrollY: () => window.pageYOffset,
       getOffsetHeight: () => $el.offsetHeight,
-      getFirstRowElementOffsetHeight: () => $row().offsetHeight,
+      getFirstRowElementOffsetHeight: () => findRow().offsetHeight,
       notifyChange: data => this.$emit("change", data),
       setStyle: (prop, value) => $el.style.setProperty(prop, value),
-      setStyleForTitleElement: (prop, value) => $title().style.setProperty(prop, value),
-      setStyleForFlexibleRowElement: (prop, value) => $row().style.setProperty(prop, value),
+      setStyleForTitleElement: (prop, value) => findTitle().style.setProperty(prop, value),
+      setStyleForFlexibleRowElement: (prop, value) => findRow().style.setProperty(prop, value),
       setStyleForFixedAdjustElement: (prop, value) => {
+        const $fixedAdjust = findFixedAdjust();
         if ($fixedAdjust) {
           $fixedAdjust.style.setProperty(prop, value);
         }

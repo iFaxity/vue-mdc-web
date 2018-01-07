@@ -8874,7 +8874,7 @@ var Ripple = Object.freeze({
 	Ripple: install$1
 });
 
-var MDCButton = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c(_vm.link ? "a" : "button",_vm._g({tag:"component",class:_vm.cssClasses,attrs:{"href":_vm.link}},_vm.$listeners),[(_vm.icon)?_c('i',{staticClass:"material-icons mdc-button__icon"},[_vm._v(_vm._s(_vm.icon))]):_vm._e(),_vm._t("default")],2)},staticRenderFns: [],
+var Button$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c(_vm.link ? "a" : "button",_vm._g({tag:"component",class:_vm.cssClasses,attrs:{"href":_vm.link}},_vm.$listeners),[(_vm.icon)?_c('i',{staticClass:"material-icons mdc-button__icon"},[_vm._v(_vm._s(_vm.icon))]):_vm._e(),_vm._t("default")],2)},staticRenderFns: [],
   name: "MdcButton",
   mixins: [ install$1() ],
   props: {
@@ -8902,15 +8902,15 @@ var MDCButton = {render: function(){var _vm=this;var _h=_vm.$createElement;var _
 };
 
 function install(Vue) {
-  Vue.component(MDCButton.name, MDCButton);
+  Vue.component(Button$1.name, Button$1);
 }
 
 var Button = Object.freeze({
-	MDCButton: MDCButton,
+	Button: Button$1,
 	install: install
 });
 
-var MDCCard = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-card",class:_vm.cssClasses},[_vm._t("default")],2)},staticRenderFns: [],
+var Card$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-card",class:_vm.cssClasses},[_vm._t("default")],2)},staticRenderFns: [],
   name: "MdcCard",
   props: {
     dark: Boolean
@@ -8926,13 +8926,13 @@ var MDCCard = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=
 };
 
 function install$2 (Vue) {
-  Vue.component(MDCCard.name, MDCCard);
+  Vue.component(Card$1.name, Card$1);
 }
 
 
 
 var Card = Object.freeze({
-	MDCCard: MDCCard,
+	Card: Card$1,
 	install: install$2
 });
 
@@ -10159,7 +10159,7 @@ function createFocusTrapInstance(surfaceEl, acceptButtonEl, focusTrapFactory = f
 
 const transitionEnd = getCorrectEventName(window, "transitionend");
 
-var MDCDialog = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('aside',{staticClass:"mdc-dialog",attrs:{"aria-labelledby":"","aria-describedby":""}},[_c('div',{ref:"surface",staticClass:"mdc-dialog__surface"},[(_vm.$slots.header)?_c('header',{staticClass:"mdc-dialog__header"},[_vm._t("header")],2):_vm._e(),(_vm.$slots.default)?_c('section',{staticClass:"mdc-dialog__body",class:{"mdc-dialog__body--scrollable": _vm.scrollable}},[_vm._t("default")],2):_vm._e(),_c('footer',{staticClass:"mdc-dialog__footer"},[_c('mdc-button',{ref:"cancel",staticClass:"mdc-dialog__footer__button mdc-dialog__footer__button--cancel"},[_vm._v("Cancel")]),_c('mdc-button',{ref:"accept",staticClass:"mdc-dialog__footer__button mdc-dialog__footer__button--accept"},[_vm._v("Ok")])],1)]),_c('div',{staticClass:"mdc-dialog__backdrop"})])},staticRenderFns: [],
+var Dialog$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('aside',{staticClass:"mdc-dialog",attrs:{"aria-labelledby":"","aria-describedby":""}},[_c('div',{ref:"surface",staticClass:"mdc-dialog__surface"},[(_vm.$slots.header)?_c('header',{staticClass:"mdc-dialog__header"},[_vm._t("header")],2):_vm._e(),(_vm.$slots.default)?_c('section',{staticClass:"mdc-dialog__body",class:{"mdc-dialog__body--scrollable": _vm.scrollable}},[_vm._t("default")],2):_vm._e(),_c('footer',{staticClass:"mdc-dialog__footer"},[_c('mdc-button',{ref:"cancel",staticClass:"mdc-dialog__footer__button mdc-dialog__footer__button--cancel"},[_vm._v("Cancel")]),_c('mdc-button',{ref:"accept",staticClass:"mdc-dialog__footer__button mdc-dialog__footer__button--accept"},[_vm._v("Ok")])],1)]),_c('div',{staticClass:"mdc-dialog__backdrop"})])},staticRenderFns: [],
   name: "MdcDialog",
   props: {
     acceptText: {
@@ -10229,7 +10229,7 @@ var MDCDialog = {render: function(){var _vm=this;var _h=_vm.$createElement;var _
   }
 };
 
-var MDCDialogTitle = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c("h" + _vm.level,{tag:"component",staticClass:"mdc-dialog__header__title"},[_vm._t("default")],2)},staticRenderFns: [],
+var DialogTitle = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c("h" + _vm.level,{tag:"component",staticClass:"mdc-dialog__header__title"},[_vm._t("default")],2)},staticRenderFns: [],
   name: "MdcDialogTitle",
   props: {
     level: {
@@ -10241,14 +10241,412 @@ var MDCDialogTitle = {render: function(){var _vm=this;var _h=_vm.$createElement;
 };
 
 function install$4(Vue) {
-  Vue.component(MDCDialog.name, MDCDialog);
-  Vue.component(MDCDialogTitle.name, MDCDialogTitle);
+  Vue.component(Dialog$1.name, Dialog$1);
+  Vue.component(DialogTitle.name, DialogTitle);
 }
 
 var Dialog = Object.freeze({
-	MDCDialog: MDCDialog,
-	MDCDialogTitle: MDCDialogTitle,
+	Dialog: Dialog$1,
+	DialogTitle: DialogTitle,
 	install: install$4
+});
+
+var Fab$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('button',{staticClass:"mdc-fab material-icons",class:_vm.cssClasses,attrs:{"aria-label":_vm.label}},[_c('span',{staticClass:"mdc-fab__icon"},[_vm._v(_vm._s(_vm.icon))])])},staticRenderFns: [],
+  name: "MdcFab",
+  mixins: [ install$1() ],
+  props: {
+    mini: Boolean,
+    exited: Boolean,
+
+    icon: {
+      type: String,
+      required: true
+    },
+    label: {
+      type: String,
+      required: true
+    }
+  },
+  computed: {
+    cssClasses() {
+      return {
+        "mdc-fab--mini": this.mini,
+        "mdc-fab--exited": this.exited
+      };
+    }
+  }
+};
+
+function install$5(Vue) {
+  Vue.component(Fab$1.name, Fab$1);
+}
+
+var Fab = Object.freeze({
+	Fab: Fab$1,
+	install: install$5
+});
+
+/**
+ * @license
+ * Copyright 2017 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/* eslint no-unused-vars: [2, {"args": "none"}] */
+
+/**
+ * Adapter for MDC Icon Toggle. Provides an interface for managing
+ * - classes
+ * - dom
+ * - inner text
+ * - event handlers
+ * - event dispatch
+ *
+ * Additionally, provides type information for the adapter to the Closure
+ * compiler.
+ *
+ * Implement this adapter for your framework of choice to delegate updates to
+ * the component in your framework of choice. See architecture documentation
+ * for more details.
+ * https://github.com/material-components/material-components-web/blob/master/docs/architecture.md
+ *
+ * @record
+ */
+
+/**
+ * @license
+ * Copyright 2016 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/** @enum {string} */
+const cssClasses$3 = {
+  ROOT: 'mdc-icon-toggle',
+  DISABLED: 'mdc-icon-toggle--disabled',
+};
+
+/** @enum {string} */
+const strings$3 = {
+  DATA_TOGGLE_ON: 'data-toggle-on',
+  DATA_TOGGLE_OFF: 'data-toggle-off',
+  ARIA_PRESSED: 'aria-pressed',
+  ARIA_DISABLED: 'aria-disabled',
+  ARIA_LABEL: 'aria-label',
+  CHANGE_EVENT: 'MDCIconToggle:change',
+};
+
+/**
+ * @license
+ * Copyright 2016 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/* eslint-disable no-unused-vars */
+/**
+ * @extends {MDCFoundation<!MDCIconToggleAdapter>}
+ */
+class MDCIconToggleFoundation extends MDCFoundation {
+  static get cssClasses() {
+    return cssClasses$3;
+  }
+
+  static get strings() {
+    return strings$3;
+  }
+
+  static get defaultAdapter() {
+    return {
+      addClass: (/* className: string */) => {},
+      removeClass: (/* className: string */) => {},
+      registerInteractionHandler: (/* type: string, handler: EventListener */) => {},
+      deregisterInteractionHandler: (/* type: string, handler: EventListener */) => {},
+      setText: (/* text: string */) => {},
+      getTabIndex: () => /* number */ 0,
+      setTabIndex: (/* tabIndex: number */) => {},
+      getAttr: (/* name: string */) => /* string */ '',
+      setAttr: (/* name: string, value: string */) => {},
+      rmAttr: (/* name: string */) => {},
+      notifyChange: (/* evtData: IconToggleEvent */) => {},
+    };
+  }
+
+  constructor(adapter) {
+    super(Object.assign(MDCIconToggleFoundation.defaultAdapter, adapter));
+
+    /** @private {boolean} */
+    this.on_ = false;
+
+    /** @private {boolean} */
+    this.disabled_ = false;
+
+    /** @private {number} */
+    this.savedTabIndex_ = -1;
+
+    /** @private {?IconToggleState} */
+    this.toggleOnData_ = null;
+
+    /** @private {?IconToggleState} */
+    this.toggleOffData_ = null;
+
+    this.clickHandler_ = /** @private {!EventListener} */ (
+      () => this.toggleFromEvt_());
+
+    /** @private {boolean} */
+    this.isHandlingKeydown_ = false;
+
+    this.keydownHandler_ = /** @private {!EventListener} */ ((/** @type {!KeyboardKey} */ evt) => {
+      if (isSpace(evt)) {
+        this.isHandlingKeydown_ = true;
+        return evt.preventDefault();
+      }
+    });
+
+    this.keyupHandler_ = /** @private {!EventListener} */ ((/** @type {!KeyboardKey} */ evt) => {
+      if (isSpace(evt)) {
+        this.isHandlingKeydown_ = false;
+        this.toggleFromEvt_();
+      }
+    });
+  }
+
+  init() {
+    this.refreshToggleData();
+    this.savedTabIndex_ = this.adapter_.getTabIndex();
+    this.adapter_.registerInteractionHandler('click', this.clickHandler_);
+    this.adapter_.registerInteractionHandler('keydown', this.keydownHandler_);
+    this.adapter_.registerInteractionHandler('keyup', this.keyupHandler_);
+  }
+
+  refreshToggleData() {
+    const {DATA_TOGGLE_ON, DATA_TOGGLE_OFF} = MDCIconToggleFoundation.strings;
+    this.toggleOnData_ = this.parseJsonDataAttr_(DATA_TOGGLE_ON);
+    this.toggleOffData_ = this.parseJsonDataAttr_(DATA_TOGGLE_OFF);
+  }
+
+  destroy() {
+    this.adapter_.deregisterInteractionHandler('click', this.clickHandler_);
+    this.adapter_.deregisterInteractionHandler('keydown', this.keydownHandler_);
+    this.adapter_.deregisterInteractionHandler('keyup', this.keyupHandler_);
+  }
+
+  /** @private */
+  toggleFromEvt_() {
+    this.toggle();
+    const {on_: isOn} = this;
+    this.adapter_.notifyChange(/** @type {!IconToggleEvent} */ ({isOn}));
+  }
+
+  /** @return {boolean} */
+  isOn() {
+    return this.on_;
+  }
+
+  /** @param {boolean=} isOn */
+  toggle(isOn = !this.on_) {
+    this.on_ = isOn;
+
+    const {ARIA_LABEL, ARIA_PRESSED} = MDCIconToggleFoundation.strings;
+
+    if (this.on_) {
+      this.adapter_.setAttr(ARIA_PRESSED, 'true');
+    } else {
+      this.adapter_.setAttr(ARIA_PRESSED, 'false');
+    }
+
+    const {cssClass: classToRemove} =
+        this.on_ ? this.toggleOffData_ : this.toggleOnData_;
+
+    if (classToRemove) {
+      this.adapter_.removeClass(classToRemove);
+    }
+
+    const {content, label, cssClass} = this.on_ ? this.toggleOnData_ : this.toggleOffData_;
+
+    if (cssClass) {
+      this.adapter_.addClass(cssClass);
+    }
+    if (content) {
+      this.adapter_.setText(content);
+    }
+    if (label) {
+      this.adapter_.setAttr(ARIA_LABEL, label);
+    }
+  }
+
+  /**
+   * @param {string} dataAttr
+   * @return {!IconToggleState}
+   */
+  parseJsonDataAttr_(dataAttr) {
+    const val = this.adapter_.getAttr(dataAttr);
+    if (!val) {
+      return {};
+    }
+    return /** @type {!IconToggleState} */ (JSON.parse(val));
+  }
+
+  /** @return {boolean} */
+  isDisabled() {
+    return this.disabled_;
+  }
+
+  /** @param {boolean} isDisabled */
+  setDisabled(isDisabled) {
+    this.disabled_ = isDisabled;
+
+    const {DISABLED} = MDCIconToggleFoundation.cssClasses;
+    const {ARIA_DISABLED} = MDCIconToggleFoundation.strings;
+
+    if (this.disabled_) {
+      this.savedTabIndex_ = this.adapter_.getTabIndex();
+      this.adapter_.setTabIndex(-1);
+      this.adapter_.setAttr(ARIA_DISABLED, 'true');
+      this.adapter_.addClass(DISABLED);
+    } else {
+      this.adapter_.setTabIndex(this.savedTabIndex_);
+      this.adapter_.rmAttr(ARIA_DISABLED);
+      this.adapter_.removeClass(DISABLED);
+    }
+  }
+
+  /** @return {boolean} */
+  isKeyboardActivated() {
+    return this.isHandlingKeydown_;
+  }
+}
+
+/**
+ * @param {!KeyboardKey} keyboardKey
+ * @return {boolean}
+ */
+function isSpace(keyboardKey) {
+  return keyboardKey.key === 'Space' || keyboardKey.keyCode === 32;
+}
+
+const rippleAdapter$1 = {
+  isSurfaceActive() {
+    return this.foundation.isKeyboardActivated();
+  },
+  computeBoundingRect() {
+    const { left, top } = this.$el.getBoundingClientRect();
+    const DIM = 48;
+    return {
+      top, left,
+      right: left + DIM,
+      bottom: left + DIM,
+      width: DIM,
+      height: DIM
+    };
+  }
+};
+
+var IconToggle$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('i',{staticClass:"mdc-icon-toggle material-icons",attrs:{"role":"button","tabindex":"0"}})},staticRenderFns: [],
+  name: "MdcIconToggle",
+  mixins: [ install$1(rippleAdapter$1, { unbounded: true }) ],
+  props: {
+    active: Boolean,
+    disabled: Boolean,
+    on: {
+      type: Object,
+      required: true
+    },
+    off: {
+      type: Object,
+      required: true
+    }
+  },
+  model: {
+    prop: "active",
+    event: "change"
+  },
+  watch: {
+    active(value) {
+      this.foundation.toggle(this.active);
+    },
+    disabled(value) {
+      this.foundation.setDisabled(this.disabled);
+    },
+    on(value) {
+      this.foundation.toggleOnData_ = this.on;
+    },
+    off(value) {
+      this.foundation.toggleOffData_ = this.off;
+    }
+  },
+  mounted() {
+    const { $el } = this;
+    const findIcon = () => {
+      const selector = $el.dataset.iconInnerSelector;
+      return selector ? $el.querySelector(selector) : $el; 
+    };
+
+    this.foundation = new MDCIconToggleFoundation({
+      addClass: className => findIcon().classList.add(className),
+      removeClass: className => findIcon().classList.remove(className),
+      registerInteractionHandler: (type, handler) => $el.addEventListener(type, handler),
+      deregisterInteractionHandler: (type, handler) => $el.removeEventListener(type, handler),
+      setText: text => findIcon().textContent = text,
+      getTabIndex: () => $el.tabIndex,
+      setTabIndex: tabIndex => $el.tabIndex = tabIndex,
+      getAttr: (name, value) => $el.getAttribute(name, value),
+      setAttr: (name, value) => $el.setAttribute(name, value),
+      rmAttr: name => $el.removeAttribute(name),
+      notifyChange: data => this.$emit("change", data),
+    });
+    this.foundation.init();
+
+    // Set data here instead of using the data attributes
+    this.foundation.toggleOnData_ = this.on;
+    this.foundation.toggleOffData_ = this.off;
+    // Sync with dom here
+    this.foundation.toggle(this.active);
+    this.foundation.setDisabled(this.disabled);
+  },
+  beforeDestroy() {
+    this.foundation.destroy();
+  }
+};
+
+function install$6(Vue) {
+  Vue.component(IconToggle$1.name, IconToggle$1);
+}
+
+var IconToggle = Object.freeze({
+	IconToggle: IconToggle$1,
+	install: install$6
 });
 
 /**
@@ -10267,7 +10665,7 @@ var Dialog = Object.freeze({
  * limitations under the License.
  */
 
-const cssClasses$3 = {
+const cssClasses$4 = {
   FIXED: 'mdc-toolbar--fixed',
   FIXED_LASTROW: 'mdc-toolbar--fixed-lastrow-only',
   FIXED_AT_LAST_ROW: 'mdc-toolbar--fixed-at-last-row',
@@ -10277,7 +10675,7 @@ const cssClasses$3 = {
   FLEXIBLE_MIN: 'mdc-toolbar--flexible-space-minimized',
 };
 
-const strings$3 = {
+const strings$4 = {
   TITLE_SELECTOR: '.mdc-toolbar__title',
   FIRST_ROW_SELECTOR: '.mdc-toolbar__row:first-child',
   CHANGE_EVENT: 'MDCToolbar:change',
@@ -10308,11 +10706,11 @@ const numbers$2 = {
  */
 class MDCToolbarFoundation extends MDCFoundation {
   static get cssClasses() {
-    return cssClasses$3;
+    return cssClasses$4;
   }
 
   static get strings() {
-    return strings$3;
+    return strings$4;
   }
 
   static get numbers() {
@@ -10585,9 +10983,9 @@ var Toolbar$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _
   },
   mounted() {
     const { $el } = this;
-    const $title = () => $el.querySelector(".mdc-toolbar__title");
-    const $row = () => $el.querySelector(".mdc-toolbar__row:first-child");
-    const $fixedAdjust = (typeof this.fixed === "string" && $el.nextElementSibling) || null;
+    const findTitle = () => $el.querySelector(".mdc-toolbar__title");
+    const findRow = () => $el.querySelector(".mdc-toolbar__row:first-child");
+    const findFixedAdjust = () => (typeof this.fixed === "string" && $el.nextElementSibling) || null;
 
     this.foundation = new MDCToolbarFoundation({
       hasClass: className => $el.classList.contains(className),
@@ -10600,12 +10998,13 @@ var Toolbar$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _
       getViewportWidth: () => window.innerWidth,
       getViewportScrollY: () => window.pageYOffset,
       getOffsetHeight: () => $el.offsetHeight,
-      getFirstRowElementOffsetHeight: () => $row().offsetHeight,
+      getFirstRowElementOffsetHeight: () => findRow().offsetHeight,
       notifyChange: data => this.$emit("change", data),
       setStyle: (prop, value) => $el.style.setProperty(prop, value),
-      setStyleForTitleElement: (prop, value) => $title().style.setProperty(prop, value),
-      setStyleForFlexibleRowElement: (prop, value) => $row().style.setProperty(prop, value),
+      setStyleForTitleElement: (prop, value) => findTitle().style.setProperty(prop, value),
+      setStyleForFlexibleRowElement: (prop, value) => findRow().style.setProperty(prop, value),
       setStyleForFixedAdjustElement: (prop, value) => {
+        const $fixedAdjust = findFixedAdjust();
         if ($fixedAdjust) {
           $fixedAdjust.style.setProperty(prop, value);
         }
@@ -10658,7 +11057,7 @@ var ToolbarMenuIcon = {render: function(){var _vm=this;var _h=_vm.$createElement
   }
 };
 
-function install$5(Vue) {
+function install$7(Vue) {
   Vue.component(Toolbar$1.name, Toolbar$1);
   Vue.component(ToolbarRow.name, ToolbarRow);
   Vue.component(ToolbarSection.name, ToolbarSection);
@@ -10674,16 +11073,14 @@ var Toolbar = Object.freeze({
 	ToolbarTitle: ToolbarTitle,
 	ToolbarIcon: ToolbarIcon,
 	ToolbarMenuIcon: ToolbarMenuIcon,
-	install: install$5
+	install: install$7
 });
 
 //import * as Drawer from "./packages/drawer";
 //import * as Elevation from "./packages/elevation";
-//import * as Fab from "./packages/fab";
 //import * as FormField from "./packages/form-field";
 //import * as GridList from "./packages/grid-list";
 //import * as Icon from "./packages/icon";
-//import * as IconToggle from "./packages/icon-toggle";
 //import * as LayoutGrid from "./packages/layout-grid";
 //import * as LinearProgress from "./packages/linear-progress";
 //import * as List from "./packages/list";
@@ -10721,11 +11118,11 @@ var VueMDC = {
     Vue.use(Dialog);
     //Vue.use(Drawer);
     //Vue.use(Elevation);
-    //Vue.use(Fab);
+    Vue.use(Fab);
     //Vue.use(FormField);
     //Vue.use(GridList);
     //Vue.use(Icon);
-    //Vue.use(IconToggle);
+    Vue.use(IconToggle);
     //Vue.use(LayoutGrid);
     //Vue.use(LinearProgress);
     //Vue.use(List);
@@ -10742,7 +11139,7 @@ var VueMDC = {
   }
 };
 
-var Test = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{attrs:{"id":"app"}},[_c('mdc-toolbar',{attrs:{"fixed":"lastrow","waterfall":"","flexible":""}},[_c('mdc-toolbar-row',[_c('mdc-toolbar-section',{attrs:{"align-start":""}},[_c('mdc-toolbar-menu-icon',{on:{"click":function($event){_vm.$refs.drawer.open();}}}),_c('mdc-toolbar-title',[_vm._v("Material Components In Vuejs")])],1)],1),_c('mdc-toolbar-row',[_c('mdc-toolbar-section',{attrs:{"align-end":""}},[_c('mdc-toolbar-icon',{attrs:{"aria-label":"Download","alt":"Download"}},[_vm._v("file_download ")]),_c('mdc-toolbar-icon',{attrs:{"aria-label":"Print this page","alt":"Print this page"}},[_vm._v("print")]),_c('mdc-toolbar-icon',{attrs:{"aria-label":"Bookmark this page","alt":"Bookmark this page"}},[_vm._v("bookmark")])],1)],1)],1),_c('main',{ref:"main",staticStyle:{"height":"100vh"}},[_c('h2',[_vm._v("Buttons")]),_c('mdc-button',[_vm._v("Click me")]),_c('mdc-button',{attrs:{"icon":"accessibility","raised":""}},[_vm._v("Icon Button")]),_c('mdc-button',{attrs:{"raised":""}},[_vm._v("Raised button")]),_c('h2',[_vm._v("Dialog")]),_c('mdc-button',{attrs:{"raised":""},on:{"click":_vm.openDialog}},[_vm._v("Show Dialog")]),_c('p',[_vm._v("Result: "+_vm._s(_vm.dialogResult))]),_c('mdc-dialog',{ref:"dialog",on:{"action":_vm.dialogAction}},[_c('mdc-dialog-title',{attrs:{"slot":"header"},slot:"header"},[_vm._v("Test dialog")]),_vm._v("This is just a test dialog click accept or decline to close the window")],1),_c('h2',[_vm._v("Checkbox")]),_c('mdc-checkbox',{attrs:{"indeterminate":""},model:{value:(_vm.checked),callback:function ($$v) {_vm.checked=$$v;},expression:"checked"}}),_c('p',[_vm._v("Checked: "+_vm._s(_vm.checked))])],1)],1)},staticRenderFns: [],
+var Test = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{attrs:{"id":"app"}},[_c('mdc-toolbar',{attrs:{"fixed":"lastrow","waterfall":"","flexible":""}},[_c('mdc-toolbar-row',[_c('mdc-toolbar-section',{attrs:{"align-start":""}},[_c('mdc-toolbar-menu-icon',{on:{"click":function($event){_vm.$refs.drawer.open();}}}),_c('mdc-toolbar-title',[_vm._v("Material Components In Vuejs")])],1)],1),_c('mdc-toolbar-row',[_c('mdc-toolbar-section',{attrs:{"align-end":""}},[_c('mdc-toolbar-icon',{attrs:{"aria-label":"Download","alt":"Download"}},[_vm._v("file_download ")]),_c('mdc-toolbar-icon',{attrs:{"aria-label":"Print this page","alt":"Print this page"}},[_vm._v("print")]),_c('mdc-toolbar-icon',{attrs:{"aria-label":"Bookmark this page","alt":"Bookmark this page"}},[_vm._v("bookmark")])],1)],1)],1),_c('main',{ref:"main",staticStyle:{"height":"100vh"}},[_c('h2',[_vm._v("Buttons")]),_c('mdc-button',[_vm._v("Click me")]),_c('mdc-button',{attrs:{"icon":"accessibility","raised":""}},[_vm._v("Icon Button")]),_c('mdc-button',{attrs:{"raised":""}},[_vm._v("Raised button")]),_c('mdc-fab',{attrs:{"icon":"add","label":"Add"}}),_c('mdc-icon-toggle',{attrs:{"on":{content: "favorite", label: "Remove from favorites"},"off":{content: "favorite_border", label: "Add to favorites"}}}),_c('h2',[_vm._v("Dialog")]),_c('mdc-button',{attrs:{"raised":""},on:{"click":_vm.openDialog}},[_vm._v("Show Dialog")]),_c('p',[_vm._v("Result: "+_vm._s(_vm.dialogResult))]),_c('mdc-dialog',{ref:"dialog",on:{"action":_vm.dialogAction}},[_c('mdc-dialog-title',{attrs:{"slot":"header"},slot:"header"},[_vm._v("Test dialog")]),_vm._v("This is just a test dialog click accept or decline to close the window")],1),_c('h2',[_vm._v("Checkbox")]),_c('mdc-checkbox',{attrs:{"indeterminate":""},model:{value:(_vm.checked),callback:function ($$v) {_vm.checked=$$v;},expression:"checked"}}),_c('p',[_vm._v("Checked: "+_vm._s(_vm.checked))])],1)],1)},staticRenderFns: [],
   name: "Test",
   data() {
     return { 

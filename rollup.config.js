@@ -21,7 +21,7 @@ const plugins = [
   vue(),
   sass({
     output: "dist/styles.css",
-    include: "**/*.scss",
+    include: [ "**/*.scss", "**/*.css" ],
     exclude: [],
     options: {
       sourceMap: true,
@@ -38,7 +38,7 @@ if (process.env.NODE_ENV === "production") {
 }
 
 export default {
-  input: "www/javascripts/app.js",
+  input: "index.js",
   sourcemap: true,
   plugins,
   output: [

@@ -1,18 +1,17 @@
 <template lang="pug">
-button.mdc-fab.material-icons(v-ripple="ripple", :aria-label="label", :class=`cssClasses`)
+button.mdc-fab.material-icons(:aria-label="label", :class="cssClasses")
   span.mdc-fab__icon {{icon}}
 </template>
 
 <script>
+import { Ripple } from "../ripple";
+
 export default {
   name: "MdcFab",
+  mixins: [ Ripple() ],
   props: {
     mini: Boolean,
     exited: Boolean,
-    ripple: {
-      type: Boolean,
-      default: true
-    },
 
     icon: {
       type: String,

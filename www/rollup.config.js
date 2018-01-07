@@ -18,26 +18,21 @@ const plugins = [
   commonjs(),
   globals(),
   sass({
-    output: "www/stylesheets/styles.css",
-    include: "**/*.scss",
+    output: "www/dist/bundle.css",
+    include: [ "**/*.scss", "**/*.css" ],
     exclude: [],
     options: {
       includePaths: ["node_modules"],
     },
-    processor: css => postcss([autoprefixer]).process(css).then(result => result.css)
+    processor: css => postcss([ autoprefixer ]).process(css).then(result => result.css)
   }),
-  vue(),
-  //buble({ exclude: "node_modules/**" }),
+  vue()
 ];
 
-if (process.env.NODE_ENV === "production") {
-  plugins.push(uglify());
-}
-
 export default {
-  input: "www/javascripts/app.js",
+  input: "www/app/app.js",
   output: {
-    file: "www/javascripts/bundle.js",
+    file: "www/dist/bundle.js",
     format: "iife",
   },
   sourcemap: true,

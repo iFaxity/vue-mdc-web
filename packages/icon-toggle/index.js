@@ -1,8 +1,7 @@
-import { default as MDCIconToggle } from "./icon-toggle.vue";
-export { MDCIconToggle };
+import IconToggle from "./icon-toggle.vue";
+import "@material/icon-toggle/mdc-icon-toggle.scss";
 
-export default {
-  install(Vue) {
-    Vue.component(MDCIconToggle.name, MDCIconToggle);
-  }
-};
+export { IconToggle };
+export function install(Vue) {
+  Vue.component(IconToggle.name, IconToggle);
+}

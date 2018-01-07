@@ -1,8 +1,8 @@
-import { default as MDCCard } from "./card.vue";
+import Card from "./card.vue";
 import "@material/card/mdc-card.scss";
 
-export { MDCCard };
+export { Card };
 export function install (Vue) {
-  Vue.component(MDCCard.name, MDCCard);
+  Vue.component(Card.name, Card);
 }
 
