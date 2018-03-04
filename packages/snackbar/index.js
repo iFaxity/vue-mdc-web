@@ -1,8 +1,7 @@
-import { default as MDCSnackbar } from "./snackbar.vue";
-export { MDCSnackbar };
+import Snackbar from "./Snackbar.vue";
+import "@material/snackbar/mdc-snackbar.scss";
 
-export default {
-  install(Vue) {
-    Vue.component(MDCSnackbar.name, MDCSnackbar);
-  }
-};
+export { Snackbar };
+export function install(Vue) {
+  Vue.component(Snackbar.name, Snackbar);
+}

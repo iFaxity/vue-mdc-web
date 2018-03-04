@@ -1,7 +1,7 @@
-import { default as MDCCheckbox } from "./checkbox.vue";
+import Checkbox from "./Checkbox.vue";
 import "@material/checkbox/mdc-checkbox.scss";
 
-export { MDCCheckbox };
+export { Checkbox };
 export function install(Vue) {
-  Vue.component(MDCCheckbox.name, MDCCheckbox);
+  Vue.component(Checkbox.name, Checkbox);
 }

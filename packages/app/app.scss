@@ -1,0 +1,43 @@
+body {
+  margin: 0;
+}
+
+.mdc-app {
+  display: flex;
+  flex-direction: column;
+  padding: 0px;
+  margin: 0px;
+  box-sizing: border-box;
+  min-height: 100vh;
+
+  @media(max-width: 720px) {
+    &--drawer-hide-mobile .mdc-drawer {
+      display: none;
+    }
+  }
+
+  &--flipped {
+    flex-direction: row;
+    .mdc-app__content {
+      flex-direction: column;
+    }
+  }
+
+  .mdc-app__content {
+    display: flex;
+    flex: 1 1 auto;
+    height: 100%;
+    box-sizing: border-box;
+    //margin-top: 64px;
+
+    & > main {
+      flex: 1;
+      margin: 0 auto;
+      padding: 0 1em;
+    }
+    
+    &--align-start > main {
+      margin: 0;
+    }
+  }
+}

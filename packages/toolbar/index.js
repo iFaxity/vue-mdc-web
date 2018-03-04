@@ -1,9 +1,9 @@
-import { default as Toolbar } from "./toolbar.vue";
-import { default as ToolbarRow } from "./row.vue";
-import { default as ToolbarSection } from "./section.vue";
-import { default as ToolbarTitle } from "./title.vue";
-import { default as ToolbarIcon } from "./icon.vue";
-import { default as ToolbarMenuIcon } from "./menu-icon.vue";
+import Toolbar from "./Toolbar.vue";
+import ToolbarRow from "./ToolbarRow.vue";
+import ToolbarSection from "./ToolbarSection.vue";
+import ToolbarTitle from "./ToolbarTitle.vue";
+import ToolbarIcon from "./ToolbarIcon.vue";
+import ToolbarMenuIcon from "./ToolbarMenuIcon.vue";
 import "@material/toolbar/mdc-toolbar.scss";
 
 export { Toolbar, ToolbarRow, ToolbarSection, ToolbarTitle, ToolbarIcon, ToolbarMenuIcon };

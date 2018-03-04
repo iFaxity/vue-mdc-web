@@ -1,9 +1,9 @@
 <template lang="pug">
 .mdc-checkbox
-  input.mdc-checkbox__native-control(ref="input", type="checkbox", v-bind="$attrs", :disabled="disabled", v-model="model")
+  input.mdc-checkbox__native-control(ref="input", v-bind="$attrs", v-model="model", type="checkbox")
   .mdc-checkbox__background
     svg.mdc-checkbox__checkmark(viewBox="0 0 24 24")
-      path.mdc-checkbox__checkmark__path(fill="none", stroke="white", d="M1.73,12.91 8.1,19.28 22.79,4.59")
+      path.mdc-checkbox__checkmark-path(fill="none", stroke="white", d="M1.73,12.91 8.1,19.28 22.79,4.59")
     .mdc-checkbox__mixedmark
 </template>
 
@@ -15,35 +15,45 @@ import { Ripple } from "../ripple";
 const animationEnd = getCorrectEventName(window, "animationend");
 const rippleAdapter = {
   registerInteractionHandler(typeName, handler) {
-    const { input } = this.$refs;
-    input.addEventListener(typeName, handler);
+    this.$refs.input.addEventListener(typeName, handler);
   },
   deregisterInteractionHandler(typeName, handler) {
-    const { input } = this.$refs;
-    input.removeEventListener(typeName, handler);
-  },
-  computeBoundingRect() {
-    const { left, top } = this.$el.getBoundingClientRect();
-    const DIM = 40;
-    return {
-      top, left,
-      right: left + DIM,
-      bottom: top + DIM,
-      width: DIM,
-      height: DIM,
-    };
+    this.$refs.input.removeEventListener(typeName, handler);
   }
 };
 
 export default {
   name: "MdcCheckbox",
-  inheritAttrs: false,
   mixins: [ Ripple(rippleAdapter, { unbounded: true }) ],
+  inheritAttrs: false,
+  model: {
+    prop: "checked",
+    event: "change"
+  },
   props: {
     disabled: Boolean,
     checked: Boolean,
     indeterminate: Boolean,
   },
+  watch: {
+    disabled(value) {
+      this.foundation.setDisabled(value);
+    },
+    indeterminate(value) {
+      this.foundation.setIndeterminate(value);
+    }
+  },
+  computed: {
+    model: {
+      get() {
+        return this.checked;
+      },
+      set(value) {
+        this.$emit("change", value);
+      }
+    }
+  },
+
   mounted() {
     const { $el } = this;
     const { input } = this.$refs;
@@ -67,31 +77,6 @@ export default {
   },
   beforeDestroy() {
     this.foundation.destroy();
-  },
-  model: {
-    prop: "checked",
-    event: "change"
-  },
-  watch: {
-    disabled(value) {
-      this.foundation.setDisabled(value);
-    },
-    checked(value) {
-      this.foundation.setChecked(value);
-    },
-    indeterminate(value) {
-      this.foundation.setIndeterminate(value);
-    }
-  },
-  computed: {
-    model: {
-      get() {
-        return this.checked;
-      },
-      set(value) {
-        this.$emit("change", value);
-      }
-    }
   }
 };
 </script>

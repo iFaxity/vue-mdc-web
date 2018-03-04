@@ -1,4 +1,4 @@
-import Fab from "./fab.vue";
+import Fab from "./Fab.vue";
 import "@material/fab/mdc-fab.scss";
 
 export { Fab };

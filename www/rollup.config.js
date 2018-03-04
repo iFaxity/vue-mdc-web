@@ -3,7 +3,6 @@ import nodeResolve from "rollup-plugin-node-resolve";
 import commonjs from "rollup-plugin-commonjs";
 import globals from "rollup-plugin-node-globals";
 //import buble from "rollup-plugin-buble";
-import uglify from "rollup-plugin-uglify";
 import sass from "rollup-plugin-sass";
 import autoprefixer from "autoprefixer";
 import postcss from "postcss";
@@ -24,7 +23,7 @@ const plugins = [
     options: {
       includePaths: ["node_modules"],
     },
-    processor: css => postcss([ autoprefixer ]).process(css).then(result => result.css)
+    processor: css => postcss([ autoprefixer ]).process(css, { from: null }).then(result => result.css)
   }),
   vue()
 ];

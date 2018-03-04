@@ -1,9 +1,3 @@
-import { default as Icon } from "./icon.vue";
-export { Icon };
+import Icon from "./Icon.vue";
 
-import "@material/icon/styles.scss";
-export default {
-  install(Vue) {
-    Vue.component(Icon.name, Icon);
-  }
-};
+export default Icon;

@@ -1,16 +1,23 @@
-import { default as MDCList } from "./list.vue";
-import { default as MDCListItem } from "./list-item.vue";
+import List from "./List.vue";
+import ListItem from "./ListItem.vue";
+import ListDivider from "./ListDivider.vue";
+import ListItemGraphic from "./ListItemGraphic.vue";
+import ListItemMeta from "./ListItemMeta.vue";
+// List groups
+import ListGroup from "./group/ListGroup.vue";
+import ListGroupDivider from "./group/ListGroupDivider.vue";
+import ListGroupSubheader from "./group/ListGroupSubheader.vue";
+import "@material/list/mdc-list.scss";
 
-// Start and end detail are equivalent. Just a class different
-import createDetail from "./list-item-detail";
-const MDCListItemEndDetail = createDetail("start");
-const MDCListItemEndDetail = createDetail("end");
-
-export { MDCList, MDCListItem };
-
-export default {
-  install(Vue) {
-    Vue.component(MDCList.name, MDCList);
-    Vue.component(MDCListItem.name, MDCListItem);
-  }
-};
+export { List, ListItem, ListDivider, ListItemGraphic, ListItemMeta, ListGroup, ListGroupDivider, ListGroupSubheader };
+export function install(Vue) {
+  Vue.component(List.name, List);
+  Vue.component(ListItem.name, ListItem);
+  Vue.component(ListDivider.name, ListDivider);
+  Vue.component(ListItemGraphic.name, ListItemGraphic);
+  Vue.component(ListItemMeta.name, ListItemMeta);
+  // List groups
+  Vue.component(ListGroup.name, ListGroup);
+  Vue.component(ListGroupDivider.name, ListGroupDivider);
+  Vue.component(ListGroupSubheader.name, ListGroupSubheader);
+}

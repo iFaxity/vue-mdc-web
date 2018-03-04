@@ -1,8 +1,7 @@
-import { default as MDCSwitch } from "./switch.vue";
-export { MDCSwitch };
+import Switch from "./Switch.vue";
+import "@material/switch/mdc-switch.scss";
 
-export default {
-  install(Vue) {
-    Vue.component(MDCSwitch.name, MDCSwitch);
-  }
-};
+export { Switch };
+export function install(Vue) {
+  Vue.component(Switch.name, Switch);
+}

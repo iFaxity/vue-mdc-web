@@ -4,21 +4,12 @@
   <title></title>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <link rel="icon" href="./favicon.ico">
+  <link rel="icon" href="/favicon.ico">
   
-  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,400,500|Roboto+Mono:400,500">
   <link rel="stylesheet" href="//fonts.googleapis.com/icon?family=Material+Icons">
-  <link rel="stylesheet" href="./styles.css">
+  <link rel="stylesheet" href="/bundle.css">
   <style>
-    #app, body {
-      margin: 0;
-    }
-
-    main {
-      margin: 20px;
-      padding-top: 20px;
-    }
-
     .mdc-toolbar {
       --mdc-toolbar-ratio-to-extend-flexible: 8;
     }
@@ -28,11 +19,27 @@
       background-size: cover;
       background-position: center;
     }
+
+    /*.mdc-card__media {
+      background-image: url(/images/16-9.jpg);
+    }
+    .mdc-card__media--16-9 {
+      background-image: url(/images/1-1.jpg);
+    }*/
+    .mdc-card__media::before {
+      display: block;
+      content: "";
+      margin-top: 100%;
+    }
+    .mdc-card {
+      width: 350px;
+      flex: 1;
+    }
   </style>
 </head>
 
 <body>
   <div id="app"></div>
-  <script src="./bundle.js"></script>
+  <script src="/bundle.js"></script>
 </body>
 </html>

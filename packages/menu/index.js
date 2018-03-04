@@ -1,8 +1,9 @@
-import { default as MDCButton } from "./button.vue";
-export { MDCButton };
+import Menu from "./Menu.vue";
+import MenuItem from "./MenuItem.vue";
+import "@material/menu/mdc-menu.scss";
 
-export default {
-  install(Vue) {
-    Vue.component(MDCButton.name, MDCButton);
-  }
-};
+export { Menu, MenuItem };
+export function install(Vue) {
+  Vue.component(Menu.name, Menu);
+  Vue.component(MenuItem.name, MenuItem);
+}

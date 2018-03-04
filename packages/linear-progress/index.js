@@ -1,8 +1,7 @@
-import { default as MDCButton } from "./button.vue";
-export { MDCButton };
+import LinearProgress from "./LinearProgress.vue";
+import "@material/linear-progress/mdc-linear-progress.scss";
 
-export default {
-  install(Vue) {
-    Vue.component(MDCButton.name, MDCButton);
-  }
-};
+export { LinearProgress };
+export function install(Vue) {
+  Vue.component(LinearProgress.name, LinearProgress);
+}

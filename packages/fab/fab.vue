@@ -1,6 +1,6 @@
 <template lang="pug">
 button.mdc-fab.material-icons(:aria-label="label", :class="cssClasses")
-  span.mdc-fab__icon {{icon}}
+  span.mdc-fab__icon {{ icon }}
 </template>
 
 <script>

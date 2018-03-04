@@ -1,5 +1,5 @@
 <template lang="pug">
-header.mdc-toolbar(:class=`cssClasses`)
+header.mdc-toolbar(:class="cssClasses")
   slot
 </template>
 
@@ -12,21 +12,10 @@ export default {
   props: {
     flexible: Boolean,
     waterfall: Boolean,
-    fixed: {
-      type: String,
-      validator: value => value === "" || value === "lastrow"
-    }
-  },
-  data() {
-    return { fixedAdjustElement: null };
+    fixed: Boolean,
+    fixedLastrow: Boolean
   },
   watch: {
-    fixed(value) {
-      const isStr = typeof value === "string";
-
-      this.foundation.fixed_ = isStr;
-      this.foundation.fixedLastrow_ = isStr && value === "lastrow";
-    },
     flexible(value) {
       this.foundation.hasFlexibleRow_ = value;
       this.foundation.useFlexDefaultBehaviour_ = value;
@@ -37,18 +26,25 @@ export default {
       //TODO: minimize flexible and fixed to a string
       return {
         "mdc-toolbar--waterfall": this.waterfall,
-        "mdc-toolbar--fixed": typeof this.fixed === "string",
-        "mdc-toolbar--fixed-lastrow-only": this.fixed === "lastrow",
+        "mdc-toolbar--fixed": this.isFixed,
+        "mdc-toolbar--fixed-lastrow-only": this.fixedLastrow,
         "mdc-toolbar--flexible": this.flexible,
         "mdc-toolbar--flexible-default-behavior": this.flexible
       };
+    },
+    isFixed() {
+      if(this.foundation) {
+        this.foundation.fixed_ = this.fixed;
+        this.foundation.fixedLastrow_ = this.fixedLastrow;
+      }
+
+      return this.fixed || this.fixedLastrow;
     }
   },
   mounted() {
     const { $el } = this;
     const findTitle = () => $el.querySelector(".mdc-toolbar__title");
     const findRow = () => $el.querySelector(".mdc-toolbar__row:first-child");
-    const findFixedAdjust = () => (typeof this.fixed === "string" && $el.nextElementSibling) || null;
 
     this.foundation = new Foundation({
       hasClass: className => $el.classList.contains(className),
@@ -67,7 +63,7 @@ export default {
       setStyleForTitleElement: (prop, value) => findTitle().style.setProperty(prop, value),
       setStyleForFlexibleRowElement: (prop, value) => findRow().style.setProperty(prop, value),
       setStyleForFixedAdjustElement: (prop, value) => {
-        const $fixedAdjust = findFixedAdjust();
+        const $fixedAdjust = this.isFixed && $el.nextElementSibling;
         if ($fixedAdjust) {
           $fixedAdjust.style.setProperty(prop, value);
         }

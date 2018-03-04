@@ -1,8 +1,7 @@
-import { default as MDCSlider } from "./slider.vue";
-export { MDCSlider };
+import Slider from "./Slider.vue";
+import "@material/slider/mdc-slider.scss";
 
-export default {
-  install(Vue) {
-    Vue.component(MDCSlider.name, MDCSlider);
-  }
+export { Slider };
+export function install(Vue) {
+  Vue.component(Slider.name, Slider);
 };

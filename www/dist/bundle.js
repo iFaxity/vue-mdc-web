@@ -5,9 +5,6 @@ var global$1 = typeof global !== "undefined" ? global :
             typeof self !== "undefined" ? self :
             typeof window !== "undefined" ? window : {};
 
-// shim for using process in browser
-// based off https://github.com/defunctzombie/node-process/blob/master/browser.js
-
 function defaultSetTimout() {
     throw new Error('setTimeout has not been defined');
 }
@@ -228,13 +225,6 @@ var process = {
   uptime: uptime
 };
 
-/*!
- * Vue.js v2.5.7
- * (c) 2014-2017 Evan You
- * Released under the MIT License.
- */
-/*  */
-
 var emptyObject = Object.freeze({});
 
 // these helpers produces better vm code in JS engines due to their
@@ -262,6 +252,8 @@ function isPrimitive (value) {
   return (
     typeof value === 'string' ||
     typeof value === 'number' ||
+    // $flow-disable-line
+    typeof value === 'symbol' ||
     typeof value === 'boolean'
   )
 }
@@ -566,6 +558,7 @@ var config = ({
   /**
    * Option merge strategies (used in core/util/options)
    */
+  // $flow-disable-line
   optionMergeStrategies: Object.create(null),
 
   /**
@@ -606,6 +599,7 @@ var config = ({
   /**
    * Custom user key aliases for v-on
    */
+  // $flow-disable-line
   keyCodes: Object.create(null),
 
   /**
@@ -941,9 +935,9 @@ var VNode = function VNode (
   this.elm = elm;
   this.ns = undefined;
   this.context = context;
-  this.functionalContext = undefined;
-  this.functionalOptions = undefined;
-  this.functionalScopeId = undefined;
+  this.fnContext = undefined;
+  this.fnOptions = undefined;
+  this.fnScopeId = undefined;
   this.key = data && data.key;
   this.componentOptions = componentOptions;
   this.componentInstance = undefined;
@@ -1002,6 +996,9 @@ function cloneVNode (vnode, deep) {
   cloned.isStatic = vnode.isStatic;
   cloned.key = vnode.key;
   cloned.isComment = vnode.isComment;
+  cloned.fnContext = vnode.fnContext;
+  cloned.fnOptions = vnode.fnOptions;
+  cloned.fnScopeId = vnode.fnScopeId;
   cloned.isCloned = true;
   if (deep) {
     if (vnode.children) {
@@ -1037,8 +1034,7 @@ var arrayMethods = Object.create(arrayProto);[
   'splice',
   'sort',
   'reverse'
-]
-.forEach(function (method) {
+].forEach(function (method) {
   // cache original method
   var original = arrayProto[method];
   def(arrayMethods, method, function mutator () {
@@ -1370,18 +1366,18 @@ function mergeDataOrFn (
     // it has to be a function to pass previous merges.
     return function mergedDataFn () {
       return mergeData(
-        typeof childVal === 'function' ? childVal.call(this) : childVal,
-        typeof parentVal === 'function' ? parentVal.call(this) : parentVal
+        typeof childVal === 'function' ? childVal.call(this, this) : childVal,
+        typeof parentVal === 'function' ? parentVal.call(this, this) : parentVal
       )
     }
   } else {
     return function mergedInstanceDataFn () {
       // instance merge
       var instanceData = typeof childVal === 'function'
-        ? childVal.call(vm)
+        ? childVal.call(vm, vm)
         : childVal;
       var defaultData = typeof parentVal === 'function'
-        ? parentVal.call(vm)
+        ? parentVal.call(vm, vm)
         : parentVal;
       if (instanceData) {
         return mergeData(instanceData, defaultData)
@@ -1533,13 +1529,23 @@ var defaultStrat = function (parentVal, childVal) {
  */
 function checkComponents (options) {
   for (var key in options.components) {
-    var lower = key.toLowerCase();
-    if (isBuiltInTag(lower) || config.isReservedTag(lower)) {
-      warn(
-        'Do not use built-in or reserved HTML elements as component ' +
-        'id: ' + key
-      );
-    }
+    validateComponentName(key);
+  }
+}
+
+function validateComponentName (name) {
+  if (!/^[a-zA-Z][\w-]*$/.test(name)) {
+    warn(
+      'Invalid component name: "' + name + '". Component names ' +
+      'can only contain alphanumeric characters and the hyphen, ' +
+      'and must start with a letter.'
+    );
+  }
+  if (isBuiltInTag(name) || config.isReservedTag(name)) {
+    warn(
+      'Do not use built-in or reserved HTML elements as component ' +
+      'id: ' + name
+    );
   }
 }
 
@@ -1586,6 +1592,7 @@ function normalizeProps (options, vm) {
  */
 function normalizeInject (options, vm) {
   var inject = options.inject;
+  if (!inject) { return }
   var normalized = options.inject = {};
   if (Array.isArray(inject)) {
     for (var i = 0; i < inject.length; i++) {
@@ -1598,7 +1605,7 @@ function normalizeInject (options, vm) {
         ? extend({ from: key }, val)
         : { from: val };
     }
-  } else if (process.env.NODE_ENV !== 'production' && inject) {
+  } else if (process.env.NODE_ENV !== 'production') {
     warn(
       "Invalid value for option \"inject\": expected an Array or an Object, " +
       "but got " + (toRawType(inject)) + ".",
@@ -1740,7 +1747,11 @@ function validateProp (
     observe(value);
     observerState.shouldConvert = prevShouldConvert;
   }
-  if (process.env.NODE_ENV !== 'production') {
+  if (
+    process.env.NODE_ENV !== 'production' &&
+    // skip validation for weex recycle-list child component props
+    !(false && isObject(value) && ('@binding' in value))
+  ) {
     assertProp(prop, key, value, vm, absent);
   }
   return value
@@ -2220,11 +2231,12 @@ function updateListeners (
   remove$$1,
   vm
 ) {
-  var name, cur, old, event;
+  var name, def, cur, old, event;
   for (name in on$$1) {
-    cur = on$$1[name];
+    def = cur = on$$1[name];
     old = oldOn[name];
     event = normalizeEvent(name);
+    /* istanbul ignore if */
     if (isUndef(cur)) {
       process.env.NODE_ENV !== 'production' && warn(
         "Invalid handler for event \"" + (event.name) + "\": got " + String(cur),
@@ -2234,7 +2246,7 @@ function updateListeners (
       if (isUndef(cur.fns)) {
         cur = on$$1[name] = createFnInvoker(cur);
       }
-      add(event.name, cur, event.once, event.capture, event.passive);
+      add(event.name, cur, event.once, event.capture, event.passive, event.params);
     } else if (cur !== old) {
       old.fns = cur;
       on$$1[name] = old;
@@ -2728,6 +2740,8 @@ function eventsMixin (Vue) {
 
 /*  */
 
+
+
 /**
  * Runtime helper for resolving raw children VNodes into a slot object.
  */
@@ -2748,13 +2762,13 @@ function resolveSlots (
     }
     // named slots should only be respected if the vnode was rendered in the
     // same context.
-    if ((child.context === context || child.functionalContext === context) &&
+    if ((child.context === context || child.fnContext === context) &&
       data && data.slot != null
     ) {
-      var name = child.data.slot;
+      var name = data.slot;
       var slot = (slots[name] || (slots[name] = []));
       if (child.tag === 'template') {
-        slot.push.apply(slot, child.children);
+        slot.push.apply(slot, child.children || []);
       } else {
         slot.push(child);
       }
@@ -2968,7 +2982,10 @@ function mountComponent (
     };
   }
 
-  vm._watcher = new Watcher(vm, updateComponent, noop);
+  // we set this to vm._watcher inside the watcher's constructor
+  // since the watcher's initial patch may call $forceUpdate (e.g. inside child
+  // component's mounted hook), which relies on vm._watcher being already defined
+  new Watcher(vm, updateComponent, noop, null, true /* isRenderWatcher */);
   hydrating = false;
 
   // manually mounted instance, call mounted on self
@@ -3255,9 +3272,13 @@ var Watcher = function Watcher (
   vm,
   expOrFn,
   cb,
-  options
+  options,
+  isRenderWatcher
 ) {
   this.vm = vm;
+  if (isRenderWatcher) {
+    vm._watcher = this;
+  }
   vm._watchers.push(this);
   // options
   if (options) {
@@ -3588,6 +3609,7 @@ function getData (data, vm) {
 var computedWatcherOptions = { lazy: true };
 
 function initComputed (vm, computed) {
+  // $flow-disable-line
   var watchers = vm._computedWatchers = Object.create(null);
   // computed properties are just getters during SSR
   var isSSR = isServerRendering();
@@ -3818,11 +3840,11 @@ function resolveInject (inject, vm) {
     // inject is :any because flow is not smart enough to figure out cached
     var result = Object.create(null);
     var keys = hasSymbol
-        ? Reflect.ownKeys(inject).filter(function (key) {
-          /* istanbul ignore next */
-          return Object.getOwnPropertyDescriptor(inject, key).enumerable
-        })
-        : Object.keys(inject);
+      ? Reflect.ownKeys(inject).filter(function (key) {
+        /* istanbul ignore next */
+        return Object.getOwnPropertyDescriptor(inject, key).enumerable
+      })
+      : Object.keys(inject);
 
     for (var i = 0; i < keys.length; i++) {
       var key = keys[i];
@@ -4028,19 +4050,9 @@ function bindObjectProps (
  */
 function renderStatic (
   index,
-  isInFor,
-  isOnce
+  isInFor
 ) {
-  // render fns generated by compiler < 2.5.4 does not provide v-once
-  // information to runtime so be conservative
-  var isOldVersion = arguments.length < 3;
-  // if a static tree is generated by v-once, it is cached on the instance;
-  // otherwise it is purely static and can be cached on the shared options
-  // across all instances.
-  var renderFns = this.$options.staticRenderFns;
-  var cached = isOldVersion || isOnce
-    ? (this._staticTrees || (this._staticTrees = []))
-    : (renderFns.cached || (renderFns.cached = []));
+  var cached = this._staticTrees || (this._staticTrees = []);
   var tree = cached[index];
   // if has already-rendered static tree and not inside v-for,
   // we can reuse the same tree by doing a shallow clone.
@@ -4050,7 +4062,11 @@ function renderStatic (
       : cloneVNode(tree)
   }
   // otherwise, render a fresh tree.
-  tree = cached[index] = renderFns[index].call(this._renderProxy, null, this);
+  tree = cached[index] = this.$options.staticRenderFns[index].call(
+    this._renderProxy,
+    null,
+    this // for render fns generated for functional component templates
+  );
   markStatic(tree, ("__static__" + index), false);
   return tree
 }
@@ -4168,8 +4184,8 @@ function FunctionalRenderContext (
     this._c = function (a, b, c, d) {
       var vnode = createElement(contextVm, a, b, c, d, needNormalization);
       if (vnode) {
-        vnode.functionalScopeId = options._scopeId;
-        vnode.functionalContext = parent;
+        vnode.fnScopeId = options._scopeId;
+        vnode.fnContext = parent;
       }
       return vnode
     };
@@ -4210,8 +4226,8 @@ function createFunctionalComponent (
   var vnode = options.render.call(null, renderContext._c, renderContext);
 
   if (vnode instanceof VNode) {
-    vnode.functionalContext = contextVm;
-    vnode.functionalOptions = options;
+    vnode.fnContext = contextVm;
+    vnode.fnOptions = options;
     if (data.slot) {
       (vnode.data || (vnode.data = {})).slot = data.slot;
     }
@@ -4225,6 +4241,25 @@ function mergeProps (to, from) {
     to[camelize(key)] = from[key];
   }
 }
+
+/*  */
+
+
+
+
+// Register the component hook to weex native render engine.
+// The hook will be triggered by native, not javascript.
+
+
+// Updates the state of the component to weex native render engine.
+
+/*  */
+
+// https://github.com/Hanks10100/weex-native-directive/tree/master/component
+
+// listening on native callback
+
+/*  */
 
 /*  */
 
@@ -4393,6 +4428,11 @@ function createComponent (
     { Ctor: Ctor, propsData: propsData, listeners: listeners, tag: tag, children: children },
     asyncFactory
   );
+
+  // Weex specific: invoke recycle-list optimized @render function for
+  // extracting cell-slot template.
+  // https://github.com/Hanks10100/weex-native-directive/tree/master/component
+  /* istanbul ignore if */
   return vnode
 }
 
@@ -4402,15 +4442,10 @@ function createComponentInstanceForVnode (
   parentElm,
   refElm
 ) {
-  var vnodeComponentOptions = vnode.componentOptions;
   var options = {
     _isComponent: true,
     parent: parent,
-    propsData: vnodeComponentOptions.propsData,
-    _componentTag: vnodeComponentOptions.tag,
     _parentVnode: vnode,
-    _parentListeners: vnodeComponentOptions.listeners,
-    _renderChildren: vnodeComponentOptions.children,
     _parentElm: parentElm || null,
     _refElm: refElm || null
   };
@@ -4420,7 +4455,7 @@ function createComponentInstanceForVnode (
     options.render = inlineTemplate.render;
     options.staticRenderFns = inlineTemplate.staticRenderFns;
   }
-  return new vnodeComponentOptions.Ctor(options)
+  return new vnode.componentOptions.Ctor(options)
 }
 
 function mergeHooks (data) {
@@ -4508,11 +4543,13 @@ function _createElement (
   if (process.env.NODE_ENV !== 'production' &&
     isDef(data) && isDef(data.key) && !isPrimitive(data.key)
   ) {
-    warn(
-      'Avoid using non-primitive value as key, ' +
-      'use string/number value instead.',
-      context
-    );
+    {
+      warn(
+        'Avoid using non-primitive value as key, ' +
+        'use string/number value instead.',
+        context
+      );
+    }
   }
   // support single function children as default scoped slot
   if (Array.isArray(children) &&
@@ -4754,14 +4791,18 @@ function initMixin (Vue) {
 function initInternalComponent (vm, options) {
   var opts = vm.$options = Object.create(vm.constructor.options);
   // doing this because it's faster than dynamic enumeration.
+  var parentVnode = options._parentVnode;
   opts.parent = options.parent;
-  opts.propsData = options.propsData;
-  opts._parentVnode = options._parentVnode;
-  opts._parentListeners = options._parentListeners;
-  opts._renderChildren = options._renderChildren;
-  opts._componentTag = options._componentTag;
+  opts._parentVnode = parentVnode;
   opts._parentElm = options._parentElm;
   opts._refElm = options._refElm;
+
+  var vnodeComponentOptions = parentVnode.componentOptions;
+  opts.propsData = vnodeComponentOptions.propsData;
+  opts._parentListeners = vnodeComponentOptions.listeners;
+  opts._renderChildren = vnodeComponentOptions.children;
+  opts._componentTag = vnodeComponentOptions.tag;
+
   if (options.render) {
     opts.render = options.render;
     opts.staticRenderFns = options.staticRenderFns;
@@ -4895,14 +4936,8 @@ function initExtend (Vue) {
     }
 
     var name = extendOptions.name || Super.options.name;
-    if (process.env.NODE_ENV !== 'production') {
-      if (!/^[a-zA-Z][\w-]*$/.test(name)) {
-        warn(
-          'Invalid component name: "' + name + '". Component names ' +
-          'can only contain alphanumeric characters and the hyphen, ' +
-          'and must start with a letter.'
-        );
-      }
+    if (process.env.NODE_ENV !== 'production' && name) {
+      validateComponentName(name);
     }
 
     var Sub = function VueComponent (options) {
@@ -4984,13 +5019,8 @@ function initAssetRegisters (Vue) {
         return this.options[type + 's'][id]
       } else {
         /* istanbul ignore if */
-        if (process.env.NODE_ENV !== 'production') {
-          if (type === 'component' && config.isReservedTag(id)) {
-            warn(
-              'Do not use built-in or reserved HTML elements as component ' +
-              'id: ' + id
-            );
-          }
+        if (process.env.NODE_ENV !== 'production' && type === 'component') {
+          validateComponentName(id);
         }
         if (type === 'component' && isPlainObject(definition)) {
           definition.name = definition.name || id;
@@ -5046,7 +5076,7 @@ function pruneCacheEntry (
   current
 ) {
   var cached$$1 = cache[key];
-  if (cached$$1 && cached$$1 !== current) {
+  if (cached$$1 && (!current || cached$$1.tag !== current.tag)) {
     cached$$1.componentInstance.$destroy();
   }
   cache[key] = null;
@@ -5197,7 +5227,7 @@ Object.defineProperty(Vue$3$1.prototype, '$ssrContext', {
   }
 });
 
-Vue$3$1.version = '2.5.7';
+Vue$3$1.version = '2.5.13';
 
 /*  */
 
@@ -5249,12 +5279,12 @@ function genClassForVnode (vnode) {
   var childNode = vnode;
   while (isDef(childNode.componentInstance)) {
     childNode = childNode.componentInstance._vnode;
-    if (childNode.data) {
+    if (childNode && childNode.data) {
       data = mergeClassData(childNode.data, data);
     }
   }
   while (isDef(parentNode = parentNode.parent)) {
-    if (parentNode.data) {
+    if (parentNode && parentNode.data) {
       data = mergeClassData(data, parentNode.data);
     }
   }
@@ -5765,11 +5795,14 @@ function createPatchFunction (backend) {
 
   function createChildren (vnode, children, insertedVnodeQueue) {
     if (Array.isArray(children)) {
+      if (process.env.NODE_ENV !== 'production') {
+        checkDuplicateKeys(children);
+      }
       for (var i = 0; i < children.length; ++i) {
         createElm(children[i], insertedVnodeQueue, vnode.elm, null, true);
       }
     } else if (isPrimitive(vnode.text)) {
-      nodeOps.appendChild(vnode.elm, nodeOps.createTextNode(vnode.text));
+      nodeOps.appendChild(vnode.elm, nodeOps.createTextNode(String(vnode.text)));
     }
   }
 
@@ -5796,7 +5829,7 @@ function createPatchFunction (backend) {
   // of going through the normal attribute patching process.
   function setScope (vnode) {
     var i;
-    if (isDef(i = vnode.functionalScopeId)) {
+    if (isDef(i = vnode.fnScopeId)) {
       nodeOps.setAttribute(vnode.elm, i, '');
     } else {
       var ancestor = vnode;
@@ -5810,7 +5843,7 @@ function createPatchFunction (backend) {
     // for slot content they should also get the scopeId from the host instance.
     if (isDef(i = activeInstance) &&
       i !== vnode.context &&
-      i !== vnode.functionalContext &&
+      i !== vnode.fnContext &&
       isDef(i = i.$options._scopeId)
     ) {
       nodeOps.setAttribute(vnode.elm, i, '');
@@ -5896,6 +5929,10 @@ function createPatchFunction (backend) {
     // during leaving transitions
     var canMove = !removeOnly;
 
+    if (process.env.NODE_ENV !== 'production') {
+      checkDuplicateKeys(newCh);
+    }
+
     while (oldStartIdx <= oldEndIdx && newStartIdx <= newEndIdx) {
       if (isUndef(oldStartVnode)) {
         oldStartVnode = oldCh[++oldStartIdx]; // Vnode has been moved left
@@ -5928,13 +5965,6 @@ function createPatchFunction (backend) {
           createElm(newStartVnode, insertedVnodeQueue, parentElm, oldStartVnode.elm);
         } else {
           vnodeToMove = oldCh[idxInOld];
-          /* istanbul ignore if */
-          if (process.env.NODE_ENV !== 'production' && !vnodeToMove) {
-            warn(
-              'It seems there are duplicate keys that is causing an update error. ' +
-              'Make sure each v-for item has a unique key.'
-            );
-          }
           if (sameVnode(vnodeToMove, newStartVnode)) {
             patchVnode(vnodeToMove, newStartVnode, insertedVnodeQueue);
             oldCh[idxInOld] = undefined;
@@ -5952,6 +5982,24 @@ function createPatchFunction (backend) {
       addVnodes(parentElm, refElm, newCh, newStartIdx, newEndIdx, insertedVnodeQueue);
     } else if (newStartIdx > newEndIdx) {
       removeVnodes(parentElm, oldCh, oldStartIdx, oldEndIdx);
+    }
+  }
+
+  function checkDuplicateKeys (children) {
+    var seenKeys = {};
+    for (var i = 0; i < children.length; i++) {
+      var vnode = children[i];
+      var key = vnode.key;
+      if (isDef(key)) {
+        if (seenKeys[key]) {
+          warn(
+            ("Duplicate keys detected: '" + key + "'. This may cause an update error."),
+            vnode.context
+          );
+        } else {
+          seenKeys[key] = true;
+        }
+      }
     }
   }
 
@@ -6337,17 +6385,20 @@ function normalizeDirectives$1 (
 ) {
   var res = Object.create(null);
   if (!dirs) {
+    // $flow-disable-line
     return res
   }
   var i, dir;
   for (i = 0; i < dirs.length; i++) {
     dir = dirs[i];
     if (!dir.modifiers) {
+      // $flow-disable-line
       dir.modifiers = emptyModifiers;
     }
     res[getRawDirName(dir)] = dir;
     dir.def = resolveAsset(vm.$options, 'directives', dir.name, true);
   }
+  // $flow-disable-line
   return res
 }
 
@@ -6400,7 +6451,7 @@ function updateAttrs (oldVnode, vnode) {
   // #4391: in IE9, setting type can reset value for input[type=radio]
   // #6666: IE/Edge forces progress value down to 1 before setting a max
   /* istanbul ignore if */
-  if ((isIE9 || isEdge) && attrs.value !== oldAttrs.value) {
+  if ((isIE || isEdge) && attrs.value !== oldAttrs.value) {
     setAttr(elm, 'value', attrs.value);
   }
   for (key in oldAttrs) {
@@ -6440,6 +6491,23 @@ function setAttr (el, key, value) {
     if (isFalsyAttrValue(value)) {
       el.removeAttribute(key);
     } else {
+      // #7138: IE10 & 11 fires input event when setting placeholder on
+      // <textarea>... block the first input event and remove the blocker
+      // immediately.
+      /* istanbul ignore if */
+      if (
+        isIE && !isIE9 &&
+        el.tagName === 'TEXTAREA' &&
+        key === 'placeholder' && !el.__ieph
+      ) {
+        var blocker = function (e) {
+          e.stopImmediatePropagation();
+          el.removeEventListener('input', blocker);
+        };
+        el.addEventListener('input', blocker);
+        // $flow-disable-line
+        el.__ieph = true; /* IE placeholder patched */
+      }
       el.setAttribute(key, value);
     }
   }
@@ -6498,6 +6566,9 @@ var klass = {
 
 
 
+
+
+// add a raw attr (use this in preTransforms)
 
 
 
@@ -6668,12 +6739,12 @@ function updateDOMProps (oldVnode, vnode) {
 function shouldUpdateValue (elm, checkVal) {
   return (!elm.composing && (
     elm.tagName === 'OPTION' ||
-    isDirty(elm, checkVal) ||
-    isInputChanged(elm, checkVal)
+    isNotInFocusAndDirty(elm, checkVal) ||
+    isDirtyWithModifiers(elm, checkVal)
   ))
 }
 
-function isDirty (elm, checkVal) {
+function isNotInFocusAndDirty (elm, checkVal) {
   // return true when textbox (.number and .trim) loses focus and its value is
   // not equal to the updated value
   var notInFocus = true;
@@ -6683,14 +6754,20 @@ function isDirty (elm, checkVal) {
   return notInFocus && elm.value !== checkVal
 }
 
-function isInputChanged (elm, newVal) {
+function isDirtyWithModifiers (elm, newVal) {
   var value = elm.value;
   var modifiers = elm._vModifiers; // injected by v-model runtime
-  if (isDef(modifiers) && modifiers.number) {
-    return toNumber(value) !== toNumber(newVal)
-  }
-  if (isDef(modifiers) && modifiers.trim) {
-    return value.trim() !== newVal.trim()
+  if (isDef(modifiers)) {
+    if (modifiers.lazy) {
+      // inputs with lazy should only be updated when not in focus
+      return false
+    }
+    if (modifiers.number) {
+      return toNumber(value) !== toNumber(newVal)
+    }
+    if (modifiers.trim) {
+      return value.trim() !== newVal.trim()
+    }
   }
   return value !== newVal
 }
@@ -6748,7 +6825,10 @@ function getStyle (vnode, checkChild) {
     var childNode = vnode;
     while (childNode.componentInstance) {
       childNode = childNode.componentInstance._vnode;
-      if (childNode.data && (styleData = normalizeStyleData(childNode.data))) {
+      if (
+        childNode && childNode.data &&
+        (styleData = normalizeStyleData(childNode.data))
+      ) {
         extend(res, styleData);
       }
     }
@@ -7904,7 +7984,7 @@ var TransitionGroup = {
       this._vnode,
       this.kept,
       false, // hydrating
-      true // removeOnly (!important, avoids unnecessary moves)
+      true // removeOnly (!important avoids unnecessary moves)
     );
     this._vnode = this.kept;
   },
@@ -8056,6 +8136,44 @@ Vue$3$1.nextTick(function () {
   }
 }, 0);
 
+/*  */
+
+var App$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-app mdc-typography",class:_vm.cssClasses},[_vm._t(_vm.headerSlot),_c('div',{staticClass:"mdc-app__content",class:_vm.contentCssClasses},[_vm._t(_vm.contentSlot),_vm._t("default")],2)],2)},staticRenderFns: [],
+  name: "MdcApp",
+  props: {
+    flip: Boolean, // flips the drawer & toolbar slot
+    drawerHideMobile: Boolean,
+    alignStart: Boolean
+  },
+  computed: {
+    headerSlot() {
+      return this.flip ? "drawer" : "toolbar";
+    },
+    contentSlot() {
+      return this.flip ? "toolbar" : "drawer";
+    },
+    cssClasses() {
+      return {
+        "mdc-app--flipped": this.flip,
+        "mdc-app--drawer-hide-mobile": this.drawerHideMobile
+      };
+    },
+    contentCssClasses() {
+      return this.alignStart && "mdc-app__content--align-start";
+    }
+  },
+  methods: {}
+};
+
+function install(Vue) {
+  Vue.component(App$1.name, App$1);
+}
+
+var App = Object.freeze({
+	App: App$1,
+	install: install
+});
+
 /**
  * @license
  * Copyright 2016 Google Inc.
@@ -8159,7 +8277,7 @@ class MDCFoundation {
  * Implement this adapter for your framework of choice to delegate updates to
  * the component in your framework of choice. See architecture documentation
  * for more details.
- * https://github.com/material-components/material-components-web/blob/master/docs/architecture.md
+ * https://github.com/material-components/material-components-web/blob/master/docs/code/architecture.md
  *
  * @record
  */
@@ -8188,15 +8306,14 @@ const cssClasses = {
   ROOT: 'mdc-ripple-upgraded',
   UNBOUNDED: 'mdc-ripple-upgraded--unbounded',
   BG_FOCUSED: 'mdc-ripple-upgraded--background-focused',
-  BG_ACTIVE_FILL: 'mdc-ripple-upgraded--background-active-fill',
   FG_ACTIVATION: 'mdc-ripple-upgraded--foreground-activation',
   FG_DEACTIVATION: 'mdc-ripple-upgraded--foreground-deactivation',
 };
 
 const strings = {
-  VAR_FG_SIZE: '--mdc-ripple-fg-size',
   VAR_LEFT: '--mdc-ripple-left',
   VAR_TOP: '--mdc-ripple-top',
+  VAR_FG_SIZE: '--mdc-ripple-fg-size',
   VAR_FG_SCALE: '--mdc-ripple-fg-scale',
   VAR_FG_TRANSLATE_START: '--mdc-ripple-fg-translate-start',
   VAR_FG_TRANSLATE_END: '--mdc-ripple-fg-translate-end',
@@ -8207,6 +8324,7 @@ const numbers = {
   INITIAL_ORIGIN_SCALE: 0.6,
   DEACTIVATION_TIMEOUT_MS: 225, // Corresponds to $mdc-ripple-translate-duration (i.e. activation animation duration)
   FG_DEACTIVATION_MS: 150, // Corresponds to $mdc-ripple-fade-out-duration (i.e. deactivation animation duration)
+  TAP_DELAY_MS: 300, // Delay between touch and simulated mouse events on touch devices
 };
 
 /**
@@ -8231,6 +8349,12 @@ const numbers = {
  * @private {boolean|undefined}
  */
 let supportsCssVariables_;
+
+/**
+ * Stores result from applyPassive to avoid redundant processing to detect passive event listener support.
+ * @private {boolean|undefined}
+ */
+let supportsPassive_;
 
 /**
  * @param {!Window} windowObj
@@ -8286,6 +8410,28 @@ function supportsCssVariables(windowObj, forceRefresh = false) {
   return supportsCssVariables_;
 }
 
+//
+/**
+ * Determine whether the current browser supports passive event listeners, and if so, use them.
+ * @param {!Window=} globalObj
+ * @param {boolean=} forceRefresh
+ * @return {boolean|{passive: boolean}}
+ */
+function applyPassive(globalObj = window, forceRefresh = false) {
+  if (supportsPassive_ === undefined || forceRefresh) {
+    let isSupported = false;
+    try {
+      globalObj.document.addEventListener('test', null, {get passive() {
+        isSupported = true;
+      }});
+    } catch (e) { }
+
+    supportsPassive_ = isSupported;
+  }
+
+  return supportsPassive_ ? {passive: true} : false;
+}
+
 /**
  * @param {!Object} HTMLElementPrototype
  * @return {!Array<string>}
@@ -8338,16 +8484,14 @@ function getNormalizedEventCoords(ev, pageOffset, clientRect) {
  * limitations under the License.
  */
 
-/**
- * @enum {string}
- */
-const DEACTIVATION_ACTIVATION_PAIRS = {
-  mouseup: 'mousedown',
-  pointerup: 'pointerdown',
-  touchend: 'touchstart',
-  keyup: 'keydown',
-  blur: 'focus',
-};
+const ACTIVATION_EVENT_TYPES = ['touchstart', 'pointerdown', 'mousedown', 'keydown'];
+
+// Deactivation events registered on documentElement when a pointer-related down event occurs
+const POINTER_DEACTIVATION_EVENT_TYPES = ['touchend', 'pointerup', 'mouseup'];
+
+// Tracks activations that have occurred on the current frame, to avoid simultaneous nested activations
+/** @type {!Array<!EventTarget>} */
+let activatedTargets = [];
 
 /**
  * @extends {MDCFoundation<!MDCRippleAdapter>}
@@ -8373,8 +8517,11 @@ class MDCRippleFoundation extends MDCFoundation {
       isSurfaceDisabled: () => /* boolean */ {},
       addClass: (/* className: string */) => {},
       removeClass: (/* className: string */) => {},
+      containsEventTarget: (/* target: !EventTarget */) => {},
       registerInteractionHandler: (/* evtType: string, handler: EventListener */) => {},
       deregisterInteractionHandler: (/* evtType: string, handler: EventListener */) => {},
+      registerDocumentInteractionHandler: (/* evtType: string, handler: EventListener */) => {},
+      deregisterDocumentInteractionHandler: (/* evtType: string, handler: EventListener */) => {},
       registerResizeHandler: (/* handler: EventListener */) => {},
       deregisterResizeHandler: (/* handler: EventListener */) => {},
       updateCssVariable: (/* varName: string, value: string */) => {},
@@ -8396,34 +8543,26 @@ class MDCRippleFoundation extends MDCFoundation {
     this.activationState_ = this.defaultActivationState_();
 
     /** @private {number} */
-    this.xfDuration_ = 0;
-
-    /** @private {number} */
     this.initialSize_ = 0;
 
     /** @private {number} */
     this.maxRadius_ = 0;
 
-    /** @private {!Array<{ListenerInfoType}>} */
-    this.listenerInfos_ = [
-      {activate: 'touchstart', deactivate: 'touchend'},
-      {activate: 'pointerdown', deactivate: 'pointerup'},
-      {activate: 'mousedown', deactivate: 'mouseup'},
-      {activate: 'keydown', deactivate: 'keyup'},
-      {focus: 'focus', blur: 'blur'},
-    ];
+    /** @private {function(!Event)} */
+    this.activateHandler_ = (e) => this.activate_(e);
 
-    /** @private {!ListenersType} */
-    this.listeners_ = {
-      activate: (e) => this.activate_(e),
-      deactivate: (e) => this.deactivate_(e),
-      focus: () => requestAnimationFrame(
-        () => this.adapter_.addClass(MDCRippleFoundation.cssClasses.BG_FOCUSED)
-      ),
-      blur: () => requestAnimationFrame(
-        () => this.adapter_.removeClass(MDCRippleFoundation.cssClasses.BG_FOCUSED)
-      ),
-    };
+    /** @private {function(!Event)} */
+    this.deactivateHandler_ = (e) => this.deactivate_(e);
+
+    /** @private {function(?Event=)} */
+    this.focusHandler_ = () => requestAnimationFrame(
+      () => this.adapter_.addClass(MDCRippleFoundation.cssClasses.BG_FOCUSED)
+    );
+
+    /** @private {function(?Event=)} */
+    this.blurHandler_ = () => requestAnimationFrame(
+      () => this.adapter_.removeClass(MDCRippleFoundation.cssClasses.BG_FOCUSED)
+    );
 
     /** @private {!Function} */
     this.resizeHandler_ = () => this.layout();
@@ -8451,6 +8590,9 @@ class MDCRippleFoundation extends MDCFoundation {
       this.activationAnimationHasEnded_ = true;
       this.runDeactivationUXLogicIfReady_();
     };
+
+    /** @private {?Event} */
+    this.previousActivationEvent_ = null;
   }
 
   /**
@@ -8474,7 +8616,6 @@ class MDCRippleFoundation extends MDCFoundation {
       hasDeactivationUXRun: false,
       wasActivatedByPointer: false,
       wasElementMadeActive: false,
-      activationStartTime: 0,
       activationEvent: null,
       isProgrammatic: false,
     };
@@ -8484,7 +8625,7 @@ class MDCRippleFoundation extends MDCFoundation {
     if (!this.isSupported_()) {
       return;
     }
-    this.addEventListeners_();
+    this.registerRootHandlers_();
 
     const {ROOT, UNBOUNDED} = MDCRippleFoundation.cssClasses;
     requestAnimationFrame(() => {
@@ -8496,18 +8637,75 @@ class MDCRippleFoundation extends MDCFoundation {
     });
   }
 
-  /** @private */
-  addEventListeners_() {
-    this.listenerInfos_.forEach((info) => {
-      Object.keys(info).forEach((k) => {
-        this.adapter_.registerInteractionHandler(info[k], this.listeners_[k]);
-      });
+  destroy() {
+    if (!this.isSupported_()) {
+      return;
+    }
+    this.deregisterRootHandlers_();
+    this.deregisterDeactivationHandlers_();
+
+    const {ROOT, UNBOUNDED} = MDCRippleFoundation.cssClasses;
+    requestAnimationFrame(() => {
+      this.adapter_.removeClass(ROOT);
+      this.adapter_.removeClass(UNBOUNDED);
+      this.removeCssVars_();
     });
+  }
+
+  /** @private */
+  registerRootHandlers_() {
+    ACTIVATION_EVENT_TYPES.forEach((type) => {
+      this.adapter_.registerInteractionHandler(type, this.activateHandler_);
+    });
+    this.adapter_.registerInteractionHandler('focus', this.focusHandler_);
+    this.adapter_.registerInteractionHandler('blur', this.blurHandler_);
     this.adapter_.registerResizeHandler(this.resizeHandler_);
   }
 
   /**
-   * @param {Event} e
+   * @param {!Event} e
+   * @private
+   */
+  registerDeactivationHandlers_(e) {
+    if (e.type === 'keydown') {
+      this.adapter_.registerInteractionHandler('keyup', this.deactivateHandler_);
+    } else {
+      POINTER_DEACTIVATION_EVENT_TYPES.forEach((type) => {
+        this.adapter_.registerDocumentInteractionHandler(type, this.deactivateHandler_);
+      });
+    }
+  }
+
+  /** @private */
+  deregisterRootHandlers_() {
+    ACTIVATION_EVENT_TYPES.forEach((type) => {
+      this.adapter_.deregisterInteractionHandler(type, this.activateHandler_);
+    });
+    this.adapter_.deregisterInteractionHandler('focus', this.focusHandler_);
+    this.adapter_.deregisterInteractionHandler('blur', this.blurHandler_);
+    this.adapter_.deregisterResizeHandler(this.resizeHandler_);
+  }
+
+  /** @private */
+  deregisterDeactivationHandlers_() {
+    this.adapter_.deregisterInteractionHandler('keyup', this.deactivateHandler_);
+    POINTER_DEACTIVATION_EVENT_TYPES.forEach((type) => {
+      this.adapter_.deregisterDocumentInteractionHandler(type, this.deactivateHandler_);
+    });
+  }
+
+  /** @private */
+  removeCssVars_() {
+    const {strings: strings$$1} = MDCRippleFoundation;
+    Object.keys(strings$$1).forEach((k) => {
+      if (k.indexOf('VAR_') === 0) {
+        this.adapter_.updateCssVariable(strings$$1[k], null);
+      }
+    });
+  }
+
+  /**
+   * @param {?Event} e
    * @private
    */
   activate_(e) {
@@ -8515,8 +8713,15 @@ class MDCRippleFoundation extends MDCFoundation {
       return;
     }
 
-    const {activationState_: activationState} = this;
+    const activationState = this.activationState_;
     if (activationState.isActivated) {
+      return;
+    }
+
+    // Avoid reacting to follow-on events fired by touch device after an already-processed user interaction
+    const previousActivationEvent = this.previousActivationEvent_;
+    const isSameInteraction = previousActivationEvent && e && previousActivationEvent.type !== e.type;
+    if (isSameInteraction) {
       return;
     }
 
@@ -8526,7 +8731,19 @@ class MDCRippleFoundation extends MDCFoundation {
     activationState.wasActivatedByPointer = activationState.isProgrammatic ? false : (
       e.type === 'mousedown' || e.type === 'touchstart' || e.type === 'pointerdown'
     );
-    activationState.activationStartTime = Date.now();
+
+    const hasActivatedChild =
+      e && activatedTargets.length > 0 && activatedTargets.some((target) => this.adapter_.containsEventTarget(target));
+    if (hasActivatedChild) {
+      // Immediately reset activation state, while preserving logic that prevents touch follow-on events
+      this.resetActivationState_();
+      return;
+    }
+
+    if (e) {
+      activatedTargets.push(/** @type {!EventTarget} */ (e.target));
+      this.registerDeactivationHandlers_(e);
+    }
 
     requestAnimationFrame(() => {
       // This needs to be wrapped in an rAF call b/c web browsers
@@ -8541,6 +8758,9 @@ class MDCRippleFoundation extends MDCFoundation {
         // Reset activation state immediately if element was not made active.
         this.activationState_ = this.defaultActivationState_();
       }
+
+      // Reset array on next frame after the current event has had a chance to bubble to prevent ancestor ripples
+      activatedTargets = [];
     });
   }
 
@@ -8554,11 +8774,7 @@ class MDCRippleFoundation extends MDCFoundation {
   /** @private */
   animateActivation_() {
     const {VAR_FG_TRANSLATE_START, VAR_FG_TRANSLATE_END} = MDCRippleFoundation.strings;
-    const {
-      BG_ACTIVE_FILL,
-      FG_DEACTIVATION,
-      FG_ACTIVATION,
-    } = MDCRippleFoundation.cssClasses;
+    const {FG_DEACTIVATION, FG_ACTIVATION} = MDCRippleFoundation.cssClasses;
     const {DEACTIVATION_TIMEOUT_MS} = MDCRippleFoundation.numbers;
 
     let translateStart = '';
@@ -8580,7 +8796,6 @@ class MDCRippleFoundation extends MDCFoundation {
 
     // Force layout in order to re-trigger the animation.
     this.adapter_.computeBoundingRect();
-    this.adapter_.addClass(BG_ACTIVE_FILL);
     this.adapter_.addClass(FG_ACTIVATION);
     this.activationTimer_ = setTimeout(() => this.activationTimerCallback_(), DEACTIVATION_TIMEOUT_MS);
   }
@@ -8590,8 +8805,7 @@ class MDCRippleFoundation extends MDCFoundation {
    * @return {{startPoint: PointType, endPoint: PointType}}
    */
   getFgTranslationCoordinates_() {
-    const {activationState_: activationState} = this;
-    const {activationEvent, wasActivatedByPointer} = activationState;
+    const {activationEvent, wasActivatedByPointer} = this.activationState_;
 
     let startPoint;
     if (wasActivatedByPointer) {
@@ -8621,9 +8835,12 @@ class MDCRippleFoundation extends MDCFoundation {
 
   /** @private */
   runDeactivationUXLogicIfReady_() {
+    // This method is called both when a pointing device is released, and when the activation animation ends.
+    // The deactivation animation should only run after both of those occur.
     const {FG_DEACTIVATION} = MDCRippleFoundation.cssClasses;
     const {hasDeactivationUXRun, isActivated} = this.activationState_;
     const activationHasEnded = hasDeactivationUXRun || !isActivated;
+
     if (activationHasEnded && this.activationAnimationHasEnded_) {
       this.rmBoundedActivationClasses_();
       this.adapter_.addClass(FG_DEACTIVATION);
@@ -8635,55 +8852,45 @@ class MDCRippleFoundation extends MDCFoundation {
 
   /** @private */
   rmBoundedActivationClasses_() {
-    const {BG_ACTIVE_FILL, FG_ACTIVATION} = MDCRippleFoundation.cssClasses;
-    this.adapter_.removeClass(BG_ACTIVE_FILL);
+    const {FG_ACTIVATION} = MDCRippleFoundation.cssClasses;
     this.adapter_.removeClass(FG_ACTIVATION);
     this.activationAnimationHasEnded_ = false;
     this.adapter_.computeBoundingRect();
   }
 
+  resetActivationState_() {
+    this.previousActivationEvent_ = this.activationState_.activationEvent;
+    this.activationState_ = this.defaultActivationState_();
+    // Touch devices may fire additional events for the same interaction within a short time.
+    // Store the previous event until it's safe to assume that subsequent events are for new interactions.
+    setTimeout(() => this.previousActivationEvent_ = null, MDCRippleFoundation.numbers.TAP_DELAY_MS);
+  }
+
   /**
-   * @param {Event} e
+   * @param {?Event} e
    * @private
    */
   deactivate_(e) {
-    const {activationState_: activationState} = this;
+    const activationState = this.activationState_;
     // This can happen in scenarios such as when you have a keyup event that blurs the element.
     if (!activationState.isActivated) {
       return;
     }
-    // Programmatic deactivation.
-    if (activationState.isProgrammatic) {
-      const evtObject = null;
-      const state = /** @type {!ActivationStateType} */ (Object.assign({}, activationState));
-      requestAnimationFrame(() => this.animateDeactivation_(evtObject, state));
-      this.activationState_ = this.defaultActivationState_();
-      return;
-    }
-
-    const actualActivationType = DEACTIVATION_ACTIVATION_PAIRS[e.type];
-    const expectedActivationType = activationState.activationEvent.type;
-    // NOTE: Pointer events are tricky - https://patrickhlauke.github.io/touch/tests/results/
-    // Essentially, what we need to do here is decouple the deactivation UX from the actual
-    // deactivation state itself. This way, touch/pointer events in sequence do not trample one
-    // another.
-    const needsDeactivationUX = actualActivationType === expectedActivationType;
-    let needsActualDeactivation = needsDeactivationUX;
-    if (activationState.wasActivatedByPointer) {
-      needsActualDeactivation = e.type === 'mouseup';
-    }
 
     const state = /** @type {!ActivationStateType} */ (Object.assign({}, activationState));
-    requestAnimationFrame(() => {
-      if (needsDeactivationUX) {
+
+    if (activationState.isProgrammatic) {
+      const evtObject = null;
+      requestAnimationFrame(() => this.animateDeactivation_(evtObject, state));
+      this.resetActivationState_();
+    } else {
+      this.deregisterDeactivationHandlers_();
+      requestAnimationFrame(() => {
         this.activationState_.hasDeactivationUXRun = true;
         this.animateDeactivation_(e, state);
-      }
-
-      if (needsActualDeactivation) {
-        this.activationState_ = this.defaultActivationState_();
-      }
-    });
+        this.resetActivationState_();
+      });
+    }
   }
 
   /**
@@ -8699,46 +8906,9 @@ class MDCRippleFoundation extends MDCFoundation {
    * @private
    */
   animateDeactivation_(e, {wasActivatedByPointer, wasElementMadeActive}) {
-    const {BG_FOCUSED} = MDCRippleFoundation.cssClasses;
     if (wasActivatedByPointer || wasElementMadeActive) {
-      // Remove class left over by element being focused
-      this.adapter_.removeClass(BG_FOCUSED);
       this.runDeactivationUXLogicIfReady_();
     }
-  }
-
-  destroy() {
-    if (!this.isSupported_()) {
-      return;
-    }
-    this.removeEventListeners_();
-
-    const {ROOT, UNBOUNDED} = MDCRippleFoundation.cssClasses;
-    requestAnimationFrame(() => {
-      this.adapter_.removeClass(ROOT);
-      this.adapter_.removeClass(UNBOUNDED);
-      this.removeCssVars_();
-    });
-  }
-
-  /** @private */
-  removeEventListeners_() {
-    this.listenerInfos_.forEach((info) => {
-      Object.keys(info).forEach((k) => {
-        this.adapter_.deregisterInteractionHandler(info[k], this.listeners_[k]);
-      });
-    });
-    this.adapter_.deregisterResizeHandler(this.resizeHandler_);
-  }
-
-  /** @private */
-  removeCssVars_() {
-    const {strings: strings$$1} = MDCRippleFoundation;
-    Object.keys(strings$$1).forEach((k) => {
-      if (k.indexOf('VAR_') === 0) {
-        this.adapter_.updateCssVariable(strings$$1[k], null);
-      }
-    });
   }
 
   layout() {
@@ -8754,17 +8924,25 @@ class MDCRippleFoundation extends MDCFoundation {
   /** @private */
   layoutInternal_() {
     this.frame_ = this.adapter_.computeBoundingRect();
-
     const maxDim = Math.max(this.frame_.height, this.frame_.width);
-    const surfaceDiameter = Math.sqrt(Math.pow(this.frame_.width, 2) + Math.pow(this.frame_.height, 2));
 
-    // 60% of the largest dimension of the surface
+    // Surface diameter is treated differently for unbounded vs. bounded ripples.
+    // Unbounded ripple diameter is calculated smaller since the surface is expected to already be padded appropriately
+    // to extend the hitbox, and the ripple is expected to meet the edges of the padded hitbox (which is typically
+    // square). Bounded ripples, on the other hand, are fully expected to expand beyond the surface's longest diameter
+    // (calculated based on the diagonal plus a constant padding), and are clipped at the surface's border via
+    // `overflow: hidden`.
+    const getBoundedRadius = () => {
+      const hypotenuse = Math.sqrt(Math.pow(this.frame_.width, 2) + Math.pow(this.frame_.height, 2));
+      return hypotenuse + MDCRippleFoundation.numbers.PADDING;
+    };
+
+    this.maxRadius_ = this.adapter_.isUnbounded() ? maxDim : getBoundedRadius();
+
+    // Ripple is sized as a fraction of the largest dimension of the surface, then scales up using a CSS scale transform
     this.initialSize_ = maxDim * MDCRippleFoundation.numbers.INITIAL_ORIGIN_SCALE;
-
-    // Diameter of the surface + 10px
-    this.maxRadius_ = surfaceDiameter + MDCRippleFoundation.numbers.PADDING;
     this.fgScale_ = this.maxRadius_ / this.initialSize_;
-    this.xfDuration_ = 1000 * Math.sqrt(this.maxRadius_ / 1024);
+
     this.updateLayoutCssVars_();
   }
 
@@ -8787,24 +8965,37 @@ class MDCRippleFoundation extends MDCFoundation {
       this.adapter_.updateCssVariable(VAR_TOP, `${this.unboundedCoords_.top}px`);
     }
   }
+
+  /** @param {boolean} unbounded */
+  setUnbounded(unbounded) {
+    const {UNBOUNDED} = MDCRippleFoundation.cssClasses;
+    if (unbounded) {
+      this.adapter_.addClass(UNBOUNDED);
+    } else {
+      this.adapter_.removeClass(UNBOUNDED);
+    }
+  }
 }
 
 const matches$1 = getMatchesProperty(HTMLElement.prototype);
 const supportsCssVars = supportsCssVariables(window);
 
 function createRipple(vm, adapter, { unbounded }) {
+  const { $el } = vm;
+  const { documentElement } = document;
+
   let rippleAdapter = {
     browserSupportsCssVars() {
       return supportsCssVars;
     },
     computeBoundingRect() {
-      return this.$el.getBoundingClientRect();
+      return $el.getBoundingClientRect();
     },
     getWindowPageOffset() {
       return { x: window.pageXOffset, y: window.pageYOffset };
     },
     isSurfaceActive() {
-      return this.$el[matches$1](":active");
+      return $el[matches$1](":active");
     },
     isSurfaceDisabled() {
       return !!this.disabled;
@@ -8813,27 +9004,33 @@ function createRipple(vm, adapter, { unbounded }) {
       return !!unbounded;
     },
     updateCssVariable(name, value) {
-      return this.$el.style.setProperty(name, value);
+      return $el.style.setProperty(name, value);
     },
     addClass(className) {
-      this.$el.classList.add(className);
+      $el.classList.add(className);
     },
     removeClass(className) {
-      this.$el.classList.remove(className);
+      $el.classList.remove(className);
     },
 
     // Handlers
+    registerInteractionHandler(eventType, handler) {
+      $el.addEventListener(eventType, handler, applyPassive());
+    }, 
+    deregisterInteractionHandler(eventType, handler) {
+      $el.removeEventListener(eventType, handler, applyPassive());
+    },
+    registerDocumentInteractionHandler(evtType, handler) {
+      documentElement.addEventListener(evtType, handler, applyPassive());
+    },
+    deregisterDocumentInteractionHandler(evtType, handler) {
+      documentElement.removeEventListener(evtType, handler, applyPassive());
+    },
     registerResizeHandler(handler) {
       window.addEventListener("resize", handler);
     },
     deregisterResizeHandler(handler) {
       window.removeEventListener("resize", handler);
-    },
-    registerInteractionHandler(eventType, handler) {
-      this.$el.addEventListener(eventType, handler);
-    },
-    deregisterInteractionHandler(eventType, handler) {
-      this.$el.removeEventListener(eventType, handler);
     }
   };
 
@@ -8849,18 +9046,13 @@ function createRipple(vm, adapter, { unbounded }) {
   return new MDCRippleFoundation(rippleAdapter);
 }
 
-function install$1(adapter = null, opts = {}) {
+// Exports the directive and the matches property
+function Ripple(adapter = null, opts = {}, assert) {
   return {
     data() { return { _ripple: null } },
     mounted() {
-      if (supportsCssVariables) {
-        const ripple = createRipple(this, adapter, opts);
-        ripple.init();
-        this._ripple = ripple;
-      } else {
-        // no need to run if not supported
-        console.log("Ripple cant be used. Browser doesn't support CSS variables.");
-      }
+      this._ripple = createRipple(this, adapter, opts);
+      this._ripple.init();
     },
     beforeDestroy($el, binding, vnode) {
       this._ripple.destroy();
@@ -8868,15 +9060,9 @@ function install$1(adapter = null, opts = {}) {
   };
 }
 
-
-
-var Ripple = Object.freeze({
-	Ripple: install$1
-});
-
 var Button$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c(_vm.link ? "a" : "button",_vm._g({tag:"component",class:_vm.cssClasses,attrs:{"href":_vm.link}},_vm.$listeners),[(_vm.icon)?_c('i',{staticClass:"material-icons mdc-button__icon"},[_vm._v(_vm._s(_vm.icon))]):_vm._e(),_vm._t("default")],2)},staticRenderFns: [],
   name: "MdcButton",
-  mixins: [ install$1() ],
+  mixins: [ Ripple() ],
   props: {
     icon: String,
     raised: Boolean,
@@ -8901,38 +9087,97 @@ var Button$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c
   }
 };
 
-function install(Vue) {
+function install$1(Vue) {
   Vue.component(Button$1.name, Button$1);
 }
 
 var Button = Object.freeze({
 	Button: Button$1,
-	install: install
+	install: install$1
 });
 
 var Card$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-card",class:_vm.cssClasses},[_vm._t("default")],2)},staticRenderFns: [],
   name: "MdcCard",
   props: {
-    dark: Boolean
+    stroked: Boolean
   },
   computed: {
     cssClasses() {
+      return this.stroked && "mdc-card--stroked";
+    }
+  }
+};
+
+var CardActions = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-card__actions",class:_vm.cssClasses},[_vm._t("default"),(_vm.hasButtons)?_c('div',{staticClass:"mdc-card__action-buttons"},[_vm._t("buttons")],2):_vm._e(),(_vm.hasIcons)?_c('div',{staticClass:"mdc-card__action-icons"},[_vm._t("icons")],2):_vm._e()],2)},staticRenderFns: [],
+  name: "MdcCardActions",
+  props: {
+    fullBleed: Boolean
+  },
+  computed: {
+    cssClasses() {
+      return this.fullBleed && "mdc-card__actions--full-bleed";
+    },
+    hasButtons() {
+      return !!this.$slots.buttons;
+    },
+    hasIcons() {
+      return !!this.$slots.icons;
+    }
+  },
+  mounted() {
+    const buttons = this.$el.querySelectorAll(".mdc-button");
+    const icons = this.$el.querySelectorAll(".mdc-icon-toggle");
+
+    buttons.forEach(button => {
+      button.classList.add("mdc-card__action");
+      button.classList.add("mdc-card__action--button");
+    });
+    icons.forEach(icon => {
+      icon.classList.add("mdc-card__action");
+      icon.classList.add("mdc-card__action--icon");
+    });
+  }
+};
+
+const RATIOS = ["16x9", "square"];
+
+var CardMedia = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-card__media",class:_vm.cssClasses,style:(_vm.cssStyles)},[(_vm.hasContent)?_c('div',{staticClass:"mdc-card__media-content"},[_vm._t("default")],2):_vm._e()])},staticRenderFns: [],
+  name: "MdcCardMedia",
+  props: {
+    ratio: {
+      type: String,
+      validator: value => RATIOS.includes(value)
+    },
+    image: String
+  },
+  computed: {
+    cssStyles() {
+      return this.image && `background-image: ${this.image};`;
+    },
+    cssClasses() {
       return {
-        // TODO: move theming to a mixin
-        "mdc-card--theme-dark": this.dark
+        "mdc-card__media--square": this.ratio === "square",
+        "mdc-card__media--16-9": this.ratio === "16x9"
       };
+    },
+    hasContent() {
+      return !!this.$slots.default;
     }
   }
 };
 
 function install$2 (Vue) {
   Vue.component(Card$1.name, Card$1);
+  Vue.component(CardActions.name, CardActions);
+  Vue.component(CardMedia.name, CardMedia);
 }
 
 
 
 var Card = Object.freeze({
 	Card: Card$1,
+	CardActions: CardActions,
+	CardMedia: CardMedia,
 	install: install$2
 });
 
@@ -9053,7 +9298,7 @@ const strings$1 = {
 
 /** @enum {number} */
 const numbers$1 = {
-  ANIM_END_LATCH_MS: 100,
+  ANIM_END_LATCH_MS: 250,
 };
 
 /**
@@ -9073,9 +9318,6 @@ const numbers$1 = {
  * limitations under the License.
  */
 
-/* eslint-disable no-unused-vars */
-/* eslint-enable no-unused-vars */
-/** @const {!Array<string>} */
 const CB_PROTO_PROPS = ['checked', 'indeterminate'];
 
 /**
@@ -9124,16 +9366,11 @@ class MDCCheckboxFoundation extends MDCFoundation {
     /** @private {number} */
     this.animEndLatchTimer_ = 0;
 
-    this.animEndHandler_ = /** @private {!EventListener} */ (() => {
-      clearTimeout(this.animEndLatchTimer_);
-      this.animEndLatchTimer_ = setTimeout(() => {
-        this.adapter_.removeClass(this.currentAnimationClass_);
-        this.adapter_.deregisterAnimationEndHandler(this.animEndHandler_);
-      }, numbers$1.ANIM_END_LATCH_MS);
-    });
+    this.animEndHandler_ = /** @private {!EventListener} */ (
+      () => this.handleAnimationEnd());
 
     this.changeHandler_ = /** @private {!EventListener} */ (
-      () => this.transitionCheckState_());
+      () => this.handleChange());
   }
 
   init() {
@@ -9191,6 +9428,24 @@ class MDCCheckboxFoundation extends MDCFoundation {
   /** @param {?string} value */
   setValue(value) {
     this.getNativeControl_().value = value;
+  }
+
+  /**
+   * Handles the animationend event for the checkbox
+   */
+  handleAnimationEnd() {
+    clearTimeout(this.animEndLatchTimer_);
+    this.animEndLatchTimer_ = setTimeout(() => {
+      this.adapter_.removeClass(this.currentAnimationClass_);
+      this.adapter_.deregisterAnimationEndHandler(this.animEndHandler_);
+    }, numbers$1.ANIM_END_LATCH_MS);
+  }
+
+  /**
+   * Handles the change event for the checkbox
+   */
+  handleChange() {
+    this.transitionCheckState_();
   }
 
   /** @private */
@@ -9364,7 +9619,6 @@ function validDescriptor(inputPropDesc) {
  *   styleProperty: string
  * }}
  */
-/** @const {Object<string, !VendorPropertyMapType>} */
 const eventTypeMap = {
   'animationstart': {
     noPrefix: 'animationstart',
@@ -9457,6 +9711,11 @@ function getAnimationName(windowObj, eventType) {
   return eventName;
 }
 
+// Public functions to access getAnimationName() for JavaScript events or CSS
+// property names.
+
+const transformStyleProperties = ['transform', 'WebkitTransform', 'MozTransform', 'OTransform', 'MSTransform'];
+
 /**
  * @param {!Object} windowObj
  * @param {string} eventType
@@ -9466,38 +9725,57 @@ function getCorrectEventName(windowObj, eventType) {
   return getAnimationName(windowObj, eventType);
 }
 
+/**
+ * @param {!Object} windowObj
+ * @param {string} eventType
+ * @return {string}
+ */
+function getCorrectPropertyName(windowObj, eventType) {
+  return getAnimationName(windowObj, eventType);
+}
+
 const animationEnd = getCorrectEventName(window, "animationend");
 const rippleAdapter = {
   registerInteractionHandler(typeName, handler) {
-    const { input } = this.$refs;
-    input.addEventListener(typeName, handler);
+    this.$refs.input.addEventListener(typeName, handler);
   },
   deregisterInteractionHandler(typeName, handler) {
-    const { input } = this.$refs;
-    input.removeEventListener(typeName, handler);
-  },
-  computeBoundingRect() {
-    const { left, top } = this.$el.getBoundingClientRect();
-    const DIM = 40;
-    return {
-      top, left,
-      right: left + DIM,
-      bottom: top + DIM,
-      width: DIM,
-      height: DIM,
-    };
+    this.$refs.input.removeEventListener(typeName, handler);
   }
 };
 
-var MDCCheckbox = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-checkbox"},[_c('input',_vm._b({directives:[{name:"model",rawName:"v-model",value:(_vm.model),expression:"model"}],ref:"input",staticClass:"mdc-checkbox__native-control",attrs:{"type":"checkbox","disabled":_vm.disabled},domProps:{"checked":Array.isArray(_vm.model)?_vm._i(_vm.model,null)>-1:(_vm.model)},on:{"change":function($event){var $$a=_vm.model,$$el=$event.target,$$c=$$el.checked?(true):(false);if(Array.isArray($$a)){var $$v=null,$$i=_vm._i($$a,$$v);if($$el.checked){$$i<0&&(_vm.model=$$a.concat([$$v]));}else{$$i>-1&&(_vm.model=$$a.slice(0,$$i).concat($$a.slice($$i+1)));}}else{_vm.model=$$c;}}}},'input',_vm.$attrs,false)),_c('div',{staticClass:"mdc-checkbox__background"},[_c('svg',{staticClass:"mdc-checkbox__checkmark",attrs:{"viewBox":"0 0 24 24"}},[_c('path',{staticClass:"mdc-checkbox__checkmark__path",attrs:{"fill":"none","stroke":"white","d":"M1.73,12.91 8.1,19.28 22.79,4.59"}})]),_c('div',{staticClass:"mdc-checkbox__mixedmark"})])])},staticRenderFns: [],
+var Checkbox$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-checkbox"},[_c('input',_vm._b({directives:[{name:"model",rawName:"v-model",value:(_vm.model),expression:"model"}],ref:"input",staticClass:"mdc-checkbox__native-control",attrs:{"type":"checkbox"},domProps:{"checked":Array.isArray(_vm.model)?_vm._i(_vm.model,null)>-1:(_vm.model)},on:{"change":function($event){var $$a=_vm.model,$$el=$event.target,$$c=$$el.checked?(true):(false);if(Array.isArray($$a)){var $$v=null,$$i=_vm._i($$a,$$v);if($$el.checked){$$i<0&&(_vm.model=$$a.concat([$$v]));}else{$$i>-1&&(_vm.model=$$a.slice(0,$$i).concat($$a.slice($$i+1)));}}else{_vm.model=$$c;}}}},'input',_vm.$attrs,false)),_c('div',{staticClass:"mdc-checkbox__background"},[_c('svg',{staticClass:"mdc-checkbox__checkmark",attrs:{"viewBox":"0 0 24 24"}},[_c('path',{staticClass:"mdc-checkbox__checkmark-path",attrs:{"fill":"none","stroke":"white","d":"M1.73,12.91 8.1,19.28 22.79,4.59"}})]),_c('div',{staticClass:"mdc-checkbox__mixedmark"})])])},staticRenderFns: [],
   name: "MdcCheckbox",
+  mixins: [ Ripple(rippleAdapter, { unbounded: true }) ],
   inheritAttrs: false,
-  mixins: [ install$1(rippleAdapter, { unbounded: true }) ],
+  model: {
+    prop: "checked",
+    event: "change"
+  },
   props: {
     disabled: Boolean,
     checked: Boolean,
     indeterminate: Boolean,
   },
+  watch: {
+    disabled(value) {
+      this.foundation.setDisabled(value);
+    },
+    indeterminate(value) {
+      this.foundation.setIndeterminate(value);
+    }
+  },
+  computed: {
+    model: {
+      get() {
+        return this.checked;
+      },
+      set(value) {
+        this.$emit("change", value);
+      }
+    }
+  },
+
   mounted() {
     const { $el } = this;
     const { input } = this.$refs;
@@ -9521,42 +9799,237 @@ var MDCCheckbox = {render: function(){var _vm=this;var _h=_vm.$createElement;var
   },
   beforeDestroy() {
     this.foundation.destroy();
-  },
-  model: {
-    prop: "checked",
-    event: "change"
-  },
-  watch: {
-    disabled(value) {
-      this.foundation.setDisabled(value);
-    },
-    checked(value) {
-      this.foundation.setChecked(value);
-    },
-    indeterminate(value) {
-      this.foundation.setIndeterminate(value);
-    }
-  },
-  computed: {
-    model: {
-      get() {
-        return this.checked;
-      },
-      set(value) {
-        this.$emit("change", value);
-      }
-    }
   }
 };
 
 function install$3(Vue) {
-  Vue.component(MDCCheckbox.name, MDCCheckbox);
+  Vue.component(Checkbox$1.name, Checkbox$1);
 }
 
 
 var Checkbox = Object.freeze({
-	MDCCheckbox: MDCCheckbox,
+	Checkbox: Checkbox$1,
 	install: install$3
+});
+
+/**
+ * @license
+ * Copyright 2017 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/* eslint no-unused-vars: [2, {"args": "none"}] */
+
+/**
+ * Adapter for MDC Chip.
+ *
+ * Defines the shape of the adapter expected by the foundation. Implement this
+ * adapter to integrate the Chip into your framework. See
+ * https://github.com/material-components/material-components-web/blob/master/docs/authoring-components.md
+ * for more information.
+ *
+ * @record
+ */
+
+/**
+ * @license
+ * Copyright 2016 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/** @enum {string} */
+const strings$2 = {
+  INTERACTION_EVENT: 'MDCChip:interaction',
+};
+
+/**
+ * @license
+ * Copyright 2016 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+class MDCChipFoundation extends MDCFoundation {
+  /** @return enum {string} */
+  static get strings() {
+    return strings$2;
+  }
+
+  /**
+   * {@see MDCChipAdapter} for typing information on parameters and return
+   * types.
+   * @return {!MDCChipAdapter}
+   */
+  static get defaultAdapter() {
+    return /** @type {!MDCChipAdapter} */ ({
+      registerInteractionHandler: () => {},
+      deregisterInteractionHandler: () => {},
+      notifyInteraction: () => {},
+    });
+  }
+
+  /**
+   * @param {!MDCChipAdapter} adapter
+   */
+  constructor(adapter) {
+    super(Object.assign(MDCChipFoundation.defaultAdapter, adapter));
+
+    /** @private {function(!Event): undefined} */
+    this.interactionHandler_ = (evt) => this.handleInteraction_(evt);
+  }
+
+  init() {
+    ['click', 'keydown'].forEach((evtType) => {
+      this.adapter_.registerInteractionHandler(evtType, this.interactionHandler_);
+    });
+  }
+
+  destroy() {
+    ['click', 'keydown'].forEach((evtType) => {
+      this.adapter_.deregisterInteractionHandler(evtType, this.interactionHandler_);
+    });
+  }
+
+  /**
+   * Handles an interaction event on the root element.
+   * @param {!Event} evt
+   */
+  handleInteraction_(evt) {
+    if (evt.type === 'click' || evt.key === 'Enter' || evt.keyCode === 13) {
+      this.adapter_.notifyInteraction();
+    }
+  }
+}
+
+var MdcIcon$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c(_vm.tag,{tag:"component",staticClass:"material-icons",class:_vm.cssClasses,attrs:{"tabindex":_vm.action && '0',"role":_vm.action && 'button',"aria-hidden":!_vm.action && 'true',"aria-label":_vm.label}},[_vm._v(_vm._s(_vm.icon))])},staticRenderFns: [],
+  name: "MdcIcon",
+  props: {
+    name: {
+      type: String,
+      required: true
+    },
+    icon: {
+      type: String,
+      required: true
+    },
+    
+    action: Boolean,
+    label: String,
+    tag: {
+      type: String,
+      default: "i"
+    }
+  },
+  computed: {
+    cssClasses() {
+      return `mdc-${this.name}__icon`;
+    }
+  }
+};
+
+var Chip = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-chip"},[(_vm.leadingIcon)?_c('mdc-icon',_vm._b({staticClass:"mdc-chip__icon--leading"},'mdc-icon',_vm.leadingIcon,false)):_vm._e(),_c('div',{staticClass:"mdc-chip__text"},[_vm._v(_vm._s(_vm.text))]),(_vm.trailingIcon)?_c('mdc-icon',_vm._b({staticClass:"mdc-chip__icon--trailing"},'mdc-icon',_vm.trailinIcon,false)):_vm._e()],1)},staticRenderFns: [],
+  name: "MdcChip",
+  mixins: [ Ripple() ],
+  components: { MdcIcon: MdcIcon$1 },
+  props: {
+    text: {
+      type: String,
+      required: true
+    },
+    entry: Boolean,
+    filter: Boolean,
+    action: String,
+  },
+  computed: {
+    leadingIcon() {
+      if(this.entry) {
+        return {
+          name: "chip",
+          icon: "face"
+        };
+      } else if(this.filter) {
+        return null;
+      } else if(this.action) {
+        return {
+          name: "chip",
+          icon: this.action
+        };
+      }
+    },
+    trailingIcon() {
+      if(this.entry) {
+        return {
+          name: "chip",
+          icon: "more_vert",
+          label: "More options",
+          action: true
+        };
+      } else if(this.filter) {
+        return {
+          name: "chip",
+          icon: "cancel",
+          action: true
+        };
+      } else if(this.action) {
+        return null;
+      }
+    }
+  },
+  mounted() {
+    this.foundation = new MDCChipFoundation({
+      registerInteractionHandler: (type, handler) => this.$el.addEventListener(type, handler),
+      deregisterInteractionHandler: (type, handler) => this.$el.removeEventListener(type, handler),
+      notifyInteraction: () => this.$emit("click")
+    });
+    this.foundation.init();
+  }
+};
+
+var ChipSet = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-chip-set"},[_vm._t("default")],2)},staticRenderFns: [],
+  name: "MdcChipSet",
+};
+
+function install$4 (Vue) {
+  Vue.component(Chip.name, Chip);
+  Vue.component(ChipSet.name, ChipSet);
+}
+
+var Chips = Object.freeze({
+	Chip: Chip,
+	ChipSet: ChipSet,
+	install: install$4
 });
 
 /**
@@ -9602,7 +10075,7 @@ const cssClasses$2 = {
   CANCEL_BTN: 'mdc-dialog__footer__button--cancel',
 };
 
-const strings$2 = {
+const strings$3 = {
   OPEN_DIALOG_SELECTOR: '.mdc-dialog--open',
   DIALOG_SURFACE_SELECTOR: '.mdc-dialog__surface',
   ACCEPT_SELECTOR: '.mdc-dialog__footer__button--accept',
@@ -9632,7 +10105,7 @@ class MDCDialogFoundation extends MDCFoundation {
   }
 
   static get strings() {
-    return strings$2;
+    return strings$3;
   }
 
   static get defaultAdapter() {
@@ -10159,9 +10632,11 @@ function createFocusTrapInstance(surfaceEl, acceptButtonEl, focusTrapFactory = f
 
 const transitionEnd = getCorrectEventName(window, "transitionend");
 
-var Dialog$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('aside',{staticClass:"mdc-dialog",attrs:{"aria-labelledby":"","aria-describedby":""}},[_c('div',{ref:"surface",staticClass:"mdc-dialog__surface"},[(_vm.$slots.header)?_c('header',{staticClass:"mdc-dialog__header"},[_vm._t("header")],2):_vm._e(),(_vm.$slots.default)?_c('section',{staticClass:"mdc-dialog__body",class:{"mdc-dialog__body--scrollable": _vm.scrollable}},[_vm._t("default")],2):_vm._e(),_c('footer',{staticClass:"mdc-dialog__footer"},[_c('mdc-button',{ref:"cancel",staticClass:"mdc-dialog__footer__button mdc-dialog__footer__button--cancel"},[_vm._v("Cancel")]),_c('mdc-button',{ref:"accept",staticClass:"mdc-dialog__footer__button mdc-dialog__footer__button--accept"},[_vm._v("Ok")])],1)]),_c('div',{staticClass:"mdc-dialog__backdrop"})])},staticRenderFns: [],
+var Dialog$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('aside',{staticClass:"mdc-dialog",attrs:{"role":"alertdialog"}},[_c('div',{ref:"surface",staticClass:"mdc-dialog__surface"},[(_vm.title)?_c('header',{staticClass:"mdc-dialog__header"},[_c('h2',{staticClass:"mdc-dialog__header__title"},[_vm._v(_vm._s(_vm.title))])]):_vm._e(),(_vm.hasContent)?_c('section',{staticClass:"mdc-dialog__body",class:_vm.cssBodyClasses},[_vm._t("default")],2):_vm._e(),_c('footer',{staticClass:"mdc-dialog__footer"},[_c('mdc-button',{ref:"cancel",staticClass:"mdc-dialog__footer__button mdc-dialog__footer__button--cancel"},[_vm._v(_vm._s(_vm.cancelText))]),_c('mdc-button',{ref:"accept",staticClass:"mdc-dialog__footer__button mdc-dialog__footer__button--accept",attrs:{"raised":""}},[_vm._v(_vm._s(_vm.acceptText))])],1)]),_c('div',{staticClass:"mdc-dialog__backdrop"})])},staticRenderFns: [],
   name: "MdcDialog",
   props: {
+    title: String,
+    scrollable: Boolean,
     acceptText: {
       type: String,
       default: "Ok"
@@ -10169,8 +10644,15 @@ var Dialog$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c
     cancelText: {
       type: String,
       default: "Cancel"
+    }
+  },
+  computed: {
+    cssBodyClasses() {
+      return this.scrollable && "mdc-dialog__body--scrollable";
     },
-    scrollable: Boolean
+    hasContent() {
+      return !!this.$slots.default;
+    }
   },
   mounted() {
     const { $el } = this;
@@ -10216,44 +10698,872 @@ var Dialog$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c
   },
   methods: {
     open() {
-      if(this.foundation.isOpen()) return false;
-      this.foundation.open();
-      return true;
+      if(!this.foundation.isOpen()) {
+        this.foundation.open();
+        return true;
+      }
+      return false;
     },
     close() {
-      if(!this.foundation.isOpen()) return false;
-      
-      this.foundation.close();
-      return true;
+      if(this.foundation.isOpen()) {
+        this.foundation.close();
+        return true;
+      }
+      return false;
     }
   }
 };
 
-var DialogTitle = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c("h" + _vm.level,{tag:"component",staticClass:"mdc-dialog__header__title"},[_vm._t("default")],2)},staticRenderFns: [],
-  name: "MdcDialogTitle",
-  props: {
-    level: {
-      type: [Number, String],
-      default: 2,
-      validator: value => value >= 1 && value <= 6
-    }
-  }
-};
-
-function install$4(Vue) {
+function install$5(Vue) {
   Vue.component(Dialog$1.name, Dialog$1);
-  Vue.component(DialogTitle.name, DialogTitle);
 }
 
 var Dialog = Object.freeze({
 	Dialog: Dialog$1,
-	DialogTitle: DialogTitle,
-	install: install$4
+	install: install$5
+});
+
+const TYPES = ["temporary", "permanent", "persistent"];
+
+var Drawer$1 = {
+  name: "MdcDrawer",
+  functional: true,
+  inheritAttrs: true,
+
+  props: {
+    type: {
+      type: String,
+      validator: value => TYPES.includes(value)
+    },
+    temporary: Boolean,
+    permanent: Boolean,
+    persistent: Boolean
+  },
+
+  render(h, ctx) {
+    const { props } = ctx;
+    let type = props.type || TYPES.find(n => props[n] === true);
+
+    if(!TYPES.includes(type)) {
+      throw new Error("MDC Drawer: a valid type was not specified");
+    }
+    return h(`mdc-${type}-drawer`, ctx.data, ctx.children)
+  }
+};
+
+var PermanentDrawer = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('nav',{staticClass:"mdc-drawer mdc-drawer--permanent mdc-typography"},[(_vm.spacer)?_c('div',{staticClass:"mdc-drawer__toolbar-spacer"}):_vm._e(),_c('div',{staticClass:"mdc-drawer__content"},[_c('nav',{staticClass:"mdc-list"},[_vm._t("default")],2)])])},staticRenderFns: [],
+  name: "MdcPermanentDrawer",
+  props: {
+    spacer: Boolean
+  }
+};
+
+/**
+ * Copyright 2016 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+const FOCUSABLE_ELEMENTS =
+  'a[href], area[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), ' +
+  'button:not([disabled]), iframe, object, embed, [tabindex], [contenteditable]';
+
+/**
+ * Copyright 2016 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+class MDCSlidableDrawerFoundation extends MDCFoundation {
+  static get defaultAdapter() {
+    return {
+      addClass: (/* className: string */) => {},
+      removeClass: (/* className: string */) => {},
+      hasClass: (/* className: string */) => {},
+      hasNecessaryDom: () => /* boolean */ false,
+      registerInteractionHandler: (/* evt: string, handler: EventListener */) => {},
+      deregisterInteractionHandler: (/* evt: string, handler: EventListener */) => {},
+      registerDrawerInteractionHandler: (/* evt: string, handler: EventListener */) => {},
+      deregisterDrawerInteractionHandler: (/* evt: string, handler: EventListener */) => {},
+      registerTransitionEndHandler: (/* handler: EventListener */) => {},
+      deregisterTransitionEndHandler: (/* handler: EventListener */) => {},
+      registerDocumentKeydownHandler: (/* handler: EventListener */) => {},
+      deregisterDocumentKeydownHandler: (/* handler: EventListener */) => {},
+      setTranslateX: (/* value: number | null */) => {},
+      getFocusableElements: () => /* NodeList */ {},
+      saveElementTabState: (/* el: Element */) => {},
+      restoreElementTabState: (/* el: Element */) => {},
+      makeElementUntabbable: (/* el: Element */) => {},
+      notifyOpen: () => {},
+      notifyClose: () => {},
+      isRtl: () => /* boolean */ false,
+      getDrawerWidth: () => /* number */ 0,
+    };
+  }
+
+  constructor(adapter, rootCssClass, animatingCssClass, openCssClass) {
+    super(Object.assign(MDCSlidableDrawerFoundation.defaultAdapter, adapter));
+
+    this.rootCssClass_ = rootCssClass;
+    this.animatingCssClass_ = animatingCssClass;
+    this.openCssClass_ = openCssClass;
+
+    this.transitionEndHandler_ = (evt) => this.handleTransitionEnd_(evt);
+
+    this.inert_ = false;
+
+    this.componentTouchStartHandler_ = (evt) => this.handleTouchStart_(evt);
+    this.componentTouchMoveHandler_ = (evt) => this.handleTouchMove_(evt);
+    this.componentTouchEndHandler_ = (evt) => this.handleTouchEnd_(evt);
+    this.documentKeydownHandler_ = (evt) => {
+      if (evt.key && evt.key === 'Escape' || evt.keyCode === 27) {
+        this.close();
+      }
+    };
+  }
+
+  init() {
+    const ROOT = this.rootCssClass_;
+    const OPEN = this.openCssClass_;
+
+    if (!this.adapter_.hasClass(ROOT)) {
+      throw new Error(`${ROOT} class required in root element.`);
+    }
+
+    if (!this.adapter_.hasNecessaryDom()) {
+      throw new Error(`Required DOM nodes missing in ${ROOT} component.`);
+    }
+
+    if (this.adapter_.hasClass(OPEN)) {
+      this.isOpen_ = true;
+    } else {
+      this.detabinate_();
+      this.isOpen_ = false;
+    }
+
+    this.adapter_.registerDrawerInteractionHandler('touchstart', this.componentTouchStartHandler_);
+    this.adapter_.registerInteractionHandler('touchmove', this.componentTouchMoveHandler_);
+    this.adapter_.registerInteractionHandler('touchend', this.componentTouchEndHandler_);
+  }
+
+  destroy() {
+    this.adapter_.deregisterDrawerInteractionHandler('touchstart', this.componentTouchStartHandler_);
+    this.adapter_.deregisterInteractionHandler('touchmove', this.componentTouchMoveHandler_);
+    this.adapter_.deregisterInteractionHandler('touchend', this.componentTouchEndHandler_);
+    // Deregister the document keydown handler just in case the component is destroyed while the menu is open.
+    this.adapter_.deregisterDocumentKeydownHandler(this.documentKeydownHandler_);
+  }
+
+  open() {
+    this.adapter_.registerTransitionEndHandler(this.transitionEndHandler_);
+    this.adapter_.registerDocumentKeydownHandler(this.documentKeydownHandler_);
+    this.adapter_.addClass(this.animatingCssClass_);
+    this.adapter_.addClass(this.openCssClass_);
+    this.retabinate_();
+    // Debounce multiple calls
+    if (!this.isOpen_) {
+      this.adapter_.notifyOpen();
+    }
+    this.isOpen_ = true;
+  }
+
+  close() {
+    this.adapter_.deregisterDocumentKeydownHandler(this.documentKeydownHandler_);
+    this.adapter_.registerTransitionEndHandler(this.transitionEndHandler_);
+    this.adapter_.addClass(this.animatingCssClass_);
+    this.adapter_.removeClass(this.openCssClass_);
+    this.detabinate_();
+    // Debounce multiple calls
+    if (this.isOpen_) {
+      this.adapter_.notifyClose();
+    }
+    this.isOpen_ = false;
+  }
+
+  isOpen() {
+    return this.isOpen_;
+  }
+
+  /**
+   *  Render all children of the drawer inert when it's closed.
+   */
+  detabinate_() {
+    if (this.inert_) {
+      return;
+    }
+
+    const elements = this.adapter_.getFocusableElements();
+    if (elements) {
+      for (let i = 0; i < elements.length; i++) {
+        this.adapter_.saveElementTabState(elements[i]);
+        this.adapter_.makeElementUntabbable(elements[i]);
+      }
+    }
+
+    this.inert_ = true;
+  }
+
+  /**
+   *  Make all children of the drawer tabbable again when it's open.
+   */
+  retabinate_() {
+    if (!this.inert_) {
+      return;
+    }
+
+    const elements = this.adapter_.getFocusableElements();
+    if (elements) {
+      for (let i = 0; i < elements.length; i++) {
+        this.adapter_.restoreElementTabState(elements[i]);
+      }
+    }
+
+    this.inert_ = false;
+  }
+
+  handleTouchStart_(evt) {
+    if (!this.adapter_.hasClass(this.openCssClass_)) {
+      return;
+    }
+    if (evt.pointerType && evt.pointerType !== 'touch') {
+      return;
+    }
+
+    this.direction_ = this.adapter_.isRtl() ? -1 : 1;
+    this.drawerWidth_ = this.adapter_.getDrawerWidth();
+    this.startX_ = evt.touches ? evt.touches[0].pageX : evt.pageX;
+    this.currentX_ = this.startX_;
+
+    this.updateRaf_ = requestAnimationFrame(this.updateDrawer_.bind(this));
+  }
+
+  handleTouchMove_(evt) {
+    if (evt.pointerType && evt.pointerType !== 'touch') {
+      return;
+    }
+
+    this.currentX_ = evt.touches ? evt.touches[0].pageX : evt.pageX;
+  }
+
+  handleTouchEnd_(evt) {
+    if (evt.pointerType && evt.pointerType !== 'touch') {
+      return;
+    }
+
+    this.prepareForTouchEnd_();
+
+    // Did the user close the drawer by more than 50%?
+    if (Math.abs(this.newPosition_ / this.drawerWidth_) >= 0.5) {
+      this.close();
+    } else {
+      // Triggering an open here means we'll get a nice animation back to the fully open state.
+      this.open();
+    }
+  }
+
+  prepareForTouchEnd_() {
+    cancelAnimationFrame(this.updateRaf_);
+    this.adapter_.setTranslateX(null);
+  }
+
+  updateDrawer_() {
+    this.updateRaf_ = requestAnimationFrame(this.updateDrawer_.bind(this));
+    this.adapter_.setTranslateX(this.newPosition_);
+  }
+
+  get newPosition_() {
+    let newPos = null;
+
+    if (this.direction_ === 1) {
+      newPos = Math.min(0, this.currentX_ - this.startX_);
+    } else {
+      newPos = Math.max(0, this.currentX_ - this.startX_);
+    }
+
+    return newPos;
+  }
+
+  isRootTransitioningEventTarget_() {
+    // Classes extending MDCSlidableDrawerFoundation should implement this method to return true or false
+    // if the event target is the root event target currently transitioning.
+    return false;
+  }
+
+  handleTransitionEnd_(evt) {
+    if (this.isRootTransitioningEventTarget_(evt.target)) {
+      this.adapter_.removeClass(this.animatingCssClass_);
+      this.adapter_.deregisterTransitionEndHandler(this.transitionEndHandler_);
+    }
+  };
+}
+
+/**
+ * Copyright 2016 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/**
+ * Copyright 2016 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+const cssClasses$3 = {
+  ROOT: 'mdc-drawer--persistent',
+  OPEN: 'mdc-drawer--open',
+  ANIMATING: 'mdc-drawer--animating',
+};
+
+const strings$4 = {
+  DRAWER_SELECTOR: '.mdc-drawer--persistent .mdc-drawer__drawer',
+  FOCUSABLE_ELEMENTS,
+  OPEN_EVENT: 'MDCPersistentDrawer:open',
+  CLOSE_EVENT: 'MDCPersistentDrawer:close',
+};
+
+/**
+ * Copyright 2016 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+class MDCPersistentDrawerFoundation extends MDCSlidableDrawerFoundation {
+  static get cssClasses() {
+    return cssClasses$3;
+  }
+
+  static get strings() {
+    return strings$4;
+  }
+
+  static get defaultAdapter() {
+    return Object.assign(MDCSlidableDrawerFoundation.defaultAdapter, {
+      isDrawer: () => false,
+    });
+  }
+
+  constructor(adapter) {
+    super(
+      Object.assign(MDCPersistentDrawerFoundation.defaultAdapter, adapter),
+      MDCPersistentDrawerFoundation.cssClasses.ROOT,
+      MDCPersistentDrawerFoundation.cssClasses.ANIMATING,
+      MDCPersistentDrawerFoundation.cssClasses.OPEN);
+  }
+
+  isRootTransitioningEventTarget_(el) {
+    return this.adapter_.isDrawer(el);
+  }
+}
+
+/**
+ * Copyright 2016 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+const TAB_DATA = 'data-mdc-tabindex';
+const TAB_DATA_HANDLED = 'data-mdc-tabindex-handled';
+
+let storedTransformPropertyName_;
+let supportsPassive_$1;
+
+// Remap touch events to pointer events, if the browser doesn't support touch events.
+function remapEvent(eventName, globalObj = window) {
+  if (!('ontouchstart' in globalObj.document)) {
+    switch (eventName) {
+    case 'touchstart':
+      return 'pointerdown';
+    case 'touchmove':
+      return 'pointermove';
+    case 'touchend':
+      return 'pointerup';
+    default:
+      return eventName;
+    }
+  }
+
+  return eventName;
+}
+
+// Choose the correct transform property to use on the current browser.
+function getTransformPropertyName(globalObj = window, forceRefresh = false) {
+  if (storedTransformPropertyName_ === undefined || forceRefresh) {
+    const el = globalObj.document.createElement('div');
+    const transformPropertyName = ('transform' in el.style ? 'transform' : '-webkit-transform');
+    storedTransformPropertyName_ = transformPropertyName;
+  }
+
+  return storedTransformPropertyName_;
+}
+
+// Determine whether the current browser supports CSS properties.
+function supportsCssCustomProperties(globalObj = window) {
+  if ('CSS' in globalObj) {
+    return globalObj.CSS.supports('(--color: red)');
+  }
+  return false;
+}
+
+// Determine whether the current browser supports passive event listeners, and if so, use them.
+function applyPassive$1(globalObj = window, forceRefresh = false) {
+  if (supportsPassive_$1 === undefined || forceRefresh) {
+    let isSupported = false;
+    try {
+      globalObj.document.addEventListener('test', null, {get passive() {
+        isSupported = true;
+      }});
+    } catch (e) { }
+
+    supportsPassive_$1 = isSupported;
+  }
+
+  return supportsPassive_$1 ? {passive: true} : false;
+}
+
+// Save the tab state for an element.
+function saveElementTabState(el) {
+  if (el.hasAttribute('tabindex')) {
+    el.setAttribute(TAB_DATA, el.getAttribute('tabindex'));
+  }
+  el.setAttribute(TAB_DATA_HANDLED, true);
+}
+
+// Restore the tab state for an element, if it was saved.
+function restoreElementTabState(el) {
+  // Only modify elements we've already handled, in case anything was dynamically added since we saved state.
+  if (el.hasAttribute(TAB_DATA_HANDLED)) {
+    if (el.hasAttribute(TAB_DATA)) {
+      el.setAttribute('tabindex', el.getAttribute(TAB_DATA));
+      el.removeAttribute(TAB_DATA);
+    } else {
+      el.removeAttribute('tabindex');
+    }
+    el.removeAttribute(TAB_DATA_HANDLED);
+  }
+}
+
+var PersistentDrawer = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('aside',{staticClass:"mdc-drawer mdc-drawer--persistent"},[_c('nav',{ref:"drawer",staticClass:"mdc-drawer__drawer"},[(_vm.spacer)?_c('div',{staticClass:"mdc-drawer__toolbar-spacer"}):_vm._e(),(_vm.header)?_c('header',{staticClass:"mdc-drawer__header"},[_c('div',{staticClass:"mdc-drawer__header-content"},[_vm._v(_vm._s(_vm.header))])]):_vm._e(),_c('nav',{staticClass:"mdc-drawer__content mdc-list"},[_vm._t("default")],2)])])},staticRenderFns: [],
+  name: "MdcPersistentDrawer",
+  props: {
+    open: Boolean,
+    spacer: Boolean,
+    header: String
+  },
+  mounted() {
+    const { $el } = this;
+    const { drawer } = this.$refs;
+    
+    const { FOCUSABLE_ELEMENTS } = MDCPersistentDrawerFoundation.strings;
+    const styles = getComputedStyle($el);
+
+    this.foundation = new MDCPersistentDrawerFoundation({
+      addClass: className => $el.classList.add(className),
+      removeClass: className => $el.classList.remove(className),
+      hasClass: className => $el.classList.contains(className),
+
+      hasNecessaryDom: () => !!drawer,
+      registerInteractionHandler: (evt, handler) => $el.addEventListener(remapEvent(evt), handler, applyPassive$1()),
+      deregisterInteractionHandler: (evt, handler) => $el.removeEventListener(remapEvent(evt), handler, applyPassive$1()),
+      registerDrawerInteractionHandler: (evt, handler) => drawer.addEventListener(remapEvent(evt), handler),
+      deregisterDrawerInteractionHandler: (evt, handler) => drawer.removeEventListener(remapEvent(evt), handler),
+      registerTransitionEndHandler: handler => $el.addEventListener("transitionend", handler),
+      deregisterTransitionEndHandler: handler => $el.removeEventListener("transitionend", handler),
+      registerDocumentKeydownHandler: handler => document.addEventListener("keydown", handler),
+      deregisterDocumentKeydownHandler: handler => document.removeEventListener("keydown", handler),
+
+      getDrawerWidth: () => drawer.offsetWidth,
+      setTranslateX: value => {
+        const prop = getTransformPropertyName();
+        drawer.style[prop] = value === null ? null : `translateX(${value}px)`;
+      },
+      getFocusableElements: () => drawer.querySelectorAll(MDCPersistentDrawerFoundation.strings.FOCUSABLE_ELEMENTS),
+      saveElementTabState: el => saveElementTabState(el),
+      restoreElementTabState: el => restoreElementTabState(el),
+      makeElementUntabbable: el => el.setAttribute("tabindex", -1),
+      notifyOpen: () => this.$emit("open"),
+      notifyClose: () => this.$emit("close"),
+      isRtl: () => styles.direction === "rtl",
+      isDrawer: el => el === drawer
+    });
+    this.foundation.init();
+
+    // Initial open state
+    this.open && this.foundation.open();
+  },
+  methods: {
+    toggle() {
+      if (this.foundation.isOpen()) {
+        this.foundation.close();
+      } else {
+        this.foundation.open();
+      }
+    }
+  }
+};
+
+/**
+ * Copyright 2016 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+const cssClasses$4 = {
+  ROOT: 'mdc-drawer--temporary',
+  OPEN: 'mdc-drawer--open',
+  ANIMATING: 'mdc-drawer--animating',
+  SCROLL_LOCK: 'mdc-drawer-scroll-lock',
+};
+
+const strings$5 = {
+  DRAWER_SELECTOR: '.mdc-drawer--temporary .mdc-drawer__drawer',
+  OPACITY_VAR_NAME: '--mdc-temporary-drawer-opacity',
+  FOCUSABLE_ELEMENTS,
+  OPEN_EVENT: 'MDCTemporaryDrawer:open',
+  CLOSE_EVENT: 'MDCTemporaryDrawer:close',
+};
+
+/**
+ * Copyright 2016 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+class MDCTemporaryDrawerFoundation extends MDCSlidableDrawerFoundation {
+  static get cssClasses() {
+    return cssClasses$4;
+  }
+
+  static get strings() {
+    return strings$5;
+  }
+
+  static get defaultAdapter() {
+    return Object.assign(MDCSlidableDrawerFoundation.defaultAdapter, {
+      addBodyClass: (/* className: string */) => {},
+      removeBodyClass: (/* className: string */) => {},
+      isDrawer: () => false,
+      updateCssVariable: (/* value: string */) => {},
+      eventTargetHasClass: (/* target: EventTarget, className: string */) => /* boolean */ false,
+    });
+  }
+
+  constructor(adapter) {
+    super(
+      Object.assign(MDCTemporaryDrawerFoundation.defaultAdapter, adapter),
+      MDCTemporaryDrawerFoundation.cssClasses.ROOT,
+      MDCTemporaryDrawerFoundation.cssClasses.ANIMATING,
+      MDCTemporaryDrawerFoundation.cssClasses.OPEN);
+
+    this.componentClickHandler_ = (evt) => {
+      if (this.adapter_.eventTargetHasClass(evt.target, cssClasses$4.ROOT)) {
+        this.close(true);
+      }
+    };
+  }
+
+  init() {
+    super.init();
+
+    // Make browser aware of custom property being used in this element.
+    // Workaround for certain types of hard-to-reproduce heisenbugs.
+    this.adapter_.updateCssVariable(0);
+    this.adapter_.registerInteractionHandler('click', this.componentClickHandler_);
+  }
+
+  destroy() {
+    super.destroy();
+
+    this.adapter_.deregisterInteractionHandler('click', this.componentClickHandler_);
+    this.enableScroll_();
+  }
+
+  open() {
+    this.disableScroll_();
+    // Make sure custom property values are cleared before starting.
+    this.adapter_.updateCssVariable('');
+
+    super.open();
+  }
+
+  close() {
+    // Make sure custom property values are cleared before making any changes.
+    this.adapter_.updateCssVariable('');
+
+    super.close();
+  }
+
+  prepareForTouchEnd_() {
+    super.prepareForTouchEnd_();
+
+    this.adapter_.updateCssVariable('');
+  }
+
+  updateDrawer_() {
+    super.updateDrawer_();
+
+    const newOpacity = Math.max(0, 1 + this.direction_ * (this.newPosition_ / this.drawerWidth_));
+    this.adapter_.updateCssVariable(newOpacity);
+  }
+
+  isRootTransitioningEventTarget_(el) {
+    return this.adapter_.isDrawer(el);
+  }
+
+  handleTransitionEnd_(evt) {
+    super.handleTransitionEnd_(evt);
+    if (!this.isOpen_) {
+      this.enableScroll_();
+    }
+  };
+
+  disableScroll_() {
+    this.adapter_.addBodyClass(cssClasses$4.SCROLL_LOCK);
+  }
+
+  enableScroll_() {
+    this.adapter_.removeBodyClass(cssClasses$4.SCROLL_LOCK);
+  }
+}
+
+var TemporaryDrawer = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('aside',{staticClass:"mdc-drawer mdc-drawer--temporary"},[_c('nav',{ref:"drawer",staticClass:"mdc-drawer__drawer"},[(_vm.header)?_c('header',{staticClass:"mdc-drawer__header"},[_c('div',{staticClass:"mdc-drawer__header-content"},[_vm._v(_vm._s(_vm.header))])]):_vm._e(),_c('nav',{staticClass:"mdc-drawer__content mdc-list"},[_vm._t("default")],2)])])},staticRenderFns: [],
+  name: "MdcTemporaryDrawer",
+  props: {
+    open: Boolean,
+    spacer: Boolean,
+    header: String
+  },
+  mounted() {
+    const { $el } = this;
+    const { drawer } = this.$refs;
+
+    const { FOCUSABLE_ELEMENTS, OPACITY_VAR_NAME } = MDCTemporaryDrawerFoundation.strings;
+    const styles = getComputedStyle($el);
+
+    this.foundation = new MDCTemporaryDrawerFoundation({
+      addClass: className => $el.classList.add(className),
+      removeClass: className => $el.classList.remove(className),
+      hasClass: className => $el.classList.contains(className),
+      addBodyClass: className => document.body.classList.add(className),
+      removeBodyClass: className => document.body.classList.remove(className),
+      eventTargetHasClass: (target, className) => target.classList.contains(className),
+
+      hasNecessaryDom: () => !!drawer,
+      registerInteractionHandler: (evt, handler) => $el.addEventListener(remapEvent(evt), handler, applyPassive$1()),
+      deregisterInteractionHandler: (evt, handler) => $el.removeEventListener(remapEvent(evt), handler, applyPassive$1()),
+      registerDrawerInteractionHandler: (evt, handler) => drawer.addEventListener(remapEvent(evt), handler),
+      deregisterDrawerInteractionHandler: (evt, handler) => drawer.removeEventListener(remapEvent(evt), handler),
+      registerTransitionEndHandler: handler => drawer.addEventListener("transitionend", handler),
+      deregisterTransitionEndHandler: handler => drawer.removeEventListener("transitionend", handler),
+      registerDocumentKeydownHandler: handler => document.addEventListener("keydown", handler),
+      deregisterDocumentKeydownHandler: handler => document.removeEventListener("keydown", handler),
+
+      getDrawerWidth: () => drawer.offsetWidth,
+      setTranslateX: (value) => {
+        const prop = getTransformPropertyName();
+        drawer.style[prop] = value === null ? null : `translateX(${value}px)`;
+      },
+      updateCssVariable: value => {
+        if (supportsCssCustomProperties()) {
+          $el.style.setProperty(OPACITY_VAR_NAME, value);
+        }
+      },
+      getFocusableElements: () => drawer.querySelectorAll(FOCUSABLE_ELEMENTS),
+      saveElementTabState: el => saveElementTabState(el),
+      restoreElementTabState: el => restoreElementTabState(el),
+      makeElementUntabbable: el => el.setAttribute("tabindex", -1),
+      notifyOpen: () => this.$emit("open"),
+      notifyClose: () => this.$emit("close"),
+      isRtl: () => styles.direction === "rtl",
+      isDrawer: (el) => el === drawer
+    });
+    this.foundation.init();
+
+    // Initial open state
+    this.open && this.foundation.open();
+  },
+  methods: {
+    toggle() {
+      if (this.foundation.isOpen()) {
+        this.foundation.close();
+      } else {
+        this.foundation.open();
+      }
+    }
+  }
+};
+
+const MdcLink = {
+  functional: true,
+  props: {
+    tag: {
+      type: String,
+      default: "a"
+    },
+    link: String,
+    to: String,
+    replace: Boolean,
+    append: Boolean,
+    exact: Boolean
+  },
+  render(h, ctx) {
+    const { data, props } = ctx;
+    let tag = props.tag;
+
+    if(props.to) {
+      tag = "router-link";
+      // remove the link
+      data.props = Object.assign({}, props, { link: undefined });
+    } else {
+      if(tag === "a") {
+        data.attrs.href = props.link;
+      }
+    }
+
+    return h(tag, data, ctx.children);
+  }
+};
+
+function install$7(activeClass, exactActiveClass) {
+  return {
+    components: { MdcLink },
+    props: {
+      to: String,
+      replace: Boolean,
+      append: Boolean,
+      exact: Boolean
+    },
+    computed: {
+      $_link() {
+        return this.to && {
+          activeClass, exactActiveClass,
+          to: this.to,
+          replace: this.replace,
+          append: this.append,
+          exact: this.exact
+        };
+      }
+    }
+  };
+}
+
+var DrawerItem = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('mdc-link',_vm._b({staticClass:"mdc-list-item",attrs:{"tag":"a","link":_vm.link}},'mdc-link',_vm.$_link,false),[_vm._t("graphic"),_vm._v(_vm._s(_vm.text))],2)},staticRenderFns: [],
+  name: "MdcDrawerItem",
+  mixins: [ Ripple(), install$7("mdc-list-item--activated") ],
+  props: {
+    link: String,
+    text: {
+      type: String,
+      required: true
+    }
+  }
+};
+
+var DrawerDivider = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('hr',{staticClass:"mdc-list-divider"})},staticRenderFns: [],
+  name: "MdcDrawerDivider"
+};
+
+function install$6(Vue) {
+  Vue.component(Drawer$1.name, Drawer$1);
+  Vue.component(PermanentDrawer.name, PermanentDrawer);
+  Vue.component(PersistentDrawer.name, PersistentDrawer);
+  Vue.component(TemporaryDrawer.name, TemporaryDrawer);
+  Vue.component(DrawerItem.name, DrawerItem);
+  Vue.component(DrawerDivider.name, DrawerDivider);
+}
+
+var Drawer = Object.freeze({
+	PermanentDrawer: PermanentDrawer,
+	PersistentDrawer: PersistentDrawer,
+	TemporaryDrawer: TemporaryDrawer,
+	DrawerItem: DrawerItem,
+	DrawerDivider: DrawerDivider,
+	install: install$6
 });
 
 var Fab$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('button',{staticClass:"mdc-fab material-icons",class:_vm.cssClasses,attrs:{"aria-label":_vm.label}},[_c('span',{staticClass:"mdc-fab__icon"},[_vm._v(_vm._s(_vm.icon))])])},staticRenderFns: [],
   name: "MdcFab",
-  mixins: [ install$1() ],
+  mixins: [ Ripple() ],
   props: {
     mini: Boolean,
     exited: Boolean,
@@ -10277,13 +11587,205 @@ var Fab$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_v
   }
 };
 
-function install$5(Vue) {
+function install$8(Vue) {
   Vue.component(Fab$1.name, Fab$1);
 }
 
 var Fab = Object.freeze({
 	Fab: Fab$1,
-	install: install$5
+	install: install$8
+});
+
+var FormField$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-form-field",class:_vm.cssClasses},[_vm._t("default"),_c('label',[_vm._v(_vm._s(_vm.label))])],2)},staticRenderFns: [],
+  name: "MdcFormField",
+  props: {
+    label: {
+      type: String,
+      required: true
+    },
+    alignEnd: Boolean
+  },
+  computed: {
+    cssClasses() {
+      return this.alignEnd && "mdc-form-field--align-end";
+    }
+  }
+};
+
+function install$9(Vue) {
+  Vue.component(FormField$1.name, FormField$1);
+}
+
+var FormField = Object.freeze({
+	FormField: FormField$1,
+	install: install$9
+});
+
+/**
+ * Copyright 2016 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+const strings$6 = {
+  TILES_SELECTOR: '.mdc-grid-list__tiles',
+  TILE_SELECTOR: '.mdc-grid-tile',
+};
+
+/**
+ * Copyright 2016 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+class MDCGridListFoundation extends MDCFoundation {
+  static get strings() {
+    return strings$6;
+  }
+
+  static get defaultAdapter() {
+    return {
+      getOffsetWidth: () => /* number */ 0,
+      getNumberOfTiles: () => /* number */ 0,
+      getOffsetWidthForTileAtIndex: (/* index: number */) => /* number */ 0,
+      setStyleForTilesElement: (/* property: string, value: string */) => {},
+      registerResizeHandler: (/* handler: EventListener */) => {},
+      deregisterResizeHandler: (/* handler: EventListener */) => {},
+    };
+  }
+  constructor(adapter) {
+    super(Object.assign(MDCGridListFoundation.defaultAdapter, adapter));
+    this.resizeHandler_ = () => this.alignCenter();
+    this.resizeFrame_ = 0;
+  }
+  init() {
+    this.alignCenter();
+    this.adapter_.registerResizeHandler(this.resizeHandler_);
+  }
+  destroy() {
+    this.adapter_.deregisterResizeHandler(this.resizeHandler_);
+  }
+  alignCenter() {
+    if (this.resizeFrame_ !== 0) {
+      cancelAnimationFrame(this.resizeFrame_);
+    }
+    this.resizeFrame_ = requestAnimationFrame(() => {
+      this.alignCenter_();
+      this.resizeFrame_ = 0;
+    });
+  }
+  alignCenter_() {
+    if (this.adapter_.getNumberOfTiles() == 0) {
+      return;
+    }
+    const gridWidth = this.adapter_.getOffsetWidth();
+    const itemWidth = this.adapter_.getOffsetWidthForTileAtIndex(0);
+    const tilesWidth = itemWidth * Math.floor(gridWidth / itemWidth);
+    this.adapter_.setStyleForTilesElement('width', `${tilesWidth}px`);
+  }
+}
+
+const RATIOS$1 = ["1x1", "16x9", "2x3", "3x2", "4x3", "3x4"];
+
+var GridList$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-grid-list"},[_c('ul',{ref:"tiles",staticClass:"mdc-grid-list__tiles"},[_vm._t("default")],2)])},staticRenderFns: [],
+  name: "MdcGridList",
+  props: {
+    headerCaption: Boolean,
+    twoline: Boolean,
+    iconAlignEnd: Boolean,
+    iconAlignStart: Boolean,
+    thinGutter: Boolean,
+    ratio: {
+      type: String,
+      validator: value => RATIOS$1.includes(value)
+    }
+  },
+  mounted() {
+    const { $el } = this;
+    const { tiles } = this.$refs;
+
+    this.foundation = new MDCGridListFoundation({
+      getOffsetWidth: () => $el.offsetWidth,
+      getNumberOfTiles: () => tiles.children.length,
+      getOffsetWidthForTileAtIndex: index => tiles.children[index].offsetWidth,
+      setStyleForTilesElement: (prop, value) => tiles.style[prop] = value,
+      registerResizeHandler: handler => window.addEventListener("resize", handler),
+      deregisterResizeHandler: handler => window.removeEventListener("resize", handler)
+    });
+    this.foundation.init();
+  },
+  beforeDestroy() {
+    this.foundation.destroy();
+  },
+  computed: {
+    cssClasses() {
+      const classes = {
+        "mdc-grid-list--tile-gutter-1": this.thinGutter,
+        "mdc-grid-list--header-caption": this.captions,
+        "mdc-grid-list--twoline-caption": this.twoline,
+        "mdc-grid-list--with-icon-align-start": this.iconAlignStart,
+        "mdc-grid-list--with-icon-align-end": this.iconAlignEnd
+      };
+
+      if(this.aspect) {
+        classes[`mdc-grid-list--tile-aspect-${this.ratio}`] = true;
+      }
+      return classes;
+    }
+  }
+};
+
+var GridTile = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('li',{staticClass:"mdc-grid-tile"},[_c('div',{staticClass:"mdc-grid-tile__primary"},[(_vm.cover)?_c('div',{staticClass:"mdc-grid-tile__primary-content",style:(_vm.coverStyle)}):_c('img',{staticClass:"mdc-grid-tile__primary-content",attrs:{"src":_vm.src}})]),(_vm.hasSecondary)?_c('span',{staticClass:"mdc-grid-tile__secondary"},[(_vm.icon)?_c('mdc-icon',{attrs:{"name":"grid-tile","icon":_vm.icon}}):_vm._e(),(_vm.title)?_c('span',{staticClass:"mdc-grid-tile__title"},[_vm._v(_vm._s(_vm.title))]):_vm._e(),(_vm.text)?_c('span',{staticClass:"mdc-grid-tile__support-text"},[_vm._v(_vm._s(_vm.text))]):_vm._e()],1):_vm._e()])},staticRenderFns: [],
+  name: "MdcGridTile",
+  components: { MdcIcon: MdcIcon$1 },
+  props: {
+    cover: Boolean,
+    title: String,
+    text: String,
+    icon: String,
+    src: {
+      type: String,
+      required: true
+    }
+  },
+  computed: {
+    coverStyle() {
+      return `background-image: url(${src})`;
+    },
+    hasSecondary() {
+      return this.text || this.title || this.icon;
+    }
+  }
+};
+
+function install$10(Vue) {
+  Vue.component(GridList$1.name, GridList$1);
+  Vue.component(GridTile.name, GridTile);
+}
+
+var GridList = Object.freeze({
+	GridList: GridList$1,
+	GridTile: GridTile,
+	install: install$10
 });
 
 /**
@@ -10319,7 +11821,7 @@ var Fab = Object.freeze({
  * Implement this adapter for your framework of choice to delegate updates to
  * the component in your framework of choice. See architecture documentation
  * for more details.
- * https://github.com/material-components/material-components-web/blob/master/docs/architecture.md
+ * https://github.com/material-components/material-components-web/blob/master/docs/code/architecture.md
  *
  * @record
  */
@@ -10342,13 +11844,13 @@ var Fab = Object.freeze({
  */
 
 /** @enum {string} */
-const cssClasses$3 = {
+const cssClasses$5 = {
   ROOT: 'mdc-icon-toggle',
   DISABLED: 'mdc-icon-toggle--disabled',
 };
 
 /** @enum {string} */
-const strings$3 = {
+const strings$7 = {
   DATA_TOGGLE_ON: 'data-toggle-on',
   DATA_TOGGLE_OFF: 'data-toggle-off',
   ARIA_PRESSED: 'aria-pressed',
@@ -10374,17 +11876,13 @@ const strings$3 = {
  * limitations under the License.
  */
 
-/* eslint-disable no-unused-vars */
-/**
- * @extends {MDCFoundation<!MDCIconToggleAdapter>}
- */
 class MDCIconToggleFoundation extends MDCFoundation {
   static get cssClasses() {
-    return cssClasses$3;
+    return cssClasses$5;
   }
 
   static get strings() {
-    return strings$3;
+    return strings$7;
   }
 
   static get defaultAdapter() {
@@ -10549,33 +12047,27 @@ class MDCIconToggleFoundation extends MDCFoundation {
 }
 
 /**
- * @param {!KeyboardKey} keyboardKey
- * @return {boolean}
+ * @typedef {!{
+ *   key: string,
+ *   keyCode: number
+ * }}
  */
 function isSpace(keyboardKey) {
   return keyboardKey.key === 'Space' || keyboardKey.keyCode === 32;
 }
 
+
+/** @record */
+
 const rippleAdapter$1 = {
   isSurfaceActive() {
     return this.foundation.isKeyboardActivated();
-  },
-  computeBoundingRect() {
-    const { left, top } = this.$el.getBoundingClientRect();
-    const DIM = 48;
-    return {
-      top, left,
-      right: left + DIM,
-      bottom: left + DIM,
-      width: DIM,
-      height: DIM
-    };
   }
 };
 
 var IconToggle$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('i',{staticClass:"mdc-icon-toggle material-icons",attrs:{"role":"button","tabindex":"0"}})},staticRenderFns: [],
   name: "MdcIconToggle",
-  mixins: [ install$1(rippleAdapter$1, { unbounded: true }) ],
+  mixins: [ Ripple(rippleAdapter$1, { unbounded: true }) ],
   props: {
     active: Boolean,
     disabled: Boolean,
@@ -10640,13 +12132,93 @@ var IconToggle$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;va
   }
 };
 
-function install$6(Vue) {
+function install$11(Vue) {
   Vue.component(IconToggle$1.name, IconToggle$1);
 }
 
 var IconToggle = Object.freeze({
 	IconToggle: IconToggle$1,
-	install: install$6
+	install: install$11
+});
+
+var LayoutGrid$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-layout-grid",class:_vm.cssClasses},[_c('div',{staticClass:"mdc-layout-grid__inner"},[_vm._t("default")],2)])},staticRenderFns: [],
+  name: "MdcLayoutGrid",
+  props: {
+    fixedColumnWidth: Boolean,
+    alignLeft: Boolean,
+    alignRight: Boolean
+  },
+  computed: {
+    cssClasses() {
+      return {
+        "mdc-layout-grid--fixed-column-width": this.fixedColumnWidth,
+        "mdc-layout-grid--align-left": this.alignLeft,
+        "mdc-layout-grid--align-right": this.alignRight
+      };
+    }
+  }
+};
+
+const ALIGNMENTS = [ "top", "bottom", "middle" ];
+const spanValidator = value => value >= 1 && value <= 12;
+
+var LayoutCell = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-layout-grid__cell",class:_vm.cssClasses},[_vm._t("default")],2)},staticRenderFns: [],
+  name: "MdcLayoutCell",
+  props: {
+    span: {
+      type: [Number, String],
+      validator: spanValidator
+    },
+    desktop: {
+      type: [Number, String],
+      validator: spanValidator
+    },
+    tablet: {
+      type: [Number, String],
+      validator: spanValidator
+    },
+    phone: {
+      type: [Number, String],
+      validator: spanValidator
+    },
+    order: {
+      type: [Number, String],
+      validator: spanValidator
+    },
+    align: {
+      type: String,
+      validator: value => ALIGNMENTS.includes(value)
+    }
+  },
+  computed: {
+    cssClasses() {
+      return [
+        this.span && `mdc-layout-grid__cell--span-${this.span}`,
+        this.desktop && `mdc-layout-grid__cell--span-${this.desktop}-desktop`,
+        this.tablet && `mdc-layout-grid__cell--span-${this.tablet}-tablet`,
+        this.phone && `mdc-layout-grid__cell--span-${this.phone}-phone`,
+        this.order && `mdc-layout-grid__cell--order-${this.order}`,
+        this.align && `mdc-layout-grid__cell--align-${this.align}`
+      ];
+    }
+  }
+};
+
+var LayoutInner = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-layout-grid__inner"},[_vm._t("default")],2)},staticRenderFns: [],
+  name: "MdcLayoutInner"
+};
+
+function install$12(Vue) {
+  Vue.component(LayoutGrid$1.name, LayoutGrid$1);
+  Vue.component(LayoutCell.name, LayoutCell);
+  Vue.component(LayoutInner.name, LayoutInner);
+}
+
+var LayoutGrid = Object.freeze({
+	LayoutGrid: LayoutGrid$1,
+	LayoutCell: LayoutCell,
+	LayoutInner: LayoutInner,
+	install: install$12
 });
 
 /**
@@ -10665,7 +12237,4861 @@ var IconToggle = Object.freeze({
  * limitations under the License.
  */
 
-const cssClasses$4 = {
+const cssClasses$6 = {
+  CLOSED_CLASS: 'mdc-linear-progress--closed',
+  INDETERMINATE_CLASS: 'mdc-linear-progress--indeterminate',
+  REVERSED_CLASS: 'mdc-linear-progress--reversed',
+};
+
+const strings$8 = {
+  PRIMARY_BAR_SELECTOR: '.mdc-linear-progress__primary-bar',
+  BUFFER_SELECTOR: '.mdc-linear-progress__buffer',
+};
+
+/**
+ * Copyright 2017 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+class MDCLinearProgressFoundation extends MDCFoundation {
+  static get cssClasses() {
+    return cssClasses$6;
+  }
+
+  static get strings() {
+    return strings$8;
+  }
+
+  static get defaultAdapter() {
+    return {
+      addClass: (/* className: string */) => {},
+      getPrimaryBar: () => /* el: Element */ {},
+      getBuffer: () => /* el: Element */ {},
+      hasClass: (/* className: string */) => false,
+      removeClass: (/* className: string */) => {},
+      setStyle: (/* el: Element, styleProperty: string, value: string */) => {},
+    };
+  }
+
+  constructor(adapter) {
+    super(Object.assign(MDCLinearProgressFoundation.defaultAdapter, adapter));
+  }
+
+  init() {
+    this.determinate_ = !this.adapter_.hasClass(cssClasses$6.INDETERMINATE_CLASS);
+    this.reverse_ = this.adapter_.hasClass(cssClasses$6.REVERSED_CLASS);
+    this.progress_ = 0;
+  }
+
+  setDeterminate(isDeterminate) {
+    this.determinate_ = isDeterminate;
+    if (this.determinate_) {
+      this.adapter_.removeClass(cssClasses$6.INDETERMINATE_CLASS);
+      this.setScale_(this.adapter_.getPrimaryBar(), this.progress_);
+    } else {
+      this.adapter_.addClass(cssClasses$6.INDETERMINATE_CLASS);
+      this.setScale_(this.adapter_.getPrimaryBar(), 1);
+      this.setScale_(this.adapter_.getBuffer(), 1);
+    }
+  }
+
+  setProgress(value) {
+    this.progress_ = value;
+    if (this.determinate_) {
+      this.setScale_(this.adapter_.getPrimaryBar(), value);
+    }
+  }
+
+  setBuffer(value) {
+    if (this.determinate_) {
+      this.setScale_(this.adapter_.getBuffer(), value);
+    }
+  }
+
+  setReverse(isReversed) {
+    this.reverse_ = isReversed;
+    if (this.reverse_) {
+      this.adapter_.addClass(cssClasses$6.REVERSED_CLASS);
+    } else {
+      this.adapter_.removeClass(cssClasses$6.REVERSED_CLASS);
+    }
+  }
+
+  open() {
+    this.adapter_.removeClass(cssClasses$6.CLOSED_CLASS);
+  }
+
+  close() {
+    this.adapter_.addClass(cssClasses$6.CLOSED_CLASS);
+  }
+
+  setScale_(el, scaleValue) {
+    const value = 'scaleX(' + scaleValue + ')';
+    transformStyleProperties.forEach((transformStyleProperty) => {
+      this.adapter_.setStyle(el, transformStyleProperty, value);
+    });
+  }
+}
+
+function assertNumber(value, fn) {
+  if(typeof value === "string") {
+    value = parseFloat(value);
+    if(isNaN(value)) throw new Error("LinearProgress: value invalid!");
+  }
+  
+  fn(value);
+}
+
+var LinearProgress$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-linear-progress",attrs:{"role":"progressbar"}},[_c('div',{staticClass:"mdc-linear-progress__buffering-dots"}),_c('div',{ref:"buffer",staticClass:"mdc-linear-progress__buffer"}),_c('div',{ref:"primary",staticClass:"mdc-linear-progress__bar mdc-linear-progress__primary-bar"},[_c('span',{staticClass:"mdc-linear-progress__bar-inner"})]),_vm._m(0)])},staticRenderFns: [function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-linear-progress__bar mdc-linear-progress__secondary-bar"},[_c('span',{staticClass:"mdc-linear-progress__bar-inner"})])}],
+  name: "MdcLinearProgress",
+  model: {
+    prop: "value",
+    event: "change"
+  },
+  props: {
+    indeterminate: Boolean,
+    reversed: Boolean,
+    closed: Boolean,
+
+    value: [String, Number],
+    buffer: [String, Number]
+  },
+  watch: {
+    indeterminate(value) {
+      this.foundation.setDeterminate(!value);
+    },
+    reversed(value) {
+      this.foundation.setReverse(value);
+    },
+    closed(value) {
+      if(value) {
+        this.foundation.close();
+      } else {
+        this.foundation.open();
+      }
+    },
+    value(value) {
+      assertNumber(value, value => this.foundation.setProgress(value));
+    },
+    buffer(value) {
+      assertNumber(value, value => this.foundation.setBuffer(value));
+    }
+  },
+  mounted() {
+    const { $el } = this;
+    const { primary, buffer } = this.$refs;
+
+    this.foundation = new MDCLinearProgressFoundation({
+      addClass: className => $el.classList.add(className),
+      removeClass: className => $el.classList.remove(className),
+      hasClass: className => $el.classList.contains(className),
+      getPrimaryBar: () => primary,
+      getBuffer: () => buffer,
+      setStyle: (el, prop, value) => el.style[prop] = value,
+    });
+
+    this.foundation.init();
+    this.foundation.setDeterminate(!this.indeterminate);
+    this.foundation.setReverse(this.reversed);
+    this.closed && this.foundation.close();
+    assertNumber(this.value, value => this.foundation.setProgress(value));
+    assertNumber(this.buffer, value => this.foundation.setBuffer(value));
+  },
+  beforeDestroy() {
+    this.foundation.destroy();
+  }
+};
+
+function install$13(Vue) {
+  Vue.component(LinearProgress$1.name, LinearProgress$1);
+}
+
+var LinearProgress = Object.freeze({
+	LinearProgress: LinearProgress$1,
+	install: install$13
+});
+
+var List$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('ul',{staticClass:"mdc-list",class:_vm.cssClasses},[_vm._t("default")],2)},staticRenderFns: [],
+  name: "MdcList",
+  props: {
+    dense: Boolean,
+    avatar: Boolean,
+    twoLine: Boolean,
+  },
+  computed: {
+    cssClasses() {
+      return {
+        "mdc-list--dense": this.dense,
+        "mdc-list--avatar-list": this.avatar,
+        "mdc-list--two-line": this.twoLine
+      };
+    }
+  }
+};
+
+var ListItem = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('li',{staticClass:"mdc-list-item"},[_vm._t("graphic"),_c('span',{staticClass:"mdc-list-item__text"},[_vm._v(_vm._s(_vm.text)),(_vm.secondary)?_c('span',{staticClass:"mdc-list-item__secondary"},[_vm._v(_vm._s(_vm.secondary))]):_vm._e()]),_vm._t("meta")],2)},staticRenderFns: [],
+  name: "MdcListItem",
+  mixins: [ Ripple() ],
+  props: {
+    text: {
+      type: String,
+      required: true
+    },
+    secondary: String
+  }
+};
+
+var ListDivider = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('li',{staticClass:"mdc-list-divider",class:_vm.cssClasses,attrs:{"role":"separator"}})},staticRenderFns: [],
+  name: "MdcListDivider",
+  props: {
+    inset: Boolean
+  },
+  computed: {
+    cssClasses() {
+      return {
+        "mdc-list-divider--inset": this.inset
+      };
+    }
+  }
+};
+
+var ListItemGraphic = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c(_vm.tag,{tag:"component",staticClass:"mdc-list-item__graphic",class:_vm.cssClasses,attrs:{"aria-label":_vm.icon && _vm.label,"aria-hidden":_vm.icon && 'true',"src":_vm.src,"title":_vm.title}},[_vm._v(_vm._s(_vm.icon))])},staticRenderFns: [],
+  name: "MdcListItemGraphic",
+  props: {
+    icon: String,
+    label: String,
+    src: String,
+  },
+  computed: {
+    cssClasses() {
+      return {
+        "material-icons": this.icon
+      };
+    },
+    tag() {
+      return this.src ? "img" : "i";
+    }
+  }
+};
+
+var ListItemMeta = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c(_vm.tag,{tag:"mdc-link",staticClass:"mdc-list-item__meta",class:_vm.cssClasses,attrs:{"aria-label":_vm.icon && _vm.label,"aria-hidden":_vm.icon && 'true',"href":_vm.link}},[_vm._v(_vm._s(_vm.content))])},staticRenderFns: [],
+  name: "MdcListItemMeta",
+  props: {
+    icon: String,
+    label: String,
+    link: String
+  },
+  computed: {
+    cssClasses() {
+      return {
+        "material-icons": this.icon
+      };
+    },
+    content() {
+      return this.icon || this.label;
+    },
+    tag() {
+      if(this.link) {
+        return "a";
+      }
+      return this.icon ? "i" : "span";
+    }
+  }
+};
+
+var ListGroup = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-list-group"},[_vm._t("default")],2)},staticRenderFns: [],
+  name: "MdcListGroup"
+};
+
+var ListGroupDivider = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('hr',{staticClass:"mdc-list-divider",class:_vm.cssClasses})},staticRenderFns: [],
+  name: "MdcListGroupDivider",
+  props: {
+    inset: Boolean
+  },
+  computed: {
+    cssClasses() {
+      return {
+        "mdc-list-divider--inset": this.inset
+      };
+    }
+  }
+};
+
+var ListGroupSubheader = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('h3',{staticClass:"mdc-list-group__subheader"},[_vm._v(_vm._s(_vm.text))])},staticRenderFns: [],
+  name: "MdcListGroupSubheader",
+  props: {
+    text: {
+      type: String,
+      required: true
+    }
+  }
+};
+
+function install$14(Vue) {
+  Vue.component(List$1.name, List$1);
+  Vue.component(ListItem.name, ListItem);
+  Vue.component(ListDivider.name, ListDivider);
+  Vue.component(ListItemGraphic.name, ListItemGraphic);
+  Vue.component(ListItemMeta.name, ListItemMeta);
+  // List groups
+  Vue.component(ListGroup.name, ListGroup);
+  Vue.component(ListGroupDivider.name, ListGroupDivider);
+  Vue.component(ListGroupSubheader.name, ListGroupSubheader);
+}
+
+var List = Object.freeze({
+	List: List$1,
+	ListItem: ListItem,
+	ListDivider: ListDivider,
+	ListItemGraphic: ListItemGraphic,
+	ListItemMeta: ListItemMeta,
+	ListGroup: ListGroup,
+	ListGroupDivider: ListGroupDivider,
+	ListGroupSubheader: ListGroupSubheader,
+	install: install$14
+});
+
+/**
+ * @license
+ * Copyright 2016 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/* eslint no-unused-vars: [2, {"args": "none"}] */
+
+/**
+ * Adapter for MDC Menu. Provides an interface for managing
+ * - classes
+ * - dom
+ * - focus
+ * - position
+ * - dimensions
+ * - event handlers
+ *
+ * Additionally, provides type information for the adapter to the Closure
+ * compiler.
+ *
+ * Implement this adapter for your framework of choice to delegate updates to
+ * the component in your framework of choice. See architecture documentation
+ * for more details.
+ * https://github.com/material-components/material-components-web/blob/master/docs/code/architecture.md
+ *
+ * @record
+ */
+
+/**
+ * @license
+ * Copyright 2016 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/** @enum {string} */
+const cssClasses$7 = {
+  ROOT: 'mdc-menu',
+  OPEN: 'mdc-menu--open',
+  ANIMATING_OPEN: 'mdc-menu--animating-open',
+  ANIMATING_CLOSED: 'mdc-menu--animating-closed',
+  SELECTED_LIST_ITEM: 'mdc-list-item--selected',
+};
+
+/** @enum {string} */
+const strings$9 = {
+  ITEMS_SELECTOR: '.mdc-menu__items',
+  SELECTED_EVENT: 'MDCMenu:selected',
+  CANCEL_EVENT: 'MDCMenu:cancel',
+  ARIA_DISABLED_ATTR: 'aria-disabled',
+};
+
+/** @enum {number} */
+const numbers$2 = {
+  // Amount of time to wait before triggering a selected event on the menu. Note that this time
+  // will most likely be bumped up once interactive lists are supported to allow for the ripple to
+  // animate before closing the menu
+  SELECTED_TRIGGER_DELAY: 50,
+  // Total duration of menu open animation.
+  TRANSITION_OPEN_DURATION: 120,
+  // Total duration of menu close animation.
+  TRANSITION_CLOSE_DURATION: 75,
+  // Margin left to the edge of the viewport when menu is at maximum possible height.
+  MARGIN_TO_EDGE: 32,
+  // Ratio of anchor width to menu width for switching from corner positioning to center positioning.
+  ANCHOR_TO_MENU_WIDTH_RATIO: 0.67,
+  // Ratio of vertical offset to menu height for switching from corner to mid-way origin positioning.
+  OFFSET_TO_MENU_HEIGHT_RATIO: 0.1,
+};
+
+/**
+ * Enum for bits in the {@see Corner) bitmap.
+ * @enum {number}
+ */
+const CornerBit = {
+  BOTTOM: 1,
+  CENTER: 2,
+  RIGHT: 4,
+  FLIP_RTL: 8,
+};
+
+/**
+ * Enum for representing an element corner for positioning the menu.
+ *
+ * The START constants map to LEFT if element directionality is left
+ * to right and RIGHT if the directionality is right to left.
+ * Likewise END maps to RIGHT or LEFT depending on the directionality.
+ *
+ * @enum {number}
+ */
+const Corner = {
+  TOP_LEFT: 0,
+  TOP_RIGHT: CornerBit.RIGHT,
+  BOTTOM_LEFT: CornerBit.BOTTOM,
+  BOTTOM_RIGHT: CornerBit.BOTTOM | CornerBit.RIGHT,
+  TOP_START: CornerBit.FLIP_RTL,
+  TOP_END: CornerBit.FLIP_RTL | CornerBit.RIGHT,
+  BOTTOM_START: CornerBit.BOTTOM | CornerBit.FLIP_RTL,
+  BOTTOM_END: CornerBit.BOTTOM | CornerBit.RIGHT | CornerBit.FLIP_RTL,
+};
+
+/**
+ * @license
+ * Copyright 2016 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/**
+ * @typedef {{
+ *   top: number,
+ *   right: number,
+ *   bottom: number,
+ *   left: number
+ * }}
+ */
+class MDCMenuFoundation extends MDCFoundation {
+  /** @return enum{cssClasses} */
+  static get cssClasses() {
+    return cssClasses$7;
+  }
+
+  /** @return enum{strings} */
+  static get strings() {
+    return strings$9;
+  }
+
+  /** @return enum{numbers} */
+  static get numbers() {
+    return numbers$2;
+  }
+
+  /** @return enum{number} */
+  static get Corner() {
+    return Corner;
+  }
+
+  /**
+   * {@see MDCMenuAdapter} for typing information on parameters and return
+   * types.
+   * @return {!MDCMenuAdapter}
+   */
+  static get defaultAdapter() {
+    return /** @type {!MDCMenuAdapter} */ ({
+      addClass: () => {},
+      removeClass: () => {},
+      hasClass: () => false,
+      hasNecessaryDom: () => false,
+      getAttributeForEventTarget: () => {},
+      getInnerDimensions: () => ({}),
+      hasAnchor: () => false,
+      getAnchorDimensions: () => ({}),
+      getWindowDimensions: () => ({}),
+      getNumberOfItems: () => 0,
+      registerInteractionHandler: () => {},
+      deregisterInteractionHandler: () => {},
+      registerBodyClickHandler: () => {},
+      deregisterBodyClickHandler: () => {},
+      getIndexForEventTarget: () => 0,
+      notifySelected: () => {},
+      notifyCancel: () => {},
+      saveFocus: () => {},
+      restoreFocus: () => {},
+      isFocused: () => false,
+      focus: () => {},
+      getFocusedItemIndex: () => -1,
+      focusItemAtIndex: () => {},
+      isRtl: () => false,
+      setTransformOrigin: () => {},
+      setPosition: () => {},
+      setMaxHeight: () => {},
+      setAttrForOptionAtIndex: () => {},
+      rmAttrForOptionAtIndex: () => {},
+      addClassForOptionAtIndex: () => {},
+      rmClassForOptionAtIndex: () => {},
+    });
+  }
+
+  /** @param {!MDCMenuAdapter} adapter */
+  constructor(adapter) {
+    super(Object.assign(MDCMenuFoundation.defaultAdapter, adapter));
+
+    /** @private {function(!Event)} */
+    this.clickHandler_ = (evt) => this.handlePossibleSelected_(evt);
+    /** @private {function(!Event)} */
+    this.keydownHandler_ = (evt) => this.handleKeyboardDown_(evt);
+    /** @private {function(!Event)} */
+    this.keyupHandler_ = (evt) => this.handleKeyboardUp_(evt);
+    /** @private {function(!Event)} */
+    this.documentClickHandler_ = (evt) => this.handleDocumentClick_(evt);
+    /** @private {boolean} */
+    this.isOpen_ = false;
+    /** @private {number} */
+    this.openAnimationEndTimerId_ = 0;
+    /** @private {number} */
+    this.closeAnimationEndTimerId_ = 0;
+    /** @private {number} */
+    this.selectedTriggerTimerId_ = 0;
+    /** @private {number} */
+    this.animationRequestId_ = 0;
+    /** @private {!{ width: number, height: number }} */
+    this.dimensions_;
+    /** @private {number} */
+    this.itemHeight_;
+    /** @private {Corner} */
+    this.anchorCorner_ = Corner.TOP_START;
+    /** @private {AnchorMargin} */
+    this.anchorMargin_ = {top: 0, right: 0, bottom: 0, left: 0};
+    /** @private {?AutoLayoutMeasurements} */
+    this.measures_ = null;
+    /** @private {number} */
+    this.selectedIndex_ = -1;
+    /** @private {boolean} */
+    this.rememberSelection_ = false;
+    /** @private {boolean} */
+    this.quickOpen_ = false;
+
+    // A keyup event on the menu needs to have a corresponding keydown
+    // event on the menu. If the user opens the menu with a keydown event on a
+    // button, the menu will only get the key up event causing buggy behavior with selected elements.
+    /** @private {boolean} */
+    this.keyDownWithinMenu_ = false;
+  }
+
+  init() {
+    const {ROOT, OPEN} = MDCMenuFoundation.cssClasses;
+
+    if (!this.adapter_.hasClass(ROOT)) {
+      throw new Error(`${ROOT} class required in root element.`);
+    }
+
+    if (!this.adapter_.hasNecessaryDom()) {
+      throw new Error(`Required DOM nodes missing in ${ROOT} component.`);
+    }
+
+    if (this.adapter_.hasClass(OPEN)) {
+      this.isOpen_ = true;
+    }
+
+    this.adapter_.registerInteractionHandler('click', this.clickHandler_);
+    this.adapter_.registerInteractionHandler('keyup', this.keyupHandler_);
+    this.adapter_.registerInteractionHandler('keydown', this.keydownHandler_);
+  }
+
+  destroy() {
+    clearTimeout(this.selectedTriggerTimerId_);
+    clearTimeout(this.openAnimationEndTimerId_);
+    clearTimeout(this.closeAnimationEndTimerId_);
+    // Cancel any currently running animations.
+    cancelAnimationFrame(this.animationRequestId_);
+    this.adapter_.deregisterInteractionHandler('click', this.clickHandler_);
+    this.adapter_.deregisterInteractionHandler('keyup', this.keyupHandler_);
+    this.adapter_.deregisterInteractionHandler('keydown', this.keydownHandler_);
+    this.adapter_.deregisterBodyClickHandler(this.documentClickHandler_);
+  }
+
+  /**
+   * @param {!Corner} corner Default anchor corner alignment of top-left menu corner.
+   */
+  setAnchorCorner(corner) {
+    this.anchorCorner_ = corner;
+  }
+
+  /**
+   * @param {!AnchorMargin} margin 4-plet of margins from anchor.
+   */
+  setAnchorMargin(margin) {
+    this.anchorMargin_.top = typeof margin.top === 'number' ? margin.top : 0;
+    this.anchorMargin_.right = typeof margin.right === 'number' ? margin.right : 0;
+    this.anchorMargin_.bottom = typeof margin.bottom === 'number' ? margin.bottom : 0;
+    this.anchorMargin_.left = typeof margin.left === 'number' ? margin.left : 0;
+  }
+
+  /** @param {boolean} rememberSelection */
+  setRememberSelection(rememberSelection) {
+    this.rememberSelection_ = rememberSelection;
+    this.setSelectedIndex(-1);
+  }
+
+  /** @param {boolean} quickOpen */
+  setQuickOpen(quickOpen) {
+    this.quickOpen_ = quickOpen;
+  }
+
+  /**
+   * @param {?number} focusIndex
+   * @private
+   */
+  focusOnOpen_(focusIndex) {
+    if (focusIndex === null) {
+      // If this instance of MDCMenu remembers selections, and the user has
+      // made a selection, then focus the last selected item
+      if (this.rememberSelection_ && this.selectedIndex_ >= 0) {
+        this.adapter_.focusItemAtIndex(this.selectedIndex_);
+        return;
+      }
+
+      this.adapter_.focus();
+      // If that doesn't work, focus first item instead.
+      if (!this.adapter_.isFocused()) {
+        this.adapter_.focusItemAtIndex(0);
+      }
+    } else {
+      this.adapter_.focusItemAtIndex(focusIndex);
+    }
+  }
+
+  /**
+   * Handle clicks and cancel the menu if not a child list-item
+   * @param {!Event} evt
+   * @private
+   */
+  handleDocumentClick_(evt) {
+    let el = evt.target;
+
+    while (el && el !== document.documentElement) {
+      if (this.adapter_.getIndexForEventTarget(el) !== -1) {
+        return;
+      }
+      el = el.parentNode;
+    }
+
+    this.adapter_.notifyCancel();
+    this.close(evt);
+  };
+
+  /**
+   * Handle keys that we want to repeat on hold (tab and arrows).
+   * @param {!Event} evt
+   * @return {boolean}
+   * @private
+   */
+  handleKeyboardDown_(evt) {
+    // Do nothing if Alt, Ctrl or Meta are pressed.
+    if (evt.altKey || evt.ctrlKey || evt.metaKey) {
+      return true;
+    }
+
+    const {keyCode, key, shiftKey} = evt;
+    const isTab = key === 'Tab' || keyCode === 9;
+    const isArrowUp = key === 'ArrowUp' || keyCode === 38;
+    const isArrowDown = key === 'ArrowDown' || keyCode === 40;
+    const isSpace = key === 'Space' || keyCode === 32;
+    const isEnter = key === 'Enter' || keyCode === 13;
+    // The menu needs to know if the keydown event was triggered on the menu
+    this.keyDownWithinMenu_ = isEnter || isSpace;
+
+    const focusedItemIndex = this.adapter_.getFocusedItemIndex();
+    const lastItemIndex = this.adapter_.getNumberOfItems() - 1;
+
+    if (shiftKey && isTab && focusedItemIndex === 0) {
+      this.adapter_.focusItemAtIndex(lastItemIndex);
+      evt.preventDefault();
+      return false;
+    }
+
+    if (!shiftKey && isTab && focusedItemIndex === lastItemIndex) {
+      this.adapter_.focusItemAtIndex(0);
+      evt.preventDefault();
+      return false;
+    }
+
+    // Ensure Arrow{Up,Down} and space do not cause inadvertent scrolling
+    if (isArrowUp || isArrowDown || isSpace) {
+      evt.preventDefault();
+    }
+
+    if (isArrowUp) {
+      if (focusedItemIndex === 0 || this.adapter_.isFocused()) {
+        this.adapter_.focusItemAtIndex(lastItemIndex);
+      } else {
+        this.adapter_.focusItemAtIndex(focusedItemIndex - 1);
+      }
+    } else if (isArrowDown) {
+      if (focusedItemIndex === lastItemIndex || this.adapter_.isFocused()) {
+        this.adapter_.focusItemAtIndex(0);
+      } else {
+        this.adapter_.focusItemAtIndex(focusedItemIndex + 1);
+      }
+    }
+
+    return true;
+  }
+
+  /**
+   * Handle keys that we don't want to repeat on hold (Enter, Space, Escape).
+   * @param {!Event} evt
+   * @return {boolean}
+   * @private
+   */
+  handleKeyboardUp_(evt) {
+    // Do nothing if Alt, Ctrl or Meta are pressed.
+    if (evt.altKey || evt.ctrlKey || evt.metaKey) {
+      return true;
+    }
+
+    const {keyCode, key} = evt;
+    const isEnter = key === 'Enter' || keyCode === 13;
+    const isSpace = key === 'Space' || keyCode === 32;
+    const isEscape = key === 'Escape' || keyCode === 27;
+
+    if (isEnter || isSpace) {
+      // If the keydown event didn't occur on the menu, then it should
+      // disregard the possible selected event.
+      if (this.keyDownWithinMenu_) {
+        this.handlePossibleSelected_(evt);
+      }
+      this.keyDownWithinMenu_ = false;
+    }
+
+    if (isEscape) {
+      this.adapter_.notifyCancel();
+      this.close();
+    }
+
+    return true;
+  }
+
+  /**
+   * @param {!Event} evt
+   * @private
+   */
+  handlePossibleSelected_(evt) {
+    if (this.adapter_.getAttributeForEventTarget(evt.target, strings$9.ARIA_DISABLED_ATTR) === 'true') {
+      return;
+    }
+    const targetIndex = this.adapter_.getIndexForEventTarget(evt.target);
+    if (targetIndex < 0) {
+      return;
+    }
+    // Debounce multiple selections
+    if (this.selectedTriggerTimerId_) {
+      return;
+    }
+    this.selectedTriggerTimerId_ = setTimeout(() => {
+      this.selectedTriggerTimerId_ = 0;
+      this.close();
+      if (this.rememberSelection_) {
+        this.setSelectedIndex(targetIndex);
+      }
+      this.adapter_.notifySelected({index: targetIndex});
+    }, numbers$2.SELECTED_TRIGGER_DELAY);
+  }
+
+  /**
+   * @return {AutoLayoutMeasurements} Measurements used to position menu popup.
+   */
+  getAutoLayoutMeasurements_() {
+    const anchorRect = this.adapter_.getAnchorDimensions();
+    const viewport = this.adapter_.getWindowDimensions();
+
+    return {
+      viewport: viewport,
+      viewportDistance: {
+        top: anchorRect.top,
+        right: viewport.width - anchorRect.right,
+        left: anchorRect.left,
+        bottom: viewport.height - anchorRect.bottom,
+      },
+      anchorHeight: anchorRect.height,
+      anchorWidth: anchorRect.width,
+      menuHeight: this.dimensions_.height,
+      menuWidth: this.dimensions_.width,
+    };
+  }
+
+  /**
+   * Computes the corner of the anchor from which to animate and position the menu.
+   * @return {Corner}
+   * @private
+   */
+  getOriginCorner_() {
+    // Defaults: open from the top left.
+    let corner = Corner.TOP_LEFT;
+
+    const {viewportDistance, anchorHeight, anchorWidth, menuHeight, menuWidth} = this.measures_;
+    const isBottomAligned = Boolean(this.anchorCorner_ & CornerBit.BOTTOM);
+    const availableTop = isBottomAligned ? viewportDistance.top + anchorHeight + this.anchorMargin_.bottom
+      : viewportDistance.top + this.anchorMargin_.top;
+    const availableBottom = isBottomAligned ? viewportDistance.bottom - this.anchorMargin_.bottom
+      : viewportDistance.bottom + anchorHeight - this.anchorMargin_.top;
+
+    const topOverflow = menuHeight - availableTop;
+    const bottomOverflow = menuHeight - availableBottom;
+    if (bottomOverflow > 0 && topOverflow < bottomOverflow) {
+      corner |= CornerBit.BOTTOM;
+    }
+
+    const isRtl = this.adapter_.isRtl();
+    const isFlipRtl = Boolean(this.anchorCorner_ & CornerBit.FLIP_RTL);
+    const avoidHorizontalOverlap = Boolean(this.anchorCorner_ & CornerBit.RIGHT);
+    const isAlignedRight = (avoidHorizontalOverlap && !isRtl) ||
+      (!avoidHorizontalOverlap && isFlipRtl && isRtl);
+    const availableLeft = isAlignedRight ? viewportDistance.left + anchorWidth + this.anchorMargin_.right :
+      viewportDistance.left + this.anchorMargin_.left;
+    const availableRight = isAlignedRight ? viewportDistance.right - this.anchorMargin_.right :
+      viewportDistance.right + anchorWidth - this.anchorMargin_.left;
+
+    const leftOverflow = menuWidth - availableLeft;
+    const rightOverflow = menuWidth - availableRight;
+
+    if ((leftOverflow < 0 && isAlignedRight && isRtl) ||
+        (avoidHorizontalOverlap && !isAlignedRight && leftOverflow < 0) ||
+        (rightOverflow > 0 && leftOverflow < rightOverflow)) {
+      corner |= CornerBit.RIGHT;
+    }
+
+    return corner;
+  }
+
+  /**
+   * @param {Corner} corner Origin corner of the menu.
+   * @return {number} Horizontal offset of menu origin corner from corresponding anchor corner.
+   * @private
+   */
+  getHorizontalOriginOffset_(corner) {
+    const {anchorWidth} = this.measures_;
+    const isRightAligned = Boolean(corner & CornerBit.RIGHT);
+    const avoidHorizontalOverlap = Boolean(this.anchorCorner_ & CornerBit.RIGHT);
+    let x = 0;
+    if (isRightAligned) {
+      const rightOffset = avoidHorizontalOverlap ? anchorWidth - this.anchorMargin_.left : this.anchorMargin_.right;
+      x = rightOffset;
+    } else {
+      const leftOffset = avoidHorizontalOverlap ? anchorWidth - this.anchorMargin_.right : this.anchorMargin_.left;
+      x = leftOffset;
+    }
+    return x;
+  }
+
+  /**
+   * @param {Corner} corner Origin corner of the menu.
+   * @return {number} Vertical offset of menu origin corner from corresponding anchor corner.
+   * @private
+   */
+  getVerticalOriginOffset_(corner) {
+    const {viewport, viewportDistance, anchorHeight, menuHeight} = this.measures_;
+    const isBottomAligned = Boolean(corner & CornerBit.BOTTOM);
+    const {MARGIN_TO_EDGE} = MDCMenuFoundation.numbers;
+    const avoidVerticalOverlap = Boolean(this.anchorCorner_ & CornerBit.BOTTOM);
+    const canOverlapVertically = !avoidVerticalOverlap;
+    let y = 0;
+
+    if (isBottomAligned) {
+      y = avoidVerticalOverlap ? anchorHeight - this.anchorMargin_.top : -this.anchorMargin_.bottom;
+      // adjust for when menu can overlap anchor, but too tall to be aligned to bottom
+      // anchor corner. Bottom margin is ignored in such cases.
+      if (canOverlapVertically && menuHeight > viewportDistance.top + anchorHeight) {
+        y = -(Math.min(menuHeight, viewport.height - MARGIN_TO_EDGE) - (viewportDistance.top + anchorHeight));
+      }
+    } else {
+      y = avoidVerticalOverlap ? (anchorHeight + this.anchorMargin_.bottom) : this.anchorMargin_.top;
+      // adjust for when menu can overlap anchor, but too tall to be aligned to top
+      // anchor corners. Top margin is ignored in that case.
+      if (canOverlapVertically && menuHeight > viewportDistance.bottom + anchorHeight) {
+        y = -(Math.min(menuHeight, viewport.height - MARGIN_TO_EDGE) - (viewportDistance.bottom + anchorHeight));
+      }
+    }
+    return y;
+  }
+
+  /**
+   * @param {Corner} corner Origin corner of the menu.
+   * @return {number} Maximum height of the menu, based on available space. 0 indicates should not be set.
+   * @private
+   */
+  getMenuMaxHeight_(corner) {
+    let maxHeight = 0;
+    const {viewportDistance} = this.measures_;
+    const isBottomAligned = Boolean(corner & CornerBit.BOTTOM);
+
+    // When maximum height is not specified, it is handled from css.
+    if (this.anchorCorner_ & CornerBit.BOTTOM) {
+      if (isBottomAligned) {
+        maxHeight = viewportDistance.top + this.anchorMargin_.top;
+      } else {
+        maxHeight = viewportDistance.bottom - this.anchorMargin_.bottom;
+      }
+    }
+
+    return maxHeight;
+  }
+
+  /** @private */
+  autoPosition_() {
+    if (!this.adapter_.hasAnchor()) {
+      return;
+    }
+
+    // Compute measurements for autoposition methods reuse.
+    this.measures_ = this.getAutoLayoutMeasurements_();
+
+    const corner = this.getOriginCorner_();
+    const maxMenuHeight = this.getMenuMaxHeight_(corner);
+    let verticalAlignment = (corner & CornerBit.BOTTOM) ? 'bottom' : 'top';
+    let horizontalAlignment = (corner & CornerBit.RIGHT) ? 'right' : 'left';
+    const horizontalOffset = this.getHorizontalOriginOffset_(corner);
+    const verticalOffset = this.getVerticalOriginOffset_(corner);
+    const position = {
+      [horizontalAlignment]: horizontalOffset ? horizontalOffset + 'px' : '0',
+      [verticalAlignment]: verticalOffset ? verticalOffset + 'px' : '0',
+    };
+    const {anchorWidth, menuHeight, menuWidth} = this.measures_;
+    // Center align when anchor width is comparable or greater than menu, otherwise keep corner.
+    if (anchorWidth / menuWidth > numbers$2.ANCHOR_TO_MENU_WIDTH_RATIO) {
+      horizontalAlignment = 'center';
+    }
+
+    // Adjust vertical origin when menu is positioned with significant offset from anchor. This is done so that
+    // scale animation is "anchored" on the anchor.
+    if (!(this.anchorCorner_ & CornerBit.BOTTOM) &&
+        Math.abs(verticalOffset / menuHeight) > numbers$2.OFFSET_TO_MENU_HEIGHT_RATIO) {
+      const verticalOffsetPercent = Math.abs(verticalOffset / menuHeight) * 100;
+      const originPercent = (corner & CornerBit.BOTTOM) ? 100 - verticalOffsetPercent : verticalOffsetPercent;
+      verticalAlignment = Math.round(originPercent * 100) / 100 + '%';
+    }
+
+    this.adapter_.setTransformOrigin(`${horizontalAlignment} ${verticalAlignment}`);
+    this.adapter_.setPosition(position);
+    this.adapter_.setMaxHeight(maxMenuHeight ? maxMenuHeight + 'px' : '');
+
+    // Clear measures after positioning is complete.
+    this.measures_ = null;
+  }
+
+  /**
+   * Open the menu.
+   * @param {{focusIndex: ?number}=} options
+   */
+  open({focusIndex = null} = {}) {
+    this.adapter_.saveFocus();
+
+    if (!this.quickOpen_) {
+      this.adapter_.addClass(MDCMenuFoundation.cssClasses.ANIMATING_OPEN);
+    }
+
+    this.animationRequestId_ = requestAnimationFrame(() => {
+      this.dimensions_ = this.adapter_.getInnerDimensions();
+      this.autoPosition_();
+      this.adapter_.addClass(MDCMenuFoundation.cssClasses.OPEN);
+      this.focusOnOpen_(focusIndex);
+      this.adapter_.registerBodyClickHandler(this.documentClickHandler_);
+      if (!this.quickOpen_) {
+        this.openAnimationEndTimerId_ = setTimeout(() => {
+          this.openAnimationEndTimerId_ = 0;
+          this.adapter_.removeClass(MDCMenuFoundation.cssClasses.ANIMATING_OPEN);
+        }, numbers$2.TRANSITION_OPEN_DURATION);
+      }
+    });
+    this.isOpen_ = true;
+  }
+
+  /**
+   * Closes the menu.
+   * @param {Event=} evt
+   */
+  close(evt = null) {
+    const targetIsDisabled = evt ?
+      this.adapter_.getAttributeForEventTarget(evt.target, strings$9.ARIA_DISABLED_ATTR) === 'true' :
+      false;
+
+    if (targetIsDisabled) {
+      return;
+    }
+
+    this.adapter_.deregisterBodyClickHandler(this.documentClickHandler_);
+
+    if (!this.quickOpen_) {
+      this.adapter_.addClass(MDCMenuFoundation.cssClasses.ANIMATING_CLOSED);
+    }
+
+    requestAnimationFrame(() => {
+      this.adapter_.removeClass(MDCMenuFoundation.cssClasses.OPEN);
+      if (!this.quickOpen_) {
+        this.closeAnimationEndTimerId_ = setTimeout(() => {
+          this.closeAnimationEndTimerId_ = 0;
+          this.adapter_.removeClass(MDCMenuFoundation.cssClasses.ANIMATING_CLOSED);
+        }, numbers$2.TRANSITION_CLOSE_DURATION);
+      }
+    });
+    this.isOpen_ = false;
+    this.adapter_.restoreFocus();
+  }
+
+  /** @return {boolean} */
+  isOpen() {
+    return this.isOpen_;
+  }
+
+  /** @return {number} */
+  getSelectedIndex() {
+    return this.selectedIndex_;
+  }
+
+  /**
+   * @param {number} index Index of the item to set as selected.
+   */
+  setSelectedIndex(index) {
+    if (index === this.selectedIndex_) {
+      return;
+    }
+
+    const prevSelectedIndex = this.selectedIndex_;
+    if (prevSelectedIndex >= 0) {
+      this.adapter_.rmAttrForOptionAtIndex(prevSelectedIndex, 'aria-selected');
+      this.adapter_.rmClassForOptionAtIndex(prevSelectedIndex, cssClasses$7.SELECTED_LIST_ITEM);
+    }
+
+    this.selectedIndex_ = index >= 0 && index < this.adapter_.getNumberOfItems() ? index : -1;
+    if (this.selectedIndex_ >= 0) {
+      this.adapter_.setAttrForOptionAtIndex(this.selectedIndex_, 'aria-selected', 'true');
+      this.adapter_.addClassForOptionAtIndex(this.selectedIndex_, cssClasses$7.SELECTED_LIST_ITEM);
+    }
+  }
+}
+
+/**
+ * Copyright 2016 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/** @type {string|undefined} */
+let storedTransformPropertyName_$1;
+
+/**
+ * Returns the name of the correct transform property to use on the current browser.
+ * @param {!Window} globalObj
+ * @param {boolean=} forceRefresh
+ * @return {string}
+ */
+function getTransformPropertyName$1(globalObj, forceRefresh = false) {
+  if (storedTransformPropertyName_$1 === undefined || forceRefresh) {
+    const el = globalObj.document.createElement('div');
+    const transformPropertyName = ('transform' in el.style ? 'transform' : 'webkitTransform');
+    storedTransformPropertyName_$1 = transformPropertyName;
+  }
+
+  return storedTransformPropertyName_$1;
+}
+
+/**
+ * Clamps a value between the minimum and the maximum, returning the clamped value.
+ * @param {number} value
+ * @param {number} min
+ * @param {number} max
+ * @return {number}
+ */
+
+var Menu$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-menu",class:_vm.cssClasses,attrs:{"tabindex":"-1"}},[_c('div',{ref:"itemsContainer",staticClass:"mdc-list mdc-menu__items",attrs:{"role":"menu"}},[_vm._t("default")],2)])},staticRenderFns: [],
+  name: "MdcMenu",
+  props: {
+    anchor: Boolean,
+
+    margin: {
+      type: Object,
+      default() {
+        return {};
+      }
+    },
+    corner: {
+      type: String,
+      default: "top_left",
+      validator: value => {
+        let prop = value.toUpperCase();
+        return typeof Corner[prop] !== "undefined";
+      }
+    }
+  },
+  watch: {
+    margin(value) {
+      this.foundation.setAnchorMargin(value);
+    },
+    corner(value) {
+      this.foundation.setAnchorCorner(value);
+    }
+  },
+  data() {
+    return { items: [] }
+  },
+  mounted() {
+    const { $el } = this;
+    const { itemsContainer } = this.$refs;
+    const $styles = getComputedStyle($el);
+    let $anchor, prevFocus;
+    
+    if(this.anchor) {
+      $anchor = $el.parentElement;
+      $anchor.classList.add("mdc-menu-anchor");
+    }
+
+    this.foundation = new MDCMenuFoundation({
+      addClass: className => $el.classList.add(className),
+      removeClass: className => $el.classList.remove(className),
+      hasClass: className => $el.classList.contains(className),
+      hasNecessaryDom: () => !!itemsContainer,
+      getAttributeForEventTarget: (target, name) => target.getAttribute(name),
+      eventTargetHasClass: (target, className) => target.classList.contains(className),
+      getInnerDimensions: () => ({ width: itemsContainer.offsetWidth, height: itemsContainer.offsetHeight }),
+      hasAnchor: () => !!$anchor,
+      getAnchorDimensions: () => $el.parentElement.getBoundingClientRect(),
+      getWindowDimensions: () => ({ width: window.innerWidth, height: window.innerHeight }),
+      getNumberOfItems: () => this.items.length,
+      registerInteractionHandler: (type, handler) => $el.addEventListener(type, handler),
+      deregisterInteractionHandler: (type, handler) => $el.removeEventListener(type, handler),
+      registerBodyClickHandler: handler => document.body.addEventListener("click", handler),
+      deregisterBodyClickHandler: handler => document.body.removeEventListener("click", handler),
+      getIndexForEventTarget: target => this.items.indexOf(target),
+      notifySelected: data => this.$emit("selected", data.index, this.items[data.index]),
+      notifyCancel: () => this.$emit("cancel"),
+      saveFocus: () => {
+        prevFocus = document.activeElement;
+      },
+      restoreFocus: () => prevFocus && prevFocus.focus(),
+      isFocused: () => document.activeElement === $el,
+      focus: () => $el.focus(),
+      getFocusedItemIndex: () => this.items.indexOf(document.activeElement),
+      focusItemAtIndex: index => this.items[index].focus(),
+      isRtl: () => $styles.direction === "rtl",
+      setTransformOrigin: origin => {
+        const prop = getTransformPropertyName$1(window);
+        $el.style[`${prop}-origin`] = origin;
+      },
+      setPosition: pos => {
+        $el.style.left = "left" in pos ? pos.left : null;
+        $el.style.right = "right" in pos ? pos.right : null;
+        $el.style.top = "top" in pos ? pos.top : null;
+        $el.style.bottom = "bottom" in pos ? pos.bottom : null;
+      },
+      setMaxHeight: height => $el.style.maxHeight = height,
+      setAttrForOptionAtIndex: (index, attr, value) => this.items[index].setAttribute(attr, value),
+      rmAttrForOptionAtIndex: (index, attr) => this.items[index].removeAttribute(attr),
+      addClassForOptionAtIndex: (index, className) => this.items[index].classList.add(className),
+      rmClassForOptionAtIndex: (index, className) => this.items[index].classList.remove(className),
+    });
+    this.items = this.$_findItems();
+    this.foundation.init();
+
+    this.foundation.setAnchorCorner(this.corner.toUpperCase());
+    this.foundation.setAnchorMargin(this.margin);
+  },
+  updated() {
+    this.items = this.$_findItems();
+  },
+  computed: {
+    open() {
+      return this.foundation && this.foundation.isOpen();
+    }
+  },
+  methods: {
+    show(index = null) {
+      this.foundation.open({ focusIndex: index });
+    },
+    hide() {
+      this.foundation.close();
+    },
+    $_findItems() {
+      return Array.prototype.slice.call(this.$refs.itemsContainer.querySelectorAll(".mdc-list-item[role]"));
+    }
+  }
+};
+
+var MenuItem = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('li',{staticClass:"mdc-list-item",attrs:{"role":"menuitem","tabindex":"0"}},[_vm._v(_vm._s(_vm.text))])},staticRenderFns: [],
+  name: "MdcMenuItem",
+  props: {
+    text: {
+      type: String,
+      required: true
+    }
+  }
+};
+
+function install$15(Vue) {
+  Vue.component(Menu$1.name, Menu$1);
+  Vue.component(MenuItem.name, MenuItem);
+}
+
+var Menu = Object.freeze({
+	Menu: Menu$1,
+	MenuItem: MenuItem,
+	install: install$15
+});
+
+/**
+ * @license
+ * Copyright 2016 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/* eslint-disable no-unused-vars */
+
+/**
+ * @license
+ * Copyright 2016 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/** @enum {string} */
+const strings$10 = {
+  NATIVE_CONTROL_SELECTOR: '.mdc-radio__native-control',
+};
+
+/** @enum {string} */
+const cssClasses$8 = {
+  ROOT: 'mdc-radio',
+  DISABLED: 'mdc-radio--disabled',
+};
+
+/**
+ * @license
+ * Copyright 2016 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+class MDCRadioFoundation extends MDCFoundation {
+  /** @return enum {cssClasses} */
+  static get cssClasses() {
+    return cssClasses$8;
+  }
+
+  /** @return enum {strings} */
+  static get strings() {
+    return strings$10;
+  }
+
+  /** @return {!MDCRadioAdapter} */
+  static get defaultAdapter() {
+    return /** @type {!MDCRadioAdapter} */ ({
+      addClass: (/* className: string */) => {},
+      removeClass: (/* className: string */) => {},
+      getNativeControl: () => /* !MDCSelectionControlState */ {},
+    });
+  }
+
+  /** @return {boolean} */
+  isChecked() {
+    return this.getNativeControl_().checked;
+  }
+
+  /** @param {boolean} checked */
+  setChecked(checked) {
+    this.getNativeControl_().checked = checked;
+  }
+
+  /** @return {boolean} */
+  isDisabled() {
+    return this.getNativeControl_().disabled;
+  }
+
+  /** @param {boolean} disabled */
+  setDisabled(disabled) {
+    const {DISABLED} = MDCRadioFoundation.cssClasses;
+    this.getNativeControl_().disabled = disabled;
+    if (disabled) {
+      this.adapter_.addClass(DISABLED);
+    } else {
+      this.adapter_.removeClass(DISABLED);
+    }
+  }
+
+  /** @return {?string} */
+  getValue() {
+    return this.getNativeControl_().value;
+  }
+
+  /** @param {?string} value */
+  setValue(value) {
+    this.getNativeControl_().value = value;
+  }
+
+  /**
+   * @return {!MDCSelectionControlState}
+   * @private
+   */
+  getNativeControl_() {
+    return this.adapter_.getNativeControl() || {
+      checked: false,
+      disabled: false,
+      value: null,
+    };
+  }
+}
+
+const rippleAdapter$2 = {
+  isSurfaceActive() {
+    return false;
+  },
+  registerInteractionHandler(type, handler) {
+    this.$refs.input.addEventListener(type, handler);
+  },
+  deregisterInteractionHandler(type, handler) {
+    this.$refs.input.removeEventListener(type, handler);
+  }
+};
+
+var Radio$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-radio",class:_vm.cssClasses},[_c('input',_vm._b({directives:[{name:"model",rawName:"v-model",value:(_vm.model),expression:"model"}],ref:"input",staticClass:"mdc-radio__native-control",attrs:{"type":"radio"},domProps:{"value":_vm.value,"checked":_vm._q(_vm.model,_vm.value)},on:{"change":function($event){_vm.model=_vm.value;}}},'input',_vm.$attrs,false)),_vm._m(0)])},staticRenderFns: [function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-radio__background"},[_c('div',{staticClass:"mdc-radio__outer-circle"}),_c('div',{staticClass:"mdc-radio__inner-circle"})])}],
+  name: "MdcRadio",
+  mixins: [ Ripple(rippleAdapter$2, { unbounded: true }) ],
+  inheritAttrs: false,
+  model: {
+    prop: "checked",
+    event: "change",
+  },
+
+  props: {
+    disabled: Boolean,
+    checked: [Boolean, String],
+    value: {
+      type: String,
+      required: true
+    }
+  },
+  computed: {
+    model: {
+      get() {
+        return this.checked;
+      },
+      set(value) {
+        this.$emit("change", value);
+      }
+    }
+  },
+  watch: {
+    disabled(value) {
+      this.foundation.setDisabled(value);
+    },
+    value(value) {
+      this.foundation.setValue(value);
+    }
+  },
+  mounted() {
+    const { $el } = this;
+
+    this.foundation = new MDCRadioFoundation({
+      addClass: className => $el.classList.add(className),
+      removeClass: className => $el.classList.remove(className),
+      getNativeControl: () => this.$refs.input
+    });
+    this.foundation.init();
+
+    this.foundation.setDisabled(this.disabled);
+    this.foundation.setValue(this.value);
+  },
+  beforeDestroy() {
+    this.foundation.destroy();
+  }
+};
+
+function install$16(Vue) {
+  Vue.component(Radio$1.name, Radio$1);
+}
+
+var Radio = Object.freeze({
+	Radio: Radio$1,
+	install: install$16
+});
+
+/**
+ * Copyright 2016 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+const cssClasses$9 = {
+  BOX: 'mdc-select--box',
+  DISABLED: 'mdc-select--disabled',
+  OPEN: 'mdc-select--open',
+  ROOT: 'mdc-select',
+  SCROLL_LOCK: 'mdc-select-scroll-lock',
+};
+
+const strings$11 = {
+  CHANGE_EVENT: 'MDCSelect:change',
+  BOTTOM_LINE_SELECTOR: '.mdc-select__bottom-line',
+  LABEL_SELECTOR: '.mdc-select__label',
+  MENU_SELECTOR: '.mdc-select__menu',
+  SURFACE_SELECTOR: '.mdc-select__surface',
+  SELECTED_TEXT_SELECTOR: '.mdc-select__selected-text',
+};
+
+/**
+ * @license
+ * Copyright 2016 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/**
+ * Copyright 2016 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+const OPENER_KEYS = [
+  {key: 'ArrowUp', keyCode: 38, forType: 'keydown'},
+  {key: 'ArrowDown', keyCode: 40, forType: 'keydown'},
+  {key: 'Space', keyCode: 32, forType: 'keyup'},
+];
+
+class MDCSelectFoundation extends MDCFoundation {
+  static get cssClasses() {
+    return cssClasses$9;
+  }
+
+  static get strings() {
+    return strings$11;
+  }
+
+  static get defaultAdapter() {
+    return {
+      addClass: (/* className: string */) => {},
+      removeClass: (/* className: string */) => {},
+      floatLabel: (/* value: boolean */) => {},
+      activateBottomLine: () => {},
+      deactivateBottomLine: () => {},
+      addBodyClass: (/* className: string */) => {},
+      removeBodyClass: (/* className: string */) => {},
+      setAttr: (/* attr: string, value: string */) => {},
+      rmAttr: (/* attr: string */) => {},
+      computeBoundingRect: () => /* {left: number, top: number} */ ({left: 0, top: 0}),
+      registerInteractionHandler: (/* type: string, handler: EventListener */) => {},
+      deregisterInteractionHandler: (/* type: string, handler: EventListener */) => {},
+      focus: () => {},
+      makeTabbable: () => {},
+      makeUntabbable: () => {},
+      getComputedStyleValue: (/* propertyName: string */) => /* string */ '',
+      setStyle: (/* propertyName: string, value: string */) => {},
+      create2dRenderingContext: () => /* {font: string, measureText: (string) => {width: number}} */ ({
+        font: '',
+        measureText: () => ({width: 0}),
+      }),
+      setMenuElStyle: (/* propertyName: string, value: string */) => {},
+      setMenuElAttr: (/* attr: string, value: string */) => {},
+      rmMenuElAttr: (/* attr: string */) => {},
+      getMenuElOffsetHeight: () => /* number */ 0,
+      openMenu: (/* focusIndex: number */) => {},
+      isMenuOpen: () => /* boolean */ false,
+      setSelectedTextContent: (/* textContent: string */) => {},
+      getNumberOfOptions: () => /* number */ 0,
+      getTextForOptionAtIndex: (/* index: number */) => /* string */ '',
+      getValueForOptionAtIndex: (/* index: number */) => /* string */ '',
+      setAttrForOptionAtIndex: (/* index: number, attr: string, value: string */) => {},
+      rmAttrForOptionAtIndex: (/* index: number, attr: string */) => {},
+      getOffsetTopForOptionAtIndex: (/* index: number */) => /* number */ 0,
+      registerMenuInteractionHandler: (/* type: string, handler: EventListener */) => {},
+      deregisterMenuInteractionHandler: (/* type: string, handler: EventListener */) => {},
+      notifyChange: () => {},
+      getWindowInnerHeight: () => /* number */ 0,
+    };
+  }
+
+  constructor(adapter) {
+    super(Object.assign(MDCSelectFoundation.defaultAdapter, adapter));
+    this.ctx_ = null;
+    this.selectedIndex_ = -1;
+    this.disabled_ = false;
+    this.isFocused_ = false;
+
+    /** @private {number} */
+    this.animationRequestId_ = 0;
+
+    this.displayHandler_ = (evt) => {
+      evt.preventDefault();
+      if (!this.adapter_.isMenuOpen()) {
+        this.open_();
+      }
+    };
+    this.displayViaKeyboardHandler_ = (evt) => this.handleDisplayViaKeyboard_(evt);
+    this.selectionHandler_ = ({detail}) => {
+      const {index} = detail;
+
+      if (index !== this.selectedIndex_) {
+        this.setSelectedIndex(index);
+        this.adapter_.notifyChange();
+      }
+      this.close_();
+    };
+    this.cancelHandler_ = () => {
+      this.close_();
+      if (this.selectedIndex_ === -1) {
+        this.adapter_.floatLabel(false);
+      }
+    };
+  }
+
+  init() {
+    this.ctx_ = this.adapter_.create2dRenderingContext();
+    this.adapter_.registerInteractionHandler('click', this.displayHandler_);
+    this.adapter_.registerInteractionHandler('keydown', this.displayViaKeyboardHandler_);
+    this.adapter_.registerInteractionHandler('keyup', this.displayViaKeyboardHandler_);
+    this.adapter_.registerMenuInteractionHandler(
+      MDCMenuFoundation.strings.SELECTED_EVENT, this.selectionHandler_);
+    this.adapter_.registerMenuInteractionHandler(
+      MDCMenuFoundation.strings.CANCEL_EVENT, this.cancelHandler_);
+    this.resize();
+  }
+
+  destroy() {
+    // Drop reference to context object to prevent potential leaks
+    this.ctx_ = null;
+    cancelAnimationFrame(this.animationRequestId_);
+    this.adapter_.deregisterInteractionHandler('click', this.displayHandler_);
+    this.adapter_.deregisterInteractionHandler('keydown', this.displayViaKeyboardHandler_);
+    this.adapter_.deregisterInteractionHandler('keyup', this.displayViaKeyboardHandler_);
+    this.adapter_.deregisterMenuInteractionHandler(
+      MDCMenuFoundation.strings.SELECTED_EVENT, this.selectionHandler_);
+    this.adapter_.deregisterMenuInteractionHandler(
+      MDCMenuFoundation.strings.CANCEL_EVENT, this.cancelHandler_);
+  }
+
+  getValue() {
+    return this.selectedIndex_ >= 0 ? this.adapter_.getValueForOptionAtIndex(this.selectedIndex_) : '';
+  }
+
+  getSelectedIndex() {
+    return this.selectedIndex_;
+  }
+
+  setSelectedIndex(index) {
+    const prevSelectedIndex = this.selectedIndex_;
+    if (prevSelectedIndex >= 0) {
+      this.adapter_.rmAttrForOptionAtIndex(this.selectedIndex_, 'aria-selected');
+    }
+
+    this.selectedIndex_ = index >= 0 && index < this.adapter_.getNumberOfOptions() ? index : -1;
+    let selectedTextContent = '';
+    if (this.selectedIndex_ >= 0) {
+      selectedTextContent = this.adapter_.getTextForOptionAtIndex(this.selectedIndex_).trim();
+      this.adapter_.setAttrForOptionAtIndex(this.selectedIndex_, 'aria-selected', 'true');
+      this.adapter_.floatLabel(true);
+    } else {
+      if (!this.adapter_.isMenuOpen()) {
+        this.adapter_.floatLabel(false);
+      }
+    }
+    this.adapter_.setSelectedTextContent(selectedTextContent);
+  }
+
+  isDisabled() {
+    return this.disabled_;
+  }
+
+  setDisabled(disabled) {
+    const {DISABLED} = MDCSelectFoundation.cssClasses;
+    this.disabled_ = disabled;
+    if (this.disabled_) {
+      this.adapter_.addClass(DISABLED);
+      this.adapter_.setAttr('aria-disabled', 'true');
+      this.adapter_.makeUntabbable();
+    } else {
+      this.adapter_.removeClass(DISABLED);
+      this.adapter_.rmAttr('aria-disabled');
+      this.adapter_.makeTabbable();
+    }
+  }
+
+  resize() {
+    const font = this.adapter_.getComputedStyleValue('font');
+    const letterSpacing = parseFloat(this.adapter_.getComputedStyleValue('letter-spacing'));
+
+    if (font) {
+      this.ctx_.font = font;
+    } else {
+      const primaryFontFamily = this.adapter_.getComputedStyleValue('font-family').split(',')[0];
+      const fontSize = this.adapter_.getComputedStyleValue('font-size');
+      this.ctx_.font = `${fontSize} ${primaryFontFamily}`;
+    }
+
+    let maxTextLength = 0;
+
+    for (let i = 0, l = this.adapter_.getNumberOfOptions(); i < l; i++) {
+      const surfacePaddingRight = parseInt(this.adapter_.getComputedStyleValue('padding-right'), 10);
+      const surfacePaddingLeft = parseInt(this.adapter_.getComputedStyleValue('padding-left'), 10);
+      const selectBoxAddedPadding = surfacePaddingRight + surfacePaddingLeft;
+      const txt = this.adapter_.getTextForOptionAtIndex(i).trim();
+      const {width} = this.ctx_.measureText(txt);
+      const addedSpace = letterSpacing * txt.length;
+
+      maxTextLength =
+        Math.max(maxTextLength, Math.ceil(width + addedSpace + selectBoxAddedPadding));
+    }
+
+    this.adapter_.setStyle('width', `${maxTextLength}px`);
+  }
+
+  open_() {
+    this.disableScroll_();
+    const {OPEN} = MDCSelectFoundation.cssClasses;
+    const focusIndex = this.selectedIndex_ < 0 ? 0 : this.selectedIndex_;
+
+    this.setMenuStylesForOpenAtIndex_(focusIndex);
+    this.adapter_.floatLabel(true);
+    this.adapter_.activateBottomLine();
+    this.adapter_.addClass(OPEN);
+    this.animationRequestId_ = requestAnimationFrame(() => {
+      this.adapter_.openMenu(focusIndex);
+      this.isFocused_ = true;
+    });
+  }
+
+  setMenuStylesForOpenAtIndex_(index) {
+    const innerHeight = this.adapter_.getWindowInnerHeight();
+    const {left, top} = this.adapter_.computeBoundingRect();
+
+    this.adapter_.setMenuElAttr('aria-hidden', 'true');
+    this.adapter_.setMenuElStyle('display', 'block');
+    const menuHeight = this.adapter_.getMenuElOffsetHeight();
+    const itemOffsetTop = this.adapter_.getOffsetTopForOptionAtIndex(index);
+    this.adapter_.setMenuElStyle('display', '');
+    this.adapter_.rmMenuElAttr('aria-hidden');
+
+    let adjustedTop = top - itemOffsetTop;
+    const overflowsTop = adjustedTop < 0;
+    const overflowsBottom = adjustedTop + menuHeight > innerHeight;
+    if (overflowsTop) {
+      adjustedTop = 0;
+    } else if (overflowsBottom) {
+      adjustedTop = Math.max(0, innerHeight - menuHeight);
+    }
+
+    this.adapter_.setMenuElStyle('left', `${left}px`);
+    this.adapter_.setMenuElStyle('top', `${adjustedTop}px`);
+    this.adapter_.setMenuElStyle('transform-origin', `center ${itemOffsetTop}px`);
+  }
+
+  close_() {
+    const {OPEN} = MDCSelectFoundation.cssClasses;
+    this.adapter_.removeClass(OPEN);
+    this.adapter_.deactivateBottomLine();
+    this.adapter_.focus();
+    this.enableScroll_();
+  }
+
+  handleDisplayViaKeyboard_(evt) {
+    // We use a hard-coded 2 instead of Event.AT_TARGET to avoid having to reference a browser
+    // global.
+    const EVENT_PHASE_AT_TARGET = 2;
+    if (evt.eventPhase !== EVENT_PHASE_AT_TARGET) {
+      return;
+    }
+
+    // Prevent pressing space down from scrolling the page
+    const isSpaceDown = evt.type === 'keydown' && (evt.key === 'Space' || evt.keyCode === 32);
+    if (isSpaceDown) {
+      evt.preventDefault();
+    }
+
+    const isOpenerKey = OPENER_KEYS.some(({key, keyCode, forType}) => {
+      return evt.type === forType && (evt.key === key || evt.keyCode === keyCode);
+    });
+
+    if (isOpenerKey) {
+      this.displayHandler_(evt);
+    }
+  }
+
+  disableScroll_() {
+    this.adapter_.addBodyClass(cssClasses$9.SCROLL_LOCK);
+  }
+
+  enableScroll_() {
+    this.adapter_.removeBodyClass(cssClasses$9.SCROLL_LOCK);
+  }
+}
+
+/**
+ * @license
+ * Copyright 2017 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/* eslint no-unused-vars: [2, {"args": "none"}] */
+
+/**
+ * Adapter for MDC Select Label.
+ *
+ * Defines the shape of the adapter expected by the foundation. Implement this
+ * adapter to integrate the Select label into your framework. See
+ * https://github.com/material-components/material-components-web/blob/master/docs/authoring-components.md
+ * for more information.
+ *
+ * @record
+ */
+
+const cssClasses$10 = {
+  LABEL_FLOAT_ABOVE: 'mdc-select__label--float-above',
+};
+
+/**
+ * @license
+ * Copyright 2016 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+class MDCSelectLabelFoundation extends MDCFoundation {
+  /** @return enum {string} */
+  static get cssClasses() {
+    return cssClasses$10;
+  }
+
+  /**
+   * {@see MDCSelectLabelAdapter} for typing information on parameters and return
+   * types.
+   * @return {!MDCSelectLabelAdapter}
+   */
+  static get defaultAdapter() {
+    return /** @type {!MDCSelectLabelAdapter} */ ({
+      addClass: () => {},
+      removeClass: () => {},
+      getWidth: () => {},
+    });
+  }
+
+  /**
+   * @param {!MDCSelectLabelAdapter} adapter
+   */
+  constructor(adapter) {
+    super(Object.assign(MDCSelectLabelFoundation.defaultAdapter, adapter));
+  }
+
+  /**
+   * Styles the label to float or defloat as necessary.
+   * @param {string} value The value of the input.
+   */
+  styleFloat(value) {
+    const {LABEL_FLOAT_ABOVE} = MDCSelectLabelFoundation.cssClasses;
+    if (!!value) {
+      this.adapter_.addClass(LABEL_FLOAT_ABOVE);
+    } else {
+      this.adapter_.removeClass(LABEL_FLOAT_ABOVE);
+    }
+  }
+}
+
+/**
+ * @license
+ * Copyright 2017 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/* eslint no-unused-vars: [2, {"args": "none"}] */
+
+/**
+ * Adapter for MDC Select Bottom Line.
+ *
+ * Defines the shape of the adapter expected by the foundation. Implement this
+ * adapter to integrate the Select label into your framework. See
+ * https://github.com/material-components/material-components-web/blob/master/docs/authoring-components.md
+ * for more information.
+ *
+ * @record
+ */
+
+/**
+ * Copyright 2016 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+const cssClasses$11 = {
+  BOTTOM_LINE_ACTIVE: 'mdc-select__bottom-line--active',
+};
+
+/**
+ * @license
+ * Copyright 2016 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+class MDCSelectBottomLineFoundation extends MDCFoundation {
+  /** @return enum {string} */
+  static get cssClasses() {
+    return cssClasses$11;
+  }
+
+  /**
+   * {@see MDCSelectBottomLineAdapter} for typing information on parameters and return
+   * types.
+   * @return {!MDCSelectBottomLineAdapter}
+   */
+  static get defaultAdapter() {
+    return /** @type {!MDCSelectBottomLineAdapter} */ ({
+      addClass: () => {},
+      removeClass: () => {},
+    });
+  }
+
+  /**
+   * Adds the active class to bottom line
+   */
+  activate() {
+    this.adapter_.addClass(cssClasses$11.BOTTOM_LINE_ACTIVE);
+  }
+
+  /**
+   * Removes the active class from the bottom line
+   */
+  deactivate() {
+    this.adapter_.removeClass(cssClasses$11.BOTTOM_LINE_ACTIVE);
+  }
+
+  /**
+   * @param {!MDCSelectBottomLineAdapter} adapter
+   */
+  constructor(adapter) {
+    super(Object.assign(MDCSelectBottomLineFoundation.defaultAdapter, adapter));
+  }
+}
+
+const getEventType = type => type.substr(type.indexOf(":") + 1);
+
+//TODO: complete after created mdc-list and mdc-menu
+var Select$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-select",class:_vm.cssClasses,attrs:{"role":"listbox"}},[_c('div',{ref:"surface",staticClass:"mdc-select__surface"},[_c('div',{ref:"label",staticClass:"mdc-select__label"},[_vm._v(_vm._s(_vm.label))]),_c('div',{staticClass:"mdc-select__selected-text"},[_vm._v(_vm._s(_vm.selectedText))]),_c('div',{ref:"bottomLine",staticClass:"mdc-select__bottom-line"})]),_c('mdc-menu',{ref:"menu",staticClass:"mdc-select__menu"},[_vm._t("default")],2)],1)},staticRenderFns: [],
+  name: "MdcSelect",
+  mixins: [ Ripple() ],
+  model: {
+    prop: "value",
+    event: "change"
+  },
+  props: {
+    disabled: Boolean,
+    value: String,
+    label: {
+      type: String,
+      required: true
+    },
+    box: Boolean
+  },
+
+  watch: {
+    value(value) {
+      this.$_setIndexFromValue(value);
+    },
+    disabled(value) {
+      this.foundation.setDisabled(value);
+    }
+  },
+  computed: {
+    cssClasses() {
+      return this.box && "mdc-select--box";
+    }
+  },
+  data() {
+    return { selectedText: "" };
+  },
+
+  mounted() {
+    const { $el } = this;
+    const { surface, menu } = this.$refs;
+
+    const bottomLine = new MDCSelectBottomLineFoundation({
+      addClass: className => this.$refs.bottomLine.classList.add(className),
+      removeClass: className => this.$refs.bottomLine.classList.remove(className)
+    });
+    const label = new MDCSelectLabelFoundation({
+      addClass: className => this.$refs.label.classList.add(className),
+      removeClass: className => this.$refs.label.classList.remove(className)
+    });
+
+    this.foundation = new MDCSelectFoundation({
+      addClass: className => $el.classList.add(className),
+      removeClass: className => $el.classList.remove(className),
+      floatLabel: value => label && label.styleFloat(value),
+      activateBottomLine: () => bottomLine.activate(),
+      deactivateBottomLine: () => bottomLine.deactivate(),
+      setAttr: (attr, value) => $el.setAttribute(attr, value),
+      rmAttr: (attr, value) => $el.removeAttribute(attr, value),
+      computeBoundingRect: () => surface.getBoundingClientRect(),
+      registerInteractionHandler: (type, handler) => surface.addEventListener(type, handler),
+      deregisterInteractionHandler: (type, handler) => surface.removeEventListener(type, handler),
+      focus: () => surface.focus(),
+      makeTabbable: () => {
+        surface.tabIndex = 0;
+      },
+      makeUntabbable: () => {
+        surface.tabIndex = -1;
+      },
+      getComputedStyleValue: prop => window.getComputedStyle(surface)[prop],
+      setStyle: (prop, value) => surface.style[prop] = value,
+      create2dRenderingContext: () => document.createElement("canvas").getContext("2d"),
+      setMenuElStyle: (prop, value) => menu.$el.style[prop] = value,
+      setMenuElAttr: (attr, value) => menu.$el.setAttribute(attr, value),
+      rmMenuElAttr: attr => menu.$el.removeAttribute(attr),
+      getMenuElOffsetHeight: () => menu.$el.offsetHeight,
+
+      openMenu: index => menu.show(index),
+      isMenuOpen: () => menu.open,
+      setSelectedTextContent: text => {
+        this.selectedText = text;
+      },
+      getNumberOfOptions: () => menu.items.length,
+      getTextForOptionAtIndex: index => menu.items[index].textContent,
+      getValueForOptionAtIndex: index => menu.items[index].dataset.value || menu.items[index].textContent,
+      setAttrForOptionAtIndex: (index, attr, value) => menu.items[index].setAttribute(attr, value),
+      rmAttrForOptionAtIndex: (index, attr) => menu.items[index].removeAttribute(attr),
+      getOffsetTopForOptionAtIndex: index => menu.items[index].offsetTop,
+      registerMenuInteractionHandler: (type, handler) => menu.$on(getEventType(type), handler), //menu.$el.addEventListener(type, handler),
+      deregisterMenuInteractionHandler: (type, handler) => menu.$off(getEventType(type), handler), //menu.$el.removeEventListener(type, handler),
+      notifyChange: () => this.$emit("change", this.foundation.getValue()),
+      getWindowInnerHeight: () => window.innerHeight,
+      addBodyClass: className => document.body.classList.add(className),
+      removeBodyClass: className => document.body.classList.remove(className)
+    });
+    // Fix the selection handler before initializing
+    const selectionHandler = this.foundation.selectionHandler_;
+    this.foundation.selectionHandler_ = (index) => selectionHandler({ detail: { index } });
+
+    this.foundation.init();
+    this.foundation.setDisabled(this.disabled);
+    this.value && this.$_setIndexFromValue(this.value, false);
+  },
+  beforeDestroy() {
+    this.foundation.destroy();
+  },
+  methods: {
+    $_setIndexFromValue(needle, emit = true) {
+      const { menu, label } = this.$refs;
+
+      const index = menu.items.findIndex(item => {
+        const value = item.dataset.value || item.textContent;
+        return value === needle;
+      });
+      if(index >= 0 && this.foundation.getSelectedIndex() !== index) {
+        this.foundation.setSelectedIndex(index);
+        emit && this.$emit("change", needle);
+        // Fix the label so it floats correctly
+        label.classList.add(MDCSelectFoundation.cssClasses.LABEL_FLOAT_ABOVE);
+      }
+    }
+  }
+};
+
+var SelectItem = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('li',{staticClass:"mdc-list-item",attrs:{"role":"option","aria-disabled":_vm.disabled && 'true',"tabindex":_vm.disabled ? '-1' : '0',"data-value":_vm.value}},[_vm._v(_vm._s(_vm.label))])},staticRenderFns: [],
+  name: "MdcSelectItem",
+  props: {
+    disabled: Boolean,
+    value: String,
+    label: {
+      type: String,
+      required: true
+    }
+  }
+};
+
+function install$17(Vue) {
+  Vue.component(Select$1.name, Select$1);
+  Vue.component(SelectItem.name, SelectItem);
+}
+
+var Select = Object.freeze({
+	Select: Select$1,
+	SelectItem: SelectItem,
+	install: install$17
+});
+
+/**
+ * Copyright 2016 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+const cssClasses$12 = {
+  ROOT: 'mdc-snackbar',
+  TEXT: 'mdc-snackbar__text',
+  ACTION_WRAPPER: 'mdc-snackbar__action-wrapper',
+  ACTION_BUTTON: 'mdc-snackbar__action-button',
+  ACTIVE: 'mdc-snackbar--active',
+  MULTILINE: 'mdc-snackbar--multiline',
+  ACTION_ON_BOTTOM: 'mdc-snackbar--action-on-bottom',
+};
+
+const strings$12 = {
+  TEXT_SELECTOR: '.mdc-snackbar__text',
+  ACTION_WRAPPER_SELECTOR: '.mdc-snackbar__action-wrapper',
+  ACTION_BUTTON_SELECTOR: '.mdc-snackbar__action-button',
+  SHOW_EVENT: 'MDCSnackbar:show',
+  HIDE_EVENT: 'MDCSnackbar:hide',
+};
+
+const numbers$3 = {
+  MESSAGE_TIMEOUT: 2750,
+};
+
+/**
+ * Copyright 2016 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+class MDCSnackbarFoundation extends MDCFoundation {
+  static get cssClasses() {
+    return cssClasses$12;
+  }
+
+  static get strings() {
+    return strings$12;
+  }
+
+  static get defaultAdapter() {
+    return {
+      addClass: (/* className: string */) => {},
+      removeClass: (/* className: string */) => {},
+      setAriaHidden: () => {},
+      unsetAriaHidden: () => {},
+      setActionAriaHidden: () => {},
+      unsetActionAriaHidden: () => {},
+      setActionText: (/* actionText: string */) => {},
+      setMessageText: (/* message: string */) => {},
+      setFocus: () => {},
+      visibilityIsHidden: () => /* boolean */ false,
+      registerCapturedBlurHandler: (/* handler: EventListener */) => {},
+      deregisterCapturedBlurHandler: (/* handler: EventListener */) => {},
+      registerVisibilityChangeHandler: (/* handler: EventListener */) => {},
+      deregisterVisibilityChangeHandler: (/* handler: EventListener */) => {},
+      registerCapturedInteractionHandler: (/* evtType: string, handler: EventListener */) => {},
+      deregisterCapturedInteractionHandler: (/* evtType: string, handler: EventListener */) => {},
+      registerActionClickHandler: (/* handler: EventListener */) => {},
+      deregisterActionClickHandler: (/* handler: EventListener */) => {},
+      registerTransitionEndHandler: (/* handler: EventListener */) => {},
+      deregisterTransitionEndHandler: (/* handler: EventListener */) => {},
+      notifyShow: () => {},
+      notifyHide: () => {},
+    };
+  }
+
+  get active() {
+    return this.active_;
+  }
+
+  constructor(adapter) {
+    super(Object.assign(MDCSnackbarFoundation.defaultAdapter, adapter));
+
+    this.active_ = false;
+    this.actionWasClicked_ = false;
+    this.dismissOnAction_ = true;
+    this.firstFocus_ = true;
+    this.pointerDownRecognized_ = false;
+    this.snackbarHasFocus_ = false;
+    this.snackbarData_ = null;
+    this.queue_ = [];
+    this.actionClickHandler_ = () => {
+      this.actionWasClicked_ = true;
+      this.invokeAction_();
+    };
+    this.visibilitychangeHandler_ = () => {
+      clearTimeout(this.timeoutId_);
+      this.snackbarHasFocus_ = true;
+
+      if (!this.adapter_.visibilityIsHidden()) {
+        setTimeout(this.cleanup_.bind(this), this.snackbarData_.timeout || numbers$3.MESSAGE_TIMEOUT);
+      }
+    };
+    this.interactionHandler_ = (evt) => {
+      if (evt.type == 'touchstart' || evt.type == 'mousedown') {
+        this.pointerDownRecognized_ = true;
+      }
+      this.handlePossibleTabKeyboardFocus_(evt);
+
+      if (evt.type == 'focus') {
+        this.pointerDownRecognized_ = false;
+      }
+    };
+    this.blurHandler_ = () => {
+      clearTimeout(this.timeoutId_);
+      this.snackbarHasFocus_ = false;
+      this.timeoutId_ = setTimeout(this.cleanup_.bind(this), this.snackbarData_.timeout || numbers$3.MESSAGE_TIMEOUT);
+    };
+  }
+
+  init() {
+    this.adapter_.registerActionClickHandler(this.actionClickHandler_);
+    this.adapter_.setAriaHidden();
+    this.adapter_.setActionAriaHidden();
+  }
+
+  destroy() {
+    this.adapter_.deregisterActionClickHandler(this.actionClickHandler_);
+    this.adapter_.deregisterCapturedBlurHandler(this.blurHandler_);
+    this.adapter_.deregisterVisibilityChangeHandler(this.visibilitychangeHandler_);
+    ['touchstart', 'mousedown', 'focus'].forEach((evtType) => {
+      this.adapter_.deregisterCapturedInteractionHandler(evtType, this.interactionHandler_);
+    });
+  }
+
+  dismissesOnAction() {
+    return this.dismissOnAction_;
+  }
+
+  setDismissOnAction(dismissOnAction) {
+    this.dismissOnAction_ = !!dismissOnAction;
+  }
+
+  show(data) {
+    if (!data) {
+      throw new Error(
+        'Please provide a data object with at least a message to display.');
+    }
+    if (!data.message) {
+      throw new Error('Please provide a message to be displayed.');
+    }
+    if (data.actionHandler && !data.actionText) {
+      throw new Error('Please provide action text with the handler.');
+    }
+    if (this.active) {
+      this.queue_.push(data);
+      return;
+    }
+    clearTimeout(this.timeoutId_);
+    this.snackbarData_ = data;
+    this.firstFocus_ = true;
+    this.adapter_.registerVisibilityChangeHandler(this.visibilitychangeHandler_);
+    this.adapter_.registerCapturedBlurHandler(this.blurHandler_);
+    ['touchstart', 'mousedown', 'focus'].forEach((evtType) => {
+      this.adapter_.registerCapturedInteractionHandler(evtType, this.interactionHandler_);
+    });
+
+    const {ACTIVE, MULTILINE, ACTION_ON_BOTTOM} = cssClasses$12;
+
+    this.adapter_.setMessageText(this.snackbarData_.message);
+
+    if (this.snackbarData_.multiline) {
+      this.adapter_.addClass(MULTILINE);
+      if (this.snackbarData_.actionOnBottom) {
+        this.adapter_.addClass(ACTION_ON_BOTTOM);
+      }
+    }
+
+    if (this.snackbarData_.actionHandler) {
+      this.adapter_.setActionText(this.snackbarData_.actionText);
+      this.actionHandler_ = this.snackbarData_.actionHandler;
+      this.setActionHidden_(false);
+    } else {
+      this.setActionHidden_(true);
+      this.actionHandler_ = null;
+      this.adapter_.setActionText(null);
+    }
+
+    this.active_ = true;
+    this.adapter_.addClass(ACTIVE);
+    this.adapter_.unsetAriaHidden();
+    this.adapter_.notifyShow();
+
+    this.timeoutId_ = setTimeout(this.cleanup_.bind(this), this.snackbarData_.timeout || numbers$3.MESSAGE_TIMEOUT);
+  }
+
+  handlePossibleTabKeyboardFocus_() {
+    const hijackFocus =
+      this.firstFocus_ && !this.pointerDownRecognized_;
+
+    if (hijackFocus) {
+      this.setFocusOnAction_();
+    }
+
+    this.firstFocus_ = false;
+  }
+
+  setFocusOnAction_() {
+    this.adapter_.setFocus();
+    this.snackbarHasFocus_ = true;
+    this.firstFocus_ = false;
+  }
+
+  invokeAction_() {
+    try {
+      if (!this.actionHandler_) {
+        return;
+      }
+
+      this.actionHandler_();
+    } finally {
+      if (this.dismissOnAction_) {
+        this.cleanup_();
+      }
+    }
+  }
+
+  cleanup_() {
+    const allowDismissal = !this.snackbarHasFocus_ || this.actionWasClicked_;
+
+    if (allowDismissal) {
+      const {ACTIVE, MULTILINE, ACTION_ON_BOTTOM} = cssClasses$12;
+
+      this.adapter_.removeClass(ACTIVE);
+
+      const handler = () => {
+        clearTimeout(this.timeoutId_);
+        this.adapter_.deregisterTransitionEndHandler(handler);
+        this.adapter_.removeClass(MULTILINE);
+        this.adapter_.removeClass(ACTION_ON_BOTTOM);
+        this.setActionHidden_(true);
+        this.adapter_.setAriaHidden();
+        this.active_ = false;
+        this.snackbarHasFocus_ = false;
+        this.adapter_.notifyHide();
+        this.showNext_();
+      };
+
+      this.adapter_.registerTransitionEndHandler(handler);
+    }
+  }
+
+  showNext_() {
+    if (!this.queue_.length) {
+      return;
+    }
+    this.show(this.queue_.shift());
+  }
+
+  setActionHidden_(isHidden) {
+    if (isHidden) {
+      this.adapter_.setActionAriaHidden();
+    } else {
+      this.adapter_.unsetActionAriaHidden();
+    }
+  }
+}
+
+const transitionend = getCorrectEventName(window, "transitionend");
+var Snackbar$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-snackbar",class:_vm.cssClasses,attrs:{"aria-live":"assertive","aria-atomic":"true","aria-hidden":_vm.hidden && 'true'}},[_c('div',{staticClass:"mdc-snackbar__text"},[_vm._v(_vm._s(_vm.messageText))]),_c('div',{staticClass:"mdc-snackbar__action__wrapper"},[_c('button',{ref:"actionButton",staticClass:"mdc-snackbar__action-button",attrs:{"type":"button","aria-hidden":_vm.actionHidden && 'true'}},[_vm._v(_vm._s(_vm.actionText))])])])},staticRenderFns: [],
+  name: "MdcSnackbar",
+  props: {
+    alignStart: Boolean,
+    dismissesOnAction: {
+      type: Boolean,
+      default: true
+    }
+  },
+  watch: {
+    dismissesOnAction(value) {
+      this.foundation.setDismissOnAction(value);
+    }
+  },
+  data() {
+    return { messageText: null, actionText: null, hidden: true, actionHidden: true };
+  },
+  mounted() {
+    const { $el } = this;
+    const { actionButton } = this.$refs;
+
+    this.foundation = new MDCSnackbarFoundation({
+      addClass: className => {
+        $el.classList.add(className);
+      },
+      removeClass: className => {
+        $el.classList.remove(className);
+      },
+      setAriaHidden: () => {
+        this.hidden = true;
+      },
+      unsetAriaHidden: () => {
+        this.hidden = false;
+      },
+      setActionAriaHidden: () => {
+        this.actionHidden = true;
+      },
+      unsetActionAriaHidden: () => {
+        this.actionHidden = false;
+      },
+      setActionText: text => {
+        this.actionText = text;
+      },
+      setMessageText: text => {
+        this.messageText = text;
+      },
+      setFocus: () => actionButton.focus(),
+      visibilityIsHidden: () => document.hidden,
+      // Interactions
+      registerCapturedBlurHandler: handler => actionButton.addEventListener("blur", handler, true),
+      deregisterCapturedBlurHandler: handler => actionButton.removeEventListener("blur", handler, true),
+      registerVisibilityChangeHandler: handler => document.addEventListener("visibilitychange", handler),
+      deregisterVisibilityChangeHandler: handler => document.removeEventListener("visibilitychange", handler),
+      registerCapturedInteractionHandler: (evt, handler) => document.body.addEventListener(evt, handler, true),
+      deregisterCapturedInteractionHandler: (evt, handler) => document.body.removeEventListener(evt, handler, true),
+      registerActionClickHandler: handler => actionButton.addEventListener("click", handler),
+      deregisterActionClickHandler: handler => actionButton.removeEventListener("click", handler),
+      registerTransitionEndHandler: handler => $el.addEventListener(transitionend, handler),
+      deregisterTransitionEndHandler: handler => $el.removeEventListener(transitionend, handler),
+      // Events
+      notifyShow: () => this.$emit("show"),
+      notifyHide: () => this.$emit("hide"),
+    });
+    this.foundation.init();
+
+    this.foundation.setDismissOnAction(this.dismissesOnAction);
+  },
+  beforeDestroy() {
+    this.foundation.destroy();
+  },
+  computed: {
+    cssClasses() {
+      return {
+        "mdc-snackbar--align-start": this.alignStart
+      };
+    }
+  },
+  methods: {
+    show(data) {
+      this.foundation.show(data);
+    }
+  }
+};
+
+function install$18(Vue) {
+  Vue.component(Snackbar$1.name, Snackbar$1);
+}
+
+var Snackbar = Object.freeze({
+	Snackbar: Snackbar$1,
+	install: install$18
+});
+
+var Switch$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-switch",class:_vm.cssClasses},[_c('input',_vm._b({directives:[{name:"model",rawName:"v-model",value:(_vm.model),expression:"model"}],staticClass:"mdc-switch__native-control",attrs:{"type":"checkbox","disabled":_vm.disabled},domProps:{"checked":Array.isArray(_vm.model)?_vm._i(_vm.model,null)>-1:(_vm.model)},on:{"change":function($event){var $$a=_vm.model,$$el=$event.target,$$c=$$el.checked?(true):(false);if(Array.isArray($$a)){var $$v=null,$$i=_vm._i($$a,$$v);if($$el.checked){$$i<0&&(_vm.model=$$a.concat([$$v]));}else{$$i>-1&&(_vm.model=$$a.slice(0,$$i).concat($$a.slice($$i+1)));}}else{_vm.model=$$c;}}}},'input',_vm.$attrs,false)),_vm._m(0)])},staticRenderFns: [function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-switch__background"},[_c('div',{staticClass:"mdc-switch__knob"})])}],
+  name: "MdcSwitch",
+  inheritAttrs: false,
+  model: {
+    prop: "checked",
+    event: "change"
+  },
+  
+  props: {
+    disabled: Boolean,
+    checked: [Boolean, Array]
+  },
+  computed: {
+    model: {
+      get() {
+        return this.checked;
+      },
+      set(value) {
+        this.$emit("change", value);
+      }
+    },
+    cssClasses() {
+      return {
+        "mdc-switch--disabled": this.disabled
+      };
+    }
+  }
+};
+
+function install$19(Vue) {
+  Vue.component(Switch$1.name, Switch$1);
+}
+
+var Switch = Object.freeze({
+	Switch: Switch$1,
+	install: install$19
+});
+
+/**
+ * Copyright 2017 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+const cssClasses$13 = {
+  ACTIVE: 'mdc-tab--active',
+};
+
+const strings$13 = {
+  SELECTED_EVENT: 'MDCTab:selected',
+};
+
+/**
+ * Copyright 2017 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+class MDCTabFoundation extends MDCFoundation {
+  static get cssClasses() {
+    return cssClasses$13;
+  }
+
+  static get strings() {
+    return strings$13;
+  }
+
+  static get defaultAdapter() {
+    return {
+      addClass: (/* className: string */) => {},
+      removeClass: (/* className: string */) => {},
+      registerInteractionHandler: (/* type: string, handler: EventListener */) => {},
+      deregisterInteractionHandler: (/* type: string, handler: EventListener */) => {},
+      getOffsetWidth: () => /* number */ 0,
+      getOffsetLeft: () => /* number */ 0,
+      notifySelected: () => {},
+    };
+  }
+
+  constructor(adapter = {}) {
+    super(Object.assign(MDCTabFoundation.defaultAdapter, adapter));
+
+    this.computedWidth_ = 0;
+    this.computedLeft_ = 0;
+    this.isActive_ = false;
+    this.preventDefaultOnClick_ = false;
+
+    this.clickHandler_ = (evt) => {
+      if (this.preventDefaultOnClick_) {
+        evt.preventDefault();
+      }
+      this.adapter_.notifySelected();
+    };
+
+    this.keydownHandler_ = (evt) => {
+      if (evt.key && evt.key === 'Enter' || evt.keyCode === 13) {
+        this.adapter_.notifySelected();
+      }
+    };
+  }
+
+  init() {
+    this.adapter_.registerInteractionHandler('click', this.clickHandler_);
+    this.adapter_.registerInteractionHandler('keydown', this.keydownHandler_);
+  }
+
+  destroy() {
+    this.adapter_.deregisterInteractionHandler('click', this.clickHandler_);
+    this.adapter_.deregisterInteractionHandler('keydown', this.keydownHandler_);
+  }
+
+  getComputedWidth() {
+    return this.computedWidth_;
+  }
+
+  getComputedLeft() {
+    return this.computedLeft_;
+  }
+
+  isActive() {
+    return this.isActive_;
+  }
+
+  setActive(isActive) {
+    this.isActive_ = isActive;
+    if (this.isActive_) {
+      this.adapter_.addClass(cssClasses$13.ACTIVE);
+    } else {
+      this.adapter_.removeClass(cssClasses$13.ACTIVE);
+    }
+  }
+
+  preventsDefaultOnClick() {
+    return this.preventDefaultOnClick_;
+  }
+
+  setPreventDefaultOnClick(preventDefaultOnClick) {
+    this.preventDefaultOnClick_ = preventDefaultOnClick;
+  }
+
+  measureSelf() {
+    this.computedWidth_ = this.adapter_.getOffsetWidth();
+    this.computedLeft_ = this.adapter_.getOffsetLeft();
+  }
+}
+
+var Tab = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('mdc-link',_vm._b({staticClass:"mdc-tab",attrs:{"role":"tab","link":_vm.link}},'mdc-link',_vm.$_link,false),[(_vm.icon)?[_c('mdc-icon',{attrs:{"name":"tab","icon":_vm.icon}}),(_vm.text)?_c('span',{staticClass:"mdc-tab__icon-text"},[_vm._v(_vm._s(_vm.text))]):_vm._e()]:[_vm._v(_vm._s(_vm.text))]],2)},staticRenderFns: [],
+  name: "MdcTab",
+  mixins: [ Ripple(), install$7("mdc-tab--active") ],
+  components: { MdcIcon: MdcIcon$1 },
+  props: {
+    link: String,
+    icon: String,
+    text: String
+  },
+
+  mounted() {
+    const { $el } = this;
+
+    this.foundation = new MDCTabFoundation({
+      addClass: className => $el.classList.add(className),
+      removeClass: className => $el.classList.remove(className),
+      registerInteractionHandler: (type, handler) => $el.addEventListener(type, handler),
+      deregisterInteractionHandler: (type, handler) => $el.removeEventListener(type, handler),
+      getOffsetWidth: () => $el.offsetWidth,
+      getOffsetLeft: () => $el.offsetLeft,
+      notifySelected: () => this.$parent.$emit("selected", this),
+    });
+    this.foundation.init();
+  },
+  beforeDestroy() {
+    this.foundation.destroy();
+  },
+  methods: {
+    computedWidth() {
+      return this.foundation.getComputedWidth();
+    },
+    computedLeft() {
+      return this.foundation.getComputedLeft();
+    },
+    setActive(value) {
+      this.foundation.setActive(value);
+    },
+    isActive() {
+      return this.foundation.isActive();
+    },
+    preventsDefaultOnClick() {
+      return this.foundation.preventsDefaultOnClick();
+    },
+    preventDefaultOnClick(preventDefaultOnClick) {
+      this.foundation.setPreventDefaultOnClick(preventDefaultOnClick);
+    },
+    measureSelf() {
+      this.foundation.measureSelf();
+    }
+  }
+};
+
+/**
+ * Copyright 2017 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+const cssClasses$14 = {
+  UPGRADED: 'mdc-tab-bar-upgraded',
+};
+
+const strings$14 = {
+  TAB_SELECTOR: '.mdc-tab',
+  INDICATOR_SELECTOR: '.mdc-tab-bar__indicator',
+  CHANGE_EVENT: 'MDCTabBar:change',
+};
+
+/**
+ * Copyright 2017 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+class MDCTabBarFoundation extends MDCFoundation {
+  static get cssClasses() {
+    return cssClasses$14;
+  }
+
+  static get strings() {
+    return strings$14;
+  }
+
+  static get defaultAdapter() {
+    return {
+      addClass: (/* className: string */) => {},
+      removeClass: (/* className: string */) => {},
+      bindOnMDCTabSelectedEvent: () => {},
+      unbindOnMDCTabSelectedEvent: () => {},
+      registerResizeHandler: (/* handler: EventListener */) => {},
+      deregisterResizeHandler: (/* handler: EventListener */) => {},
+      getOffsetWidth: () => /* number */ 0,
+      setStyleForIndicator: (/* propertyName: string, value: string */) => {},
+      getOffsetWidthForIndicator: () => /* number */ 0,
+      notifyChange: (/* evtData: {activeTabIndex: number} */) => {},
+      getNumberOfTabs: () => /* number */ 0,
+      isTabActiveAtIndex: (/* index: number */) => /* boolean */ false,
+      setTabActiveAtIndex: (/* index: number, isActive: true */) => {},
+      isDefaultPreventedOnClickForTabAtIndex: (/* index: number */) => /* boolean */ false,
+      setPreventDefaultOnClickForTabAtIndex: (/* index: number, preventDefaultOnClick: boolean */) => {},
+      measureTabAtIndex: (/* index: number */) => {},
+      getComputedWidthForTabAtIndex: (/* index: number */) => /* number */ 0,
+      getComputedLeftForTabAtIndex: (/* index: number */) => /* number */ 0,
+    };
+  }
+
+  constructor(adapter) {
+    super(Object.assign(MDCTabBarFoundation.defaultAdapter, adapter));
+
+    this.isIndicatorShown_ = false;
+    this.computedWidth_ = 0;
+    this.computedLeft_ = 0;
+    this.activeTabIndex_ = 0;
+    this.layoutFrame_ = 0;
+    this.resizeHandler_ = () => this.layout();
+  }
+
+  init() {
+    this.adapter_.addClass(cssClasses$14.UPGRADED);
+    this.adapter_.bindOnMDCTabSelectedEvent();
+    this.adapter_.registerResizeHandler(this.resizeHandler_);
+    const activeTabIndex = this.findActiveTabIndex_();
+    if (activeTabIndex >= 0) {
+      this.activeTabIndex_ = activeTabIndex;
+    }
+    this.layout();
+  }
+
+  destroy() {
+    this.adapter_.removeClass(cssClasses$14.UPGRADED);
+    this.adapter_.unbindOnMDCTabSelectedEvent();
+    this.adapter_.deregisterResizeHandler(this.resizeHandler_);
+  }
+
+  layoutInternal_() {
+    this.forEachTabIndex_((index) => this.adapter_.measureTabAtIndex(index));
+    this.computedWidth_ = this.adapter_.getOffsetWidth();
+    this.layoutIndicator_();
+  }
+
+  layoutIndicator_() {
+    const isIndicatorFirstRender = !this.isIndicatorShown_;
+
+    // Ensure that indicator appears in the right position immediately for correct first render.
+    if (isIndicatorFirstRender) {
+      this.adapter_.setStyleForIndicator('transition', 'none');
+    }
+
+    const translateAmtForActiveTabLeft = this.adapter_.getComputedLeftForTabAtIndex(this.activeTabIndex_);
+    const scaleAmtForActiveTabWidth =
+      this.adapter_.getComputedWidthForTabAtIndex(this.activeTabIndex_) / this.adapter_.getOffsetWidth();
+
+    const transformValue = `translateX(${translateAmtForActiveTabLeft}px) scale(${scaleAmtForActiveTabWidth}, 1)`;
+    this.adapter_.setStyleForIndicator(getCorrectPropertyName(window, 'transform'), transformValue);
+
+    if (isIndicatorFirstRender) {
+      // Force layout so that transform styles to take effect.
+      this.adapter_.getOffsetWidthForIndicator();
+      this.adapter_.setStyleForIndicator('transition', '');
+      this.adapter_.setStyleForIndicator('visibility', 'visible');
+      this.isIndicatorShown_ = true;
+    }
+  }
+
+  findActiveTabIndex_() {
+    let activeTabIndex = -1;
+    this.forEachTabIndex_((index) => {
+      if (this.adapter_.isTabActiveAtIndex(index)) {
+        activeTabIndex = index;
+        return true;
+      }
+    });
+    return activeTabIndex;
+  }
+
+  forEachTabIndex_(iterator) {
+    const numTabs = this.adapter_.getNumberOfTabs();
+    for (let index = 0; index < numTabs; index++) {
+      const shouldBreak = iterator(index);
+      if (shouldBreak) {
+        break;
+      }
+    }
+  }
+
+  layout() {
+    if (this.layoutFrame_) {
+      cancelAnimationFrame(this.layoutFrame_);
+    }
+
+    this.layoutFrame_ = requestAnimationFrame(() => {
+      this.layoutInternal_();
+      this.layoutFrame_ = 0;
+    });
+  }
+
+  switchToTabAtIndex(index, shouldNotify) {
+    if (index === this.activeTabIndex_) {
+      return;
+    }
+
+    if (index < 0 || index >= this.adapter_.getNumberOfTabs()) {
+      throw new Error(`Out of bounds index specified for tab: ${index}`);
+    }
+
+    const prevActiveTabIndex = this.activeTabIndex_;
+    this.activeTabIndex_ = index;
+    requestAnimationFrame(() => {
+      if (prevActiveTabIndex >= 0) {
+        this.adapter_.setTabActiveAtIndex(prevActiveTabIndex, false);
+      }
+      this.adapter_.setTabActiveAtIndex(this.activeTabIndex_, true);
+      this.layoutIndicator_();
+      if (shouldNotify) {
+        this.adapter_.notifyChange({activeTabIndex: this.activeTabIndex_});
+      }
+    });
+  }
+
+  getActiveTabIndex() {
+    return this.findActiveTabIndex_();
+  }
+}
+
+var MdcTabBar = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('nav',{staticClass:"mdc-tab-bar",class:_vm.cssClasses},[_vm._t("default"),_c('span',{ref:"indicator",staticClass:"mdc-tab-bar__indicator",style:(_vm.getIndicatorStyle)})],2)},staticRenderFns: [],
+  name: "MdcTabBar",
+  props: {
+    icons: Boolean,
+    iconsWithText: Boolean,
+    primary: Boolean,
+    secondary: Boolean
+  },
+  data() {
+    return { index: -1, tabs: [] };
+  },
+  computed: {
+    cssClasses() {
+      return {
+        "mdc-tab-bar--upgraded": true,
+        "mdc-tab-bar--icon-tab-bar": this.icons,
+        "mdc-tab-bar--icons-with-text": this.iconsWithText
+      };
+    }
+  },
+  mounted() {
+    const { $el } = this;
+    const { indicator } = this.$refs;
+
+    this.tabs = this.$children;
+
+    this.foundation = new MDCTabBarFoundation({
+      addClass: className => $el.classList.add(className),
+      removeClass: className => $el.classList.remove(className),
+      bindOnMDCTabSelectedEvent: () => this.$on("selected", this.onSelected),
+      unbindOnMDCTabSelectedEvent: () => this.$off("selected", this.onSelected),
+      registerResizeHandler: handler => window.addEventListener("resize", handler),
+      deregisterResizeHandler: handler => window.removeEventListener("resize", handler),
+      getOffsetWidth: () => $el.offsetWidth,
+      setStyleForIndicator: (prop, value) => {
+        indicator.style[prop] = value;
+      },
+      getOffsetWidthForIndicator: () => indicator.offsetWidth,
+      notifyChange: data => this.$emit("change", data),
+      getNumberOfTabs: () => this.tabs.length,
+      isTabActiveAtIndex: index => this.tabs[index].isActive(),
+      setTabActiveAtIndex: (index, active) => this.tabs[index].setActive(active),
+      isDefaultPreventedOnClickForTabAtIndex: index => this.tabs[index].preventsDefaultOnClick(),
+      setPreventDefaultOnClickForTabAtIndex: (index, value) => this.tabs[index].preventDefaultOnClick(value),
+      measureTabAtIndex: index => this.tabs[index].measureSelf(),
+      getComputedWidthForTabAtIndex: index => this.tabs[index].computedWidth(),
+      getComputedLeftForTabAtIndex: index => this.tabs[index].computedLeft(),
+    });
+    this.foundation.init();
+  },
+  beforeDestroy() {
+    this.foundation.destroy();
+  },
+  methods: {
+    onSelected(tab) {
+      const index = this.tabs.indexOf(tab);
+
+      if(index < 0) {
+        throw new Error("Invalid tab?");
+      }
+      this.foundation.switchToTabAtIndex(index, true);
+    }
+  }
+};
+
+/**
+ * Copyright 2017 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+const cssClasses$15 = {
+  INDICATOR_FORWARD: 'mdc-tab-bar-scroller__indicator--forward',
+  INDICATOR_BACK: 'mdc-tab-bar-scroller__indicator--back',
+  INDICATOR_ENABLED: 'mdc-tab-bar-scroller__indicator--enabled',
+  TAB: 'mdc-tab',
+};
+
+const strings$15 = {
+  FRAME_SELECTOR: '.mdc-tab-bar-scroller__scroll-frame',
+  TABS_SELECTOR: '.mdc-tab-bar-scroller__scroll-frame__tabs',
+  TAB_SELECTOR: '.mdc-tab',
+  INDICATOR_FORWARD_SELECTOR: '.mdc-tab-bar-scroller__indicator--forward',
+  INDICATOR_BACK_SELECTOR: '.mdc-tab-bar-scroller__indicator--back',
+};
+
+/**
+ * Copyright 2017 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+
+class MDCTabBarScrollerFoundation extends MDCFoundation {
+  static get cssClasses() {
+    return cssClasses$15;
+  }
+
+  static get strings() {
+    return strings$15;
+  }
+
+  static get defaultAdapter() {
+    return {
+      addClass: (/* className: string */) => {},
+      removeClass: (/* className: string */) => {},
+      eventTargetHasClass: (/* target: EventTarget, className: string */) => /* boolean */ false,
+      addClassToForwardIndicator: (/* className: string */) => {},
+      removeClassFromForwardIndicator: (/* className: string */) => {},
+      addClassToBackIndicator: (/* className: string */) => {},
+      removeClassFromBackIndicator: (/* className: string */) => {},
+      isRTL: () => /* boolean */ false,
+      registerBackIndicatorClickHandler: (/* handler: EventListener */) => {},
+      deregisterBackIndicatorClickHandler: (/* handler: EventListener */) => {},
+      registerForwardIndicatorClickHandler: (/* handler: EventListener */) => {},
+      deregisterForwardIndicatorClickHandler: (/* handler: EventListener */) => {},
+      registerCapturedInteractionHandler: (/* evt: string, handler: EventListener */) => {},
+      deregisterCapturedInteractionHandler: (/* evt: string, handler: EventListener */) => {},
+      registerWindowResizeHandler: (/* handler: EventListener */) => {},
+      deregisterWindowResizeHandler: (/* handler: EventListener */) => {},
+      getNumberOfTabs: () => /* number */ 0,
+      getComputedWidthForTabAtIndex: () => /* number */ 0,
+      getComputedLeftForTabAtIndex: () => /* number */ 0,
+      getOffsetWidthForScrollFrame: () => /* number */ 0,
+      getScrollLeftForScrollFrame: () => /* number */ 0,
+      setScrollLeftForScrollFrame: (/* scrollLeftAmount: number */) => {},
+      getOffsetWidthForTabBar: () => /* number */ 0,
+      setTransformStyleForTabBar: (/* value: string */) => {},
+      getOffsetLeftForEventTarget: (/* target: EventTarget */) => /* number */ 0,
+      getOffsetWidthForEventTarget: (/* target: EventTarget */) => /* number */ 0,
+    };
+  }
+
+  constructor(adapter) {
+    super(Object.assign(MDCTabBarScrollerFoundation.defaultAdapter, adapter));
+
+    this.pointerDownRecognized_ = false;
+    this.currentTranslateOffset_ = 0;
+    this.focusedTarget_ = null;
+    this.layoutFrame_ = 0;
+    this.scrollFrameScrollLeft_ = 0;
+    this.forwardIndicatorClickHandler_ = (evt) => this.scrollForward(evt);
+    this.backIndicatorClickHandler_ = (evt) => this.scrollBack(evt);
+    this.resizeHandler_ = () => this.layout();
+    this.interactionHandler_ = (evt) => {
+      if (evt.type == 'touchstart' || evt.type == 'mousedown') {
+        this.pointerDownRecognized_ = true;
+      }
+      this.handlePossibleTabKeyboardFocus_(evt);
+
+      if (evt.type == 'focus') {
+        this.pointerDownRecognized_ = false;
+      }
+    };
+  }
+
+  init() {
+    this.adapter_.registerBackIndicatorClickHandler(this.backIndicatorClickHandler_);
+    this.adapter_.registerForwardIndicatorClickHandler(this.forwardIndicatorClickHandler_);
+    this.adapter_.registerWindowResizeHandler(this.resizeHandler_);
+    ['touchstart', 'mousedown', 'focus'].forEach((evtType) => {
+      this.adapter_.registerCapturedInteractionHandler(evtType, this.interactionHandler_);
+    });
+    this.layout();
+  }
+
+  destroy() {
+    this.adapter_.deregisterBackIndicatorClickHandler(this.backIndicatorClickHandler_);
+    this.adapter_.deregisterForwardIndicatorClickHandler(this.forwardIndicatorClickHandler_);
+    this.adapter_.deregisterWindowResizeHandler(this.resizeHandler_);
+    ['touchstart', 'mousedown', 'focus'].forEach((evtType) => {
+      this.adapter_.deregisterCapturedInteractionHandler(evtType, this.interactionHandler_);
+    });
+  }
+
+  scrollBack(evt = null) {
+    if (evt) {
+      evt.preventDefault();
+    }
+
+    let tabWidthAccumulator = 0;
+    let scrollTargetIndex = 0;
+
+    for (let i = this.adapter_.getNumberOfTabs() - 1; i > 0; i--) {
+      const tabOffsetLeft = this.adapter_.getComputedLeftForTabAtIndex(i);
+      const tabBarWidthLessTabOffsetLeft = this.adapter_.getOffsetWidthForTabBar() - tabOffsetLeft;
+
+      let tabIsNotOccluded = tabOffsetLeft > this.currentTranslateOffset_;
+      if (this.isRTL_()) {
+        tabIsNotOccluded = tabBarWidthLessTabOffsetLeft > this.currentTranslateOffset_;
+      }
+
+      if (tabIsNotOccluded) {
+        continue;
+      }
+
+      tabWidthAccumulator += this.adapter_.getComputedWidthForTabAtIndex(i);
+
+      const scrollTargetDetermined = tabWidthAccumulator > this.adapter_.getOffsetWidthForScrollFrame();
+      if (scrollTargetDetermined) {
+        scrollTargetIndex = this.isRTL_() ? i + 1 : i;
+        break;
+      }
+    }
+
+    this.scrollToTabAtIndex(scrollTargetIndex);
+  }
+
+  scrollForward(evt = null) {
+    if (evt) {
+      evt.preventDefault();
+    }
+
+    const scrollFrameOffsetWidth = this.adapter_.getOffsetWidthForScrollFrame() + this.currentTranslateOffset_;
+    let scrollTargetIndex = 0;
+
+    for (let i = 0; i < this.adapter_.getNumberOfTabs(); i++) {
+      const tabOffsetLeftAndWidth =
+        this.adapter_.getComputedLeftForTabAtIndex(i) + this.adapter_.getComputedWidthForTabAtIndex(i);
+      let scrollTargetDetermined = tabOffsetLeftAndWidth > scrollFrameOffsetWidth;
+
+      if (this.isRTL_()) {
+        const frameOffsetAndTabWidth =
+          scrollFrameOffsetWidth - this.adapter_.getComputedWidthForTabAtIndex(i);
+        const tabOffsetLeftAndWidth =
+          this.adapter_.getComputedLeftForTabAtIndex(i) + this.adapter_.getComputedWidthForTabAtIndex(i);
+        const tabRightOffset =
+          this.adapter_.getOffsetWidthForTabBar() - tabOffsetLeftAndWidth;
+
+        scrollTargetDetermined = tabRightOffset > frameOffsetAndTabWidth;
+      }
+
+      if (scrollTargetDetermined) {
+        scrollTargetIndex = i;
+        break;
+      }
+    }
+
+    this.scrollToTabAtIndex(scrollTargetIndex);
+  }
+
+  layout() {
+    cancelAnimationFrame(this.layoutFrame_);
+    this.scrollFrameScrollLeft_ = this.adapter_.getScrollLeftForScrollFrame();
+    this.layoutFrame_ = requestAnimationFrame(() => this.layout_());
+  }
+
+  isRTL_() {
+    return this.adapter_.isRTL();
+  }
+
+  handlePossibleTabKeyboardFocus_(evt) {
+    if (!this.adapter_.eventTargetHasClass(evt.target, cssClasses$15.TAB) || this.pointerDownRecognized_) {
+      return;
+    }
+
+    const resetAmt = this.isRTL_() ? this.scrollFrameScrollLeft_ : 0;
+    this.adapter_.setScrollLeftForScrollFrame(resetAmt);
+
+    this.focusedTarget_ = evt.target;
+    const scrollFrameWidth = this.adapter_.getOffsetWidthForScrollFrame();
+    const tabBarWidth = this.adapter_.getOffsetWidthForTabBar();
+    const leftEdge = this.adapter_.getOffsetLeftForEventTarget(this.focusedTarget_);
+    const rightEdge = leftEdge + this.adapter_.getOffsetWidthForEventTarget(this.focusedTarget_);
+
+    let shouldScrollBack = rightEdge <= this.currentTranslateOffset_;
+    let shouldScrollForward = rightEdge > this.currentTranslateOffset_ + scrollFrameWidth;
+
+    if (this.isRTL_()) {
+      const normalizedLeftOffset = tabBarWidth - leftEdge;
+      shouldScrollBack = leftEdge >= tabBarWidth - this.currentTranslateOffset_;
+      shouldScrollForward = normalizedLeftOffset > scrollFrameWidth + this.currentTranslateOffset_;
+    }
+
+    if (shouldScrollForward) {
+      this.scrollForward();
+    } else if (shouldScrollBack) {
+      this.scrollBack();
+    }
+
+    this.pointerDownRecognized_ = false;
+  }
+
+  layout_() {
+    const frameWidth = this.adapter_.getOffsetWidthForScrollFrame();
+    const isOverflowing = this.adapter_.getOffsetWidthForTabBar() > frameWidth;
+
+    if (!isOverflowing) {
+      this.currentTranslateOffset_ = 0;
+    }
+
+    this.shiftFrame_();
+    this.updateIndicatorEnabledStates_();
+  }
+
+  scrollToTabAtIndex(index) {
+    const scrollTargetOffsetLeft = this.adapter_.getComputedLeftForTabAtIndex(index);
+    const scrollTargetOffsetWidth = this.adapter_.getComputedWidthForTabAtIndex(index);
+
+    this.currentTranslateOffset_ =
+      this.normalizeForRTL_(scrollTargetOffsetLeft, scrollTargetOffsetWidth);
+
+    requestAnimationFrame(() => this.shiftFrame_());
+  }
+
+  normalizeForRTL_(left, width) {
+    return this.isRTL_() ? this.adapter_.getOffsetWidthForTabBar() - (left + width) : left;
+  }
+
+  shiftFrame_() {
+    const shiftAmount = this.isRTL_() ?
+      this.currentTranslateOffset_ : -this.currentTranslateOffset_;
+
+    this.adapter_.setTransformStyleForTabBar(`translateX(${shiftAmount}px)`);
+    this.updateIndicatorEnabledStates_();
+  }
+
+  updateIndicatorEnabledStates_() {
+    const {INDICATOR_ENABLED} = cssClasses$15;
+    if (this.currentTranslateOffset_ === 0) {
+      this.adapter_.removeClassFromBackIndicator(INDICATOR_ENABLED);
+    } else {
+      this.adapter_.addClassToBackIndicator(INDICATOR_ENABLED);
+    }
+
+    const remainingTabBarWidth = this.adapter_.getOffsetWidthForTabBar() - this.currentTranslateOffset_;
+    if (remainingTabBarWidth > this.adapter_.getOffsetWidthForScrollFrame()) {
+      this.adapter_.addClassToForwardIndicator(INDICATOR_ENABLED);
+    } else {
+      this.adapter_.removeClassFromForwardIndicator(INDICATOR_ENABLED);
+    }
+  }
+}
+
+var TabScroller = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-tab-bar-scroller"},[_c('div',{staticClass:"mdc-tab-bar-scroller__indicator mdc-tab-bar-scroller__indicator--back"},[_c('a',{ref:"backIndicator",staticClass:"mdc-tab-bar-scroller__indicator__inner material-icons",attrs:{"href":"#","aria-label":"scroll back button"}},[_vm._v("navigate_before")])]),_c('div',{ref:"scrollFrame",staticClass:"mdc-tab-bar-scroller__scroll-frame"},[_c('mdc-tab-bar',{ref:"tabBar",staticClass:"mdc-tab-bar-scroller__scroll-frame__tabs"},[_vm._t("default")],2)],1),_c('div',{staticClass:"mdc-tab-bar-scroller__indicator mdc-tab-bar-scroller__indicator--forward"},[_c('a',{ref:"forwardIndicator",staticClass:"mdc-tab-bar-scroller__indicator__inner material-icons",attrs:{"href":"#","aria-label":"scroll forward button"}},[_vm._v("navigate_next")])])])},staticRenderFns: [],
+  name: "MdcTabScroller",
+  inheritAttrs: false,
+  components: { MdcTabBar },
+  computed: {},
+
+  mounted() {
+    const { $el } = this;
+    const { backIndicator, forwardIndicator, scrollFrame, tabBar } = this.$refs;
+
+    const styles = getComputedStyle($el);
+    const transformProp = getCorrectPropertyName(window, "transform");
+
+    this.foundation = new MDCTabBarScrollerFoundation({
+      addClass: className => $el.classList.add(className),
+      removeClass: className => $el.classList.remove(className),
+      eventTargetHasClass: (target, className) => target.classList.contains(className),
+      addClassToForwardIndicator: className => forwardIndicator.classList.add(className),
+      removeClassFromForwardIndicator: className => forwardIndicator.classList.remove(className),
+      addClassToBackIndicator: className => backIndicator.classList.add(className),
+      removeClassFromBackIndicator: className => backIndicator.classList.remove(className),
+      isRTL: () => styles.direction === "rtl",
+      // Interaction handlers
+      registerBackIndicatorClickHandler: (handler) => backIndicator.addEventListener("click", handler),
+      deregisterBackIndicatorClickHandler: (handler) => backIndicator.removeEventListener("click", handler),
+      registerForwardIndicatorClickHandler: (handler) => forwardIndicator.addEventListener("click", handler),
+      deregisterForwardIndicatorClickHandler: (handler) => forwardIndicator.removeEventListener("click", handler),
+      registerCapturedInteractionHandler: (evt, handler) => $el.addEventListener(evt, handler, true),
+      deregisterCapturedInteractionHandler: (evt, handler) => $el.removeEventListener(evt, handler, true),
+      registerWindowResizeHandler: (handler) => window.addEventListener("resize", handler),
+      deregisterWindowResizeHandler: (handler) => window.removeEventListener("resize", handler),
+
+      getNumberOfTabs: () => tabBar.tabs.length,
+      getComputedWidthForTabAtIndex: index => tabBar.tabs[index].$el.computedWidth,
+      getComputedLeftForTabAtIndex: index => tabBar.tabs[index].$el.computedLeft,
+      getOffsetWidthForScrollFrame: () => scrollFrame.offsetWidth,
+      getScrollLeftForScrollFrame: () => scrollFrame.scrollLeft,
+      setScrollLeftForScrollFrame: value => {
+        scrollFrame.scrollLeft = value;
+      },
+      getOffsetWidthForTabBar: () => tabBar.$el.offsetWidth,
+      setTransformStyleForTabBar: value => {
+        tabBar.$el.style[transformProp] = value;
+      },
+      getOffsetLeftForEventTarget: target => target.offsetLeft,
+      getOffsetWidthForEventTarget: target => target.offsetWidth
+    });
+    this.foundation.init();
+  },
+  beforeDestroy() {
+    this.foundation.destroy();
+  }
+};
+
+var TabBar = {
+  functional: true,
+  props: {
+    scroller: Boolean
+  },
+  render(h, ctx) {
+    let tag = ctx.props.scroller ? TabScroller : MdcTabBar;
+    return h(tag, ctx.data, ctx.children);
+  }
+};
+
+function install$20(Vue) {
+  Vue.component(Tab.name, Tab);
+  Vue.component("mdc-tab-bar", TabBar);
+}
+
+var Tabs = Object.freeze({
+	Tab: Tab,
+	TabBar: TabBar,
+	install: install$20
+});
+
+/**
+ * @license
+ * Copyright 2018 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/* eslint no-unused-vars: [2, {"args": "none"}] */
+
+/**
+ * Adapter for MDC TextField Line Ripple.
+ *
+ * Defines the shape of the adapter expected by the foundation. Implement this
+ * adapter to integrate the line ripple into your framework. See
+ * https://github.com/material-components/material-components-web/blob/master/docs/authoring-components.md
+ * for more information.
+ *
+ * @record
+ */
+
+/**
+ * @license
+ * Copyright 2018 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/** @enum {string} */
+const cssClasses$16 = {
+  LINE_RIPPLE_ACTIVE: 'mdc-line-ripple--active',
+  LINE_RIPPLE_DEACTIVATING: 'mdc-line-ripple--deactivating',
+};
+
+/**
+ * @license
+ * Copyright 2017 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+class MDCLineRippleFoundation extends MDCFoundation {
+  /** @return enum {string} */
+  static get cssClasses() {
+    return cssClasses$16;
+  }
+
+  /**
+   * {@see MDCLineRippleAdapter} for typing information on parameters and return
+   * types.
+   * @return {!MDCLineRippleAdapter}
+   */
+  static get defaultAdapter() {
+    return /** @type {!MDCLineRippleAdapter} */ ({
+      addClass: () => {},
+      removeClass: () => {},
+      hasClass: () => {},
+      setAttr: () => {},
+      registerEventHandler: () => {},
+      deregisterEventHandler: () => {},
+    });
+  }
+
+  /**
+   * @param {!MDCLineRippleAdapter=} adapter
+   */
+  constructor(adapter = /** @type {!MDCLineRippleAdapter} */ ({})) {
+    super(Object.assign(MDCLineRippleFoundation.defaultAdapter, adapter));
+
+    /** @private {function(!Event): undefined} */
+    this.transitionEndHandler_ = (evt) => this.handleTransitionEnd(evt);
+  }
+
+  init() {
+    this.adapter_.registerEventHandler('transitionend', this.transitionEndHandler_);
+  }
+
+  destroy() {
+    this.adapter_.deregisterEventHandler('transitionend', this.transitionEndHandler_);
+  }
+
+  /**
+   * Activates the line ripple
+   */
+  activate() {
+    this.adapter_.removeClass(cssClasses$16.LINE_RIPPLE_DEACTIVATING);
+    this.adapter_.addClass(cssClasses$16.LINE_RIPPLE_ACTIVE);
+  }
+
+  /**
+   * Sets the center of the ripple animation to the given X coordinate.
+   * @param {!number} xCoordinate
+   */
+  setRippleCenter(xCoordinate) {
+    const attributeString =
+        `transform-origin: ${xCoordinate}px center`;
+
+    this.adapter_.setAttr('style', attributeString);
+  }
+
+  /**
+   * Deactivates the line ripple
+   */
+  deactivate() {
+    this.adapter_.addClass(cssClasses$16.LINE_RIPPLE_DEACTIVATING);
+  }
+
+  /**
+   * Handles a transition end event
+   * @param {!Event} evt
+   */
+  handleTransitionEnd(evt) {
+    // Wait for the line ripple to be either transparent or opaque
+    // before emitting the animation end event
+    const isDeactivating = this.adapter_.hasClass(cssClasses$16.LINE_RIPPLE_DEACTIVATING);
+
+    if (evt.propertyName === 'opacity') {
+      if (isDeactivating) {
+        this.adapter_.removeClass(cssClasses$16.LINE_RIPPLE_ACTIVE);
+        this.adapter_.removeClass(cssClasses$16.LINE_RIPPLE_DEACTIVATING);
+      }
+    }
+  }
+}
+
+/**
+ * @license
+ * Copyright 2017 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/* eslint no-unused-vars: [2, {"args": "none"}] */
+
+/**
+ * Adapter for MDC Text Field Helper Text.
+ *
+ * Defines the shape of the adapter expected by the foundation. Implement this
+ * adapter to integrate the TextField helper text into your framework. See
+ * https://github.com/material-components/material-components-web/blob/master/docs/authoring-components.md
+ * for more information.
+ *
+ * @record
+ */
+
+/**
+ * @license
+ * Copyright 2016 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/** @enum {string} */
+const strings$16 = {
+  ARIA_HIDDEN: 'aria-hidden',
+  ROLE: 'role',
+};
+
+/** @enum {string} */
+const cssClasses$17 = {
+  HELPER_TEXT_PERSISTENT: 'mdc-text-field-helper-text--persistent',
+  HELPER_TEXT_VALIDATION_MSG: 'mdc-text-field-helper-text--validation-msg',
+};
+
+/**
+ * @license
+ * Copyright 2017 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+class MDCTextFieldHelperTextFoundation extends MDCFoundation {
+  /** @return enum {string} */
+  static get cssClasses() {
+    return cssClasses$17;
+  }
+
+  /** @return enum {string} */
+  static get strings() {
+    return strings$16;
+  }
+
+  /**
+   * {@see MDCTextFieldHelperTextAdapter} for typing information on parameters and return
+   * types.
+   * @return {!MDCTextFieldHelperTextAdapter}
+   */
+  static get defaultAdapter() {
+    return /** @type {!MDCTextFieldHelperTextAdapter} */ ({
+      addClass: () => {},
+      removeClass: () => {},
+      hasClass: () => {},
+      setAttr: () => {},
+      removeAttr: () => {},
+      setContent: () => {},
+    });
+  }
+
+  /**
+   * @param {!MDCTextFieldHelperTextAdapter} adapter
+   */
+  constructor(adapter) {
+    super(Object.assign(MDCTextFieldHelperTextFoundation.defaultAdapter, adapter));
+  }
+
+  /**
+   * Sets the content of the helper text field.
+   * @param {string} content
+   */
+  setContent(content) {
+    this.adapter_.setContent(content);
+  }
+
+  /** @param {boolean} isPersistent Sets the persistency of the helper text. */
+  setPersistent(isPersistent) {
+    if (isPersistent) {
+      this.adapter_.addClass(cssClasses$17.HELPER_TEXT_PERSISTENT);
+    } else {
+      this.adapter_.removeClass(cssClasses$17.HELPER_TEXT_PERSISTENT);
+    }
+  }
+
+  /**
+   * @param {boolean} isValidation True to make the helper text act as an
+   *   error validation message.
+   */
+  setValidation(isValidation) {
+    if (isValidation) {
+      this.adapter_.addClass(cssClasses$17.HELPER_TEXT_VALIDATION_MSG);
+    } else {
+      this.adapter_.removeClass(cssClasses$17.HELPER_TEXT_VALIDATION_MSG);
+    }
+  }
+
+  /** Makes the helper text visible to the screen reader. */
+  showToScreenReader() {
+    this.adapter_.removeAttr(strings$16.ARIA_HIDDEN);
+  }
+
+  /**
+   * Sets the validity of the helper text based on the input validity.
+   * @param {boolean} inputIsValid
+   */
+  setValidity(inputIsValid) {
+    const helperTextIsPersistent = this.adapter_.hasClass(cssClasses$17.HELPER_TEXT_PERSISTENT);
+    const helperTextIsValidationMsg = this.adapter_.hasClass(cssClasses$17.HELPER_TEXT_VALIDATION_MSG);
+    const validationMsgNeedsDisplay = helperTextIsValidationMsg && !inputIsValid;
+
+    if (validationMsgNeedsDisplay) {
+      this.adapter_.setAttr(strings$16.ROLE, 'alert');
+    } else {
+      this.adapter_.removeAttr(strings$16.ROLE);
+    }
+
+    if (!helperTextIsPersistent && !validationMsgNeedsDisplay) {
+      this.hide_();
+    }
+  }
+
+  /**
+   * Hides the help text from screen readers.
+   * @private
+   */
+  hide_() {
+    this.adapter_.setAttr(strings$16.ARIA_HIDDEN, 'true');
+  }
+}
+
+/**
+ * @license
+ * Copyright 2017 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/* eslint no-unused-vars: [2, {"args": "none"}] */
+
+/**
+ * Adapter for MDC Text Field Icon.
+ *
+ * Defines the shape of the adapter expected by the foundation. Implement this
+ * adapter to integrate the text field icon into your framework. See
+ * https://github.com/material-components/material-components-web/blob/master/docs/authoring-components.md
+ * for more information.
+ *
+ * @record
+ */
+
+/**
+ * @license
+ * Copyright 2016 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/** @enum {string} */
+const strings$17 = {
+  ICON_EVENT: 'MDCTextField:icon',
+};
+
+/**
+ * @license
+ * Copyright 2017 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+class MDCTextFieldIconFoundation extends MDCFoundation {
+  /** @return enum {string} */
+  static get strings() {
+    return strings$17;
+  }
+
+  /**
+   * {@see MDCTextFieldIconAdapter} for typing information on parameters and return
+   * types.
+   * @return {!MDCTextFieldIconAdapter}
+   */
+  static get defaultAdapter() {
+    return /** @type {!MDCTextFieldIconAdapter} */ ({
+      setAttr: () => {},
+      registerInteractionHandler: () => {},
+      deregisterInteractionHandler: () => {},
+      notifyIconAction: () => {},
+    });
+  }
+
+  /**
+   * @param {!MDCTextFieldIconAdapter} adapter
+   */
+  constructor(adapter) {
+    super(Object.assign(MDCTextFieldIconFoundation.defaultAdapter, adapter));
+
+    /** @private {function(!Event): undefined} */
+    this.interactionHandler_ = (evt) => this.handleInteraction(evt);
+  }
+
+  init() {
+    ['click', 'keydown'].forEach((evtType) => {
+      this.adapter_.registerInteractionHandler(evtType, this.interactionHandler_);
+    });
+  }
+
+  destroy() {
+    ['click', 'keydown'].forEach((evtType) => {
+      this.adapter_.deregisterInteractionHandler(evtType, this.interactionHandler_);
+    });
+  }
+
+  /**
+   * Sets the content of the helper text field.
+   * @param {boolean} disabled
+   */
+  setDisabled(disabled) {
+    if (disabled) {
+      this.adapter_.setAttr('tabindex', '-1');
+    } else {
+      this.adapter_.setAttr('tabindex', '0');
+    }
+  }
+
+  /**
+   * Handles an interaction event
+   * @param {!Event} evt
+   */
+  handleInteraction(evt) {
+    if (evt.type === 'click' || evt.key === 'Enter' || evt.keyCode === 13) {
+      this.adapter_.notifyIconAction();
+    }
+  }
+}
+
+/**
+ * @license
+ * Copyright 2017 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/* eslint no-unused-vars: [2, {"args": "none"}] */
+
+/**
+ * Adapter for MDC Text Field Label.
+ *
+ * Defines the shape of the adapter expected by the foundation. Implement this
+ * adapter to integrate the Text Field label into your framework. See
+ * https://github.com/material-components/material-components-web/blob/master/docs/authoring-components.md
+ * for more information.
+ *
+ * @record
+ */
+
+/**
+ * @license
+ * Copyright 2016 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/** @enum {string} */
+const cssClasses$18 = {
+  LABEL_FLOAT_ABOVE: 'mdc-text-field__label--float-above',
+  LABEL_SHAKE: 'mdc-text-field__label--shake',
+};
+
+/**
+ * @license
+ * Copyright 2016 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+class MDCTextFieldLabelFoundation extends MDCFoundation {
+  /** @return enum {string} */
+  static get cssClasses() {
+    return cssClasses$18;
+  }
+
+  /**
+   * {@see MDCTextFieldLabelAdapter} for typing information on parameters and return
+   * types.
+   * @return {!MDCTextFieldLabelAdapter}
+   */
+  static get defaultAdapter() {
+    return /** @type {!MDCTextFieldLabelAdapter} */ ({
+      addClass: () => {},
+      removeClass: () => {},
+      getWidth: () => {},
+    });
+  }
+
+  /**
+   * @param {!MDCTextFieldLabelAdapter} adapter
+   */
+  constructor(adapter) {
+    super(Object.assign(MDCTextFieldLabelFoundation.defaultAdapter, adapter));
+  }
+
+  /**
+   * Returns the width of the label element.
+   * @return {number}
+   */
+  getWidth() {
+    return this.adapter_.getWidth();
+  }
+
+  /**
+   * Styles the label to produce the label shake for errors.
+   * @param {boolean} isValid Whether the input's value is valid (passes all
+   *     validity checks).
+   * @param {boolean} isFocused Whether the input is focused.
+   */
+  styleShake(isValid, isFocused) {
+    const {LABEL_SHAKE} = MDCTextFieldLabelFoundation.cssClasses;
+    if (isValid || isFocused) {
+      this.adapter_.removeClass(LABEL_SHAKE);
+    } else {
+      this.adapter_.addClass(LABEL_SHAKE);
+    }
+  }
+
+  /**
+   * Styles the label to float or defloat as necessary.
+   * @param {string} value The value of the input.
+   * @param {boolean} isFocused Whether the input is focused.
+   * @param {boolean} isBadInput The input's `validity.badInput` value.
+   */
+  styleFloat(value, isFocused, isBadInput) {
+    const {LABEL_FLOAT_ABOVE, LABEL_SHAKE} = MDCTextFieldLabelFoundation.cssClasses;
+    if (!!value || isFocused) {
+      this.adapter_.addClass(LABEL_FLOAT_ABOVE);
+    } else if (!isBadInput) {
+      this.adapter_.removeClass(LABEL_FLOAT_ABOVE);
+      this.adapter_.removeClass(LABEL_SHAKE);
+    }
+  }
+}
+
+/**
+ * @license
+ * Copyright 2017 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/* eslint no-unused-vars: [2, {"args": "none"}] */
+
+/**
+ * Adapter for MDC Text Field Outline.
+ *
+ * Defines the shape of the adapter expected by the foundation. Implement this
+ * adapter to integrate the Text Field outline into your framework. See
+ * https://github.com/material-components/material-components-web/blob/master/docs/authoring-components.md
+ * for more information.
+ *
+ * @record
+ */
+
+/**
+ * @license
+ * Copyright 2016 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/** @enum {string} */
+const strings$18 = {
+  PATH_SELECTOR: '.mdc-text-field__outline-path',
+  IDLE_OUTLINE_SELECTOR: '.mdc-text-field__idle-outline',
+};
+
+/**
+ * @license
+ * Copyright 2017 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+class MDCTextFieldOutlineFoundation extends MDCFoundation {
+  /** @return enum {string} */
+  static get strings() {
+    return strings$18;
+  }
+
+  /**
+   * {@see MDCTextFieldOutlineAdapter} for typing information on parameters and return
+   * types.
+   * @return {!MDCTextFieldOutlineAdapter}
+   */
+  static get defaultAdapter() {
+    return /** @type {!MDCTextFieldOutlineAdapter} */ ({
+      getWidth: () => {},
+      getHeight: () => {},
+      setOutlinePathAttr: () => {},
+      getIdleOutlineStyleValue: () => {},
+    });
+  }
+
+  /**
+   * @param {!MDCTextFieldOutlineAdapter} adapter
+   */
+  constructor(adapter) {
+    super(Object.assign(MDCTextFieldOutlineFoundation.defaultAdapter, adapter));
+  }
+
+  /**
+   * Updates the SVG path of the focus outline element based on the given width of the
+   * label element and the RTL context.
+   * @param {number} labelWidth
+   * @param {boolean=} isRtl
+   */
+  updateSvgPath(labelWidth, isRtl = false) {
+    // Fall back to reading a specific corner's style because Firefox doesn't report the style on border-radius.
+    const radiusStyleValue = this.adapter_.getIdleOutlineStyleValue('border-radius') ||
+        this.adapter_.getIdleOutlineStyleValue('border-top-left-radius');
+    const radius = parseFloat(radiusStyleValue);
+    const width = this.adapter_.getWidth();
+    const height = this.adapter_.getHeight();
+    const cornerWidth = radius + 1.2;
+    const leadingStrokeLength = Math.abs(11 - cornerWidth);
+    const paddedLabelWidth = labelWidth + 8;
+
+    // The right, bottom, and left sides of the outline follow the same SVG path.
+    const pathMiddle = 'a' + radius + ',' + radius + ' 0 0 1 ' + radius + ',' + radius
+      + 'v' + (height - (2 * cornerWidth))
+      + 'a' + radius + ',' + radius + ' 0 0 1 ' + -radius + ',' + radius
+      + 'h' + (-width + (2 * cornerWidth))
+      + 'a' + radius + ',' + radius + ' 0 0 1 ' + -radius + ',' + -radius
+      + 'v' + (-height + (2 * cornerWidth))
+      + 'a' + radius + ',' + radius + ' 0 0 1 ' + radius + ',' + -radius;
+
+    let path;
+    if (!isRtl) {
+      path = 'M' + (cornerWidth + leadingStrokeLength + paddedLabelWidth) + ',' + 1
+        + 'h' + (width - (2 * cornerWidth) - paddedLabelWidth - leadingStrokeLength)
+        + pathMiddle
+        + 'h' + leadingStrokeLength;
+    } else {
+      path = 'M' + (width - cornerWidth - leadingStrokeLength) + ',' + 1
+        + 'h' + leadingStrokeLength
+        + pathMiddle
+        + 'h' + (width - (2 * cornerWidth) - paddedLabelWidth - leadingStrokeLength);
+    }
+
+    this.adapter_.setOutlinePathAttr(path);
+  }
+}
+
+/**
+ * @license
+ * Copyright 2017 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/* eslint-disable no-unused-vars */
+
+/**
+ * @license
+ * Copyright 2016 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/** @enum {string} */
+const strings$19 = {
+  ARIA_CONTROLS: 'aria-controls',
+  INPUT_SELECTOR: '.mdc-text-field__input',
+  LABEL_SELECTOR: '.mdc-text-field__label',
+  ICON_SELECTOR: '.mdc-text-field__icon',
+  OUTLINE_SELECTOR: '.mdc-text-field__outline',
+  BOTTOM_LINE_SELECTOR: '.mdc-line-ripple',
+};
+
+/** @enum {string} */
+const cssClasses$19 = {
+  ROOT: 'mdc-text-field',
+  UPGRADED: 'mdc-text-field--upgraded',
+  DISABLED: 'mdc-text-field--disabled',
+  DENSE: 'mdc-text-field--dense',
+  FOCUSED: 'mdc-text-field--focused',
+  INVALID: 'mdc-text-field--invalid',
+  BOX: 'mdc-text-field--box',
+  OUTLINED: 'mdc-text-field--outlined',
+};
+
+/** @enum {number} */
+const numbers$4 = {
+  LABEL_SCALE: 0.75,
+  DENSE_LABEL_SCALE: 0.923,
+};
+
+/**
+ * @license
+ * Copyright 2016 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+class MDCTextFieldFoundation extends MDCFoundation {
+  /** @return enum {string} */
+  static get cssClasses() {
+    return cssClasses$19;
+  }
+
+  /** @return enum {string} */
+  static get strings() {
+    return strings$19;
+  }
+
+  /** @return enum {string} */
+  static get numbers() {
+    return numbers$4;
+  }
+
+  /**
+   * {@see MDCTextFieldAdapter} for typing information on parameters and return
+   * types.
+   * @return {!MDCTextFieldAdapter}
+   */
+  static get defaultAdapter() {
+    return /** @type {!MDCTextFieldAdapter} */ ({
+      addClass: () => {},
+      removeClass: () => {},
+      hasClass: () => {},
+      registerTextFieldInteractionHandler: () => {},
+      deregisterTextFieldInteractionHandler: () => {},
+      registerInputInteractionHandler: () => {},
+      deregisterInputInteractionHandler: () => {},
+      getNativeInput: () => {},
+      isFocused: () => {},
+      isRtl: () => {},
+      activateLineRipple: () => {},
+      deactivateLineRipple: () => {},
+      setLineRippleTransformOrigin: () => {},
+    });
+  }
+
+  /**
+   * @param {!MDCTextFieldAdapter} adapter
+   * @param {!FoundationMapType=} foundationMap Map from subcomponent names to their subfoundations.
+   */
+  constructor(adapter, foundationMap = /** @type {!FoundationMapType} */ ({})) {
+    super(Object.assign(MDCTextFieldFoundation.defaultAdapter, adapter));
+
+    /** @type {!MDCTextFieldHelperTextFoundation|undefined} */
+    this.helperText_ = foundationMap.helperText;
+    /** @type {!MDCTextFieldIconFoundation|undefined} */
+    this.icon_ = foundationMap.icon;
+    /** @type {!MDCTextFieldLabelFoundation|undefined} */
+    this.label_ = foundationMap.label;
+    /** @type {!MDCTextFieldOutlineFoundation|undefined} */
+    this.outline_ = foundationMap.outline;
+
+    /** @private {boolean} */
+    this.isFocused_ = false;
+    /** @private {boolean} */
+    this.receivedUserInput_ = false;
+    /** @private {boolean} */
+    this.useCustomValidityChecking_ = false;
+    /** @private {boolean} */
+    this.isValid_ = true;
+    /** @private {function(): undefined} */
+    this.inputFocusHandler_ = () => this.activateFocus();
+    /** @private {function(): undefined} */
+    this.inputBlurHandler_ = () => this.deactivateFocus();
+    /** @private {function(): undefined} */
+    this.inputInputHandler_ = () => this.autoCompleteFocus();
+    /** @private {function(!Event): undefined} */
+    this.setPointerXOffset_ = (evt) => this.setTransformOrigin(evt);
+    /** @private {function(!Event): undefined} */
+    this.textFieldInteractionHandler_ = () => this.handleTextFieldInteraction();
+  }
+
+  init() {
+    this.adapter_.addClass(MDCTextFieldFoundation.cssClasses.UPGRADED);
+    // Ensure label does not collide with any pre-filled value.
+    if (this.label_ && this.getValue()) {
+      this.label_.styleFloat(
+        this.getValue(), this.isFocused_, this.isBadInput_());
+    }
+
+    if (this.adapter_.isFocused()) {
+      this.inputFocusHandler_();
+    }
+
+    this.adapter_.registerInputInteractionHandler('focus', this.inputFocusHandler_);
+    this.adapter_.registerInputInteractionHandler('blur', this.inputBlurHandler_);
+    this.adapter_.registerInputInteractionHandler('input', this.inputInputHandler_);
+    ['mousedown', 'touchstart'].forEach((evtType) => {
+      this.adapter_.registerInputInteractionHandler(evtType, this.setPointerXOffset_);
+    });
+    ['click', 'keydown'].forEach((evtType) => {
+      this.adapter_.registerTextFieldInteractionHandler(evtType, this.textFieldInteractionHandler_);
+    });
+  }
+
+  destroy() {
+    this.adapter_.removeClass(MDCTextFieldFoundation.cssClasses.UPGRADED);
+    this.adapter_.deregisterInputInteractionHandler('focus', this.inputFocusHandler_);
+    this.adapter_.deregisterInputInteractionHandler('blur', this.inputBlurHandler_);
+    this.adapter_.deregisterInputInteractionHandler('input', this.inputInputHandler_);
+    ['mousedown', 'touchstart'].forEach((evtType) => {
+      this.adapter_.deregisterInputInteractionHandler(evtType, this.setPointerXOffset_);
+    });
+    ['click', 'keydown'].forEach((evtType) => {
+      this.adapter_.deregisterTextFieldInteractionHandler(evtType, this.textFieldInteractionHandler_);
+    });
+  }
+
+  /**
+   * Handles user interactions with the Text Field.
+   */
+  handleTextFieldInteraction() {
+    if (this.adapter_.getNativeInput().disabled) {
+      return;
+    }
+    this.receivedUserInput_ = true;
+  }
+
+  /**
+   * Updates the focus outline for outlined text fields.
+   */
+  updateOutline() {
+    if (!this.outline_ || !this.label_) {
+      return;
+    }
+
+    const isDense = this.adapter_.hasClass(cssClasses$19.DENSE);
+    const labelScale = isDense ? numbers$4.DENSE_LABEL_SCALE : numbers$4.LABEL_SCALE;
+    const labelWidth = this.label_.getWidth() * labelScale;
+    const isRtl = this.adapter_.isRtl();
+    this.outline_.updateSvgPath(labelWidth, isRtl);
+  }
+
+  /**
+   * Activates the text field focus state.
+   */
+  activateFocus() {
+    this.isFocused_ = true;
+    this.styleFocused_(this.isFocused_);
+    this.adapter_.activateLineRipple();
+    if (this.outline_) {
+      this.updateOutline();
+    }
+    if (this.label_) {
+      this.label_.styleShake(this.isValid(), this.isFocused_);
+      this.label_.styleFloat(
+        this.getValue(), this.isFocused_, this.isBadInput_());
+    }
+    if (this.helperText_) {
+      this.helperText_.showToScreenReader();
+    }
+  }
+
+  /**
+   * Sets the line ripple's transform origin, so that the line ripple activate
+   * animation will animate out from the user's click location.
+   * @param {!Event} evt
+   */
+  setTransformOrigin(evt) {
+    const targetClientRect = evt.target.getBoundingClientRect();
+    const evtCoords = {x: evt.clientX, y: evt.clientY};
+    const normalizedX = evtCoords.x - targetClientRect.left;
+    this.adapter_.setLineRippleTransformOrigin(normalizedX);
+  }
+
+  /**
+   * Activates the Text Field's focus state in cases when the input value
+   * changes without user input (e.g. programatically).
+   */
+  autoCompleteFocus() {
+    if (!this.receivedUserInput_) {
+      this.activateFocus();
+    }
+  }
+
+  /**
+   * Deactivates the Text Field's focus state.
+   */
+  deactivateFocus() {
+    this.isFocused_ = false;
+    this.adapter_.deactivateLineRipple();
+    const input = this.getNativeInput_();
+    const shouldRemoveLabelFloat = !input.value && !this.isBadInput_();
+    const isValid = this.isValid();
+    this.styleValidity_(isValid);
+    this.styleFocused_(this.isFocused_);
+    if (this.label_) {
+      this.label_.styleShake(this.isValid(), this.isFocused_);
+      this.label_.styleFloat(
+        this.getValue(), this.isFocused_, this.isBadInput_());
+    }
+    if (shouldRemoveLabelFloat) {
+      this.receivedUserInput_ = false;
+    }
+  }
+
+  /**
+   * @return {string} The value of the input Element.
+   */
+  getValue() {
+    return this.getNativeInput_().value;
+  }
+
+  /**
+   * @param {string} value The value to set on the input Element.
+   */
+  setValue(value) {
+    this.getNativeInput_().value = value;
+    const isValid = this.isValid();
+    this.styleValidity_(isValid);
+    if (this.label_) {
+      this.label_.styleShake(isValid, this.isFocused_);
+      this.label_.styleFloat(
+        this.getValue(), this.isFocused_, this.isBadInput_());
+    }
+  }
+
+  /**
+   * @return {boolean} If a custom validity is set, returns that value.
+   *     Otherwise, returns the result of native validity checks.
+   */
+  isValid() {
+    return this.useCustomValidityChecking_
+      ? this.isValid_ : this.isNativeInputValid_();
+  }
+
+  /**
+   * @param {boolean} isValid Sets the validity state of the Text Field.
+   */
+  setValid(isValid) {
+    this.useCustomValidityChecking_ = true;
+    this.isValid_ = isValid;
+    // Retrieve from the getter to ensure correct logic is applied.
+    isValid = this.isValid();
+    this.styleValidity_(isValid);
+    if (this.label_) {
+      this.label_.styleShake(isValid, this.isFocused_);
+    }
+  }
+
+  /**
+   * @return {boolean} True if the Text Field is disabled.
+   */
+  isDisabled() {
+    return this.getNativeInput_().disabled;
+  }
+
+  /**
+   * @param {boolean} disabled Sets the text-field disabled or enabled.
+   */
+  setDisabled(disabled) {
+    this.getNativeInput_().disabled = disabled;
+    this.styleDisabled_(disabled);
+  }
+
+  /**
+   * @return {boolean} True if the Text Field is required.
+   */
+  isRequired() {
+    return this.getNativeInput_().required;
+  }
+
+  /**
+   * @param {boolean} isRequired Sets the text-field required or not.
+   */
+  setRequired(isRequired) {
+    this.getNativeInput_().required = isRequired;
+    // Addition of the asterisk is automatic based on CSS, but validity checking
+    // needs to be manually run.
+    this.styleValidity_(this.isValid());
+  }
+
+  /**
+   * @param {string} content Sets the content of the helper text.
+   */
+  setHelperTextContent(content) {
+    if (this.helperText_) {
+      this.helperText_.setContent(content);
+    }
+  }
+
+  /**
+   * @return {boolean} True if the Text Field input fails in converting the
+   *     user-supplied value.
+   * @private
+   */
+  isBadInput_() {
+    return this.getNativeInput_().validity.badInput;
+  }
+
+  /**
+   * @return {boolean} The result of native validity checking
+   *     (ValidityState.valid).
+   */
+  isNativeInputValid_() {
+    return this.getNativeInput_().validity.valid;
+  }
+
+  /**
+   * Styles the component based on the validity state.
+   * @param {boolean} isValid
+   * @private
+   */
+  styleValidity_(isValid) {
+    const {INVALID} = MDCTextFieldFoundation.cssClasses;
+    if (isValid) {
+      this.adapter_.removeClass(INVALID);
+    } else {
+      this.adapter_.addClass(INVALID);
+    }
+    if (this.helperText_) {
+      this.helperText_.setValidity(isValid);
+    }
+  }
+
+  /**
+   * Styles the component based on the focused state.
+   * @param {boolean} isFocused
+   * @private
+   */
+  styleFocused_(isFocused) {
+    const {FOCUSED} = MDCTextFieldFoundation.cssClasses;
+    if (isFocused) {
+      this.adapter_.addClass(FOCUSED);
+    } else {
+      this.adapter_.removeClass(FOCUSED);
+    }
+  }
+
+  /**
+   * Styles the component based on the disabled state.
+   * @param {boolean} isDisabled
+   * @private
+   */
+  styleDisabled_(isDisabled) {
+    const {DISABLED, INVALID} = MDCTextFieldFoundation.cssClasses;
+    if (isDisabled) {
+      this.adapter_.addClass(DISABLED);
+      this.adapter_.removeClass(INVALID);
+    } else {
+      this.adapter_.removeClass(DISABLED);
+    }
+    if (this.icon_) {
+      this.icon_.setDisabled(isDisabled);
+    }
+  }
+
+  /**
+   * @return {!Element|!NativeInputType} The native text input from the
+   * host environment, or a dummy if none exists.
+   * @private
+   */
+  getNativeInput_() {
+    return this.adapter_.getNativeInput() ||
+    /** @type {!NativeInputType} */ ({
+      value: '',
+      disabled: false,
+      validity: {
+        badInput: false,
+        valid: true,
+      },
+    });
+  }
+}
+
+function lineRippleFactory($el) {
+  return new MDCLineRippleFoundation({
+    addClass: className => $el.classList.add(className),
+    removeClass: className => $el.classList.remove(className),
+    hasClass: className => $el.classList.contains(className),
+    setAttr: (attr, value) => $el.setAttribute(attr, value),
+    registerEventHandler: (type, handler) => $el.addEventListener(type, handler),
+    deregisterEventHandler: (type, handler) => $el.removeEventListener(type, handler)
+  });
+}
+
+function helperTextFactory($el) {
+  return new MDCTextFieldHelperTextFoundation({
+    addClass: className => $el.classList.add(className),
+    removeClass: className => $el.classList.remove(className),
+    hasClass: className => $el.classList.contains(className),
+    setAttr: (attr, value) => $el.setAttribute(attr, value),
+    removeAttr: attr => $el.removeAttribute(attr),
+    setContent: content => $el.textContent = content
+  });
+}
+
+function iconFactory($el, notifyIconAction) {
+  return new MDCTextFieldIconFoundation({
+    setAttr: (attr, value) => $el.setAttribute(attr, value),
+    registerInteractionHandler: (tvtType, handler) => $el.addEventListener(type, handler),
+    deregisterInteractionHandler: (type, handler) => $el.removeEventListener(type, handler),
+    notifyIconAction
+  });
+}
+
+function labelFactory($el) {
+  return new MDCTextFieldLabelFoundation({
+    addClass: className => $el.classList.add(className),
+    removeClass: className => $el.classList.remove(className),
+    getWidth: () => $el.offsetWidth
+  });
+}
+
+function outlineFactory($el, $outlinePath, $idleOutline) {
+  const styles = $idleOutline && window.getComputedStyle($idleOutline);
+  return new MDCTextFieldOutlineFoundation({
+    getWidth: () => $el.offsetWidth,
+    getHeight: () => $el.offsetHeight,
+    setOutlinePathAttr: value => $outlinePath.setAttribute("d", value),
+    getIdleOutlineStyleValue: prop => $idleOutline && styles.getPropertyValue(prop)
+  });
+}
+
+const rippleAdapter$3 = {
+  isSurfaceActive() {
+    return this.$refs.input[matches$1]("active");
+  },
+  registerInteractionHandler(type, handler) {
+    this.$refs.input.addEventListener(type, handler);
+  },
+  deregisterInteractionHandler(type, handler) {
+    this.$refs.input.removeEventListener(type, handler);
+  }
+};
+
+function getHelperText(helperText) {
+  return helperText.classList.contains("mdc-text-field-helper-text") ? helperText : null;
+}
+
+var Textfield$2 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-text-field",class:_vm.cssClasses},[(_vm.leadingIcon)?_c('mdc-icon',{ref:"icon",attrs:{"name":"text-field","icon":_vm.leadingIcon}}):_vm._e(),_c('input',_vm._b({directives:[{name:"model",rawName:"v-model",value:(_vm.model),expression:"model"}],ref:"input",staticClass:"mdc-text-field__input",attrs:{"placeholder":_vm.fullwidth && _vm.label},domProps:{"value":(_vm.model)},on:{"input":function($event){if($event.target.composing){ return; }_vm.model=$event.target.value;}}},'input',_vm.$attrs,false)),(!_vm.fullwidth)?_c('label',{ref:"label",staticClass:"mdc-text-field__label"},[_vm._v(_vm._s(_vm.label))]):_vm._e(),(!_vm.leadingIcon && _vm.trailingIcon)?_c('mdc-icon',{ref:"icon",attrs:{"name":"text-field","icon":_vm.trailingIcon}}):_vm._e(),(!_vm.outlined)?_c('div',{ref:"lineRipple",staticClass:"mdc-line-ripple"}):[_c('div',{ref:"outline",staticClass:"mdc-text-field__outline"},[_c('svg',[_c('path',{ref:"outlinePath",staticClass:"mdc-text-field__outline-path"})])]),_c('div',{ref:"idleOutline",staticClass:"mdc-text-field__idle-outline"})]],2)},staticRenderFns: [],
+  name: "MdcTextfield",
+  inheritAttrs: false,
+  mixins: [ Ripple(rippleAdapter$3) ],
+  components: { MdcIcon: MdcIcon$1 },
+  props: {
+    box: Boolean,
+    outlined: Boolean,
+    fullwidth: Boolean,
+    disabled: Boolean,
+    dense: Boolean,
+    required: Boolean,
+    // For v-model
+    value: String,
+    label: String,
+
+    // Icon definitions
+    trailingIcon: String,
+    leadingIcon: String
+  },
+  watch: {
+    disabled(value) {
+      this.foundation.setDisabled(value);
+    },
+    required(value) {
+      this.foundation.setRequired(value);
+    }
+  },
+  computed: {
+    cssClasses() {
+      return {
+        "mdc-text-field--box": this.box,
+        "mdc-text-field--outlined": this.outlined,
+        "mdc-text-field--fullwidth": this.fullwidth,
+        "mdc-text-field--dense": this.dense,
+        "mdc-text-field--with-leading-icon": this.leadingIcon,
+        "mdc-text-field--with-trailing-icon": !this.leadingIcon && this.trailingIcon
+      };
+    },
+    hasIconListener() {
+      return !!(this.$listeners && this.$listeners.icon);
+    },
+    model: {
+      get() {
+        return this.value;
+      },
+      set(value) {
+        this.$emit("input", value);
+      }
+    }
+  },
+
+  mounted() {
+    const { $el } = this;
+    const { input } = this.$refs;
+
+    const styles = getComputedStyle($el);
+    const foundationMap = this.$_getFoundationMap();
+    const { lineRipple } = foundationMap;
+
+    if(!this.box || !this.outlined) {
+      this._ripple.destroy();
+    }
+
+    this.foundation = new MDCTextFieldFoundation({
+      addClass: className => $el.classList.add(className),
+      removeClass: className => $el.classList.remove(className),
+      hasClass: className => $el.classList.contains(className),
+      // Interactions
+      registerTextFieldInteractionHandler: (type, handler) => $el.addEventListener(type, handler),
+      deregisterTextFieldInteractionHandler: (type, handler) => $el.removeEventListener(type, handler),
+      registerInputInteractionHandler: (type, handler) => input.addEventListener(type, handler),
+      deregisterInputInteractionHandler: (type, handler) => input.removeEventListener(type, handler),
+      
+      getNativeInput: () => input,
+      isFocused: () => document.activeElement === input,
+      isRtl: () => styles.direction === "rtl",
+      activateLineRipple: () => lineRipple && lineRipple.activate(),
+      deactivateLineRipple: () => lineRipple && lineRipple.deactivate(),
+      setLineRippleTransformOrigin: normalizedX => lineRipple && lineRipple.setRippleCenter(normalizedX),
+    }, foundationMap);
+
+    // Initialize line ripple before foundation
+    lineRipple && lineRipple.init();
+    this.foundation.init();
+    this.foundation.setDisabled(this.disabled);
+    this.foundation.setRequired(this.required);
+  },
+  beforeDestroy() {
+    this.foundation.destroy();
+  },
+  methods: {
+    $_getFoundationMap() {
+      const { lineRipple, icon, label, outline, outlinePath, idleOutline } = this.$refs;
+      let helperText = getHelperText(this.$el.nextElementSibling);
+
+      return {
+        lineRipple: lineRipple && lineRippleFactory(lineRipple),
+        helperText: helperText && helperTextFactory(helperText),
+        icon: icon && this.hasIconListener && iconFactory(icon.$el, () => this.$emit("icon")),
+        label: label && labelFactory(label),
+        outline: outline && outlineFactory(outline, outlinePath, idleOutline),
+      };
+    }
+  }
+};
+
+function getHelperText$1(helperText) {
+  return helperText.classList.contains("mdc-text-field-helper-text") ? helperText : null;
+}
+
+var Textarea = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-text-field mdc-text-field--textarea",class:_vm.cssClasses},[_c('textarea',_vm._b({directives:[{name:"model",rawName:"v-model",value:(_vm.model),expression:"model"}],ref:"input",staticClass:"mdc-text-field__input",attrs:{"label":_vm.fullwidth && _vm.label},domProps:{"value":(_vm.model)},on:{"input":function($event){if($event.target.composing){ return; }_vm.model=$event.target.value;}}},'textarea',_vm.$attrs,false)),(!_vm.fullwidth)?_c('label',{ref:"label",staticClass:"mdc-text-field__label"},[_vm._v(_vm._s(_vm.label))]):_vm._e()])},staticRenderFns: [],
+  name: "MdcTextarea",
+  inheritAttrs: false,
+  props: {
+    fullwidth: Boolean,
+    disabled: Boolean,
+    dense: Boolean,
+    required: Boolean,
+    // For v-model
+    value: String,
+    label: String
+  },
+  watch: {
+    disabled(value) {
+      this.foundation.setDisabled(value);
+    },
+    required(value) {
+      this.foundation.setRequired(value);
+    }
+  },
+  computed: {
+    model: {
+      get() {
+        return this.value;
+      },
+      set(value) {
+        this.$emit("input", value);
+      }
+    },
+    cssClasses() {
+      return {
+        "mdc-text-field--fullwidth": this.fullwidth,
+        "mdc-text-field--dense": this.dense
+      };
+    }
+  },
+  mounted() {
+    const { $el } = this;
+    const { input } = this.$refs;
+
+    const styles = getComputedStyle($el);
+    const foundationMap = this.$_getFoundationMap();
+
+    this.foundation = new MDCTextFieldFoundation({
+      addClass: className => $el.classList.add(className),
+      removeClass: className => $el.classList.remove(className),
+      hasClass: className => $el.classList.contains(className),
+      // Interactions
+      registerTextFieldInteractionHandler: (evtType, handler) => $el.addEventListener(evtType, handler),
+      deregisterTextFieldInteractionHandler: (evtType, handler) => $el.removeEventListener(evtType, handler),
+      registerInputInteractionHandler: (evtType, handler) => input.addEventListener(evtType, handler),
+      deregisterInputInteractionHandler: (evtType, handler) => input.removeEventListener(evtType, handler),
+      
+      getNativeInput: () => input,
+      isFocused: () => document.activeElement === input,
+      isRtl: () => styles.direction === "rtl",
+
+      activateLineRipple: () => {},
+      deactivateLineRipple: () => {},
+      setLineRippleTransformOrigin: () => {},
+    }, foundationMap);
+
+    this.foundation.init();
+    this.foundation.setDisabled(this.disabled);
+    this.foundation.setRequired(this.required);
+    this.foundation.setValue(this.value);
+  },
+  beforeDestroy() {
+    this.foundation.destroy();
+  },
+  methods: {
+    $_getFoundationMap(vm) {
+      const { lineRipple, icon, label, outline, outlinePath, idleOutline } = this.$refs;
+      let helperText = getHelperText$1(this.$el.nextElementSibling);
+
+      return {
+        lineRipple: lineRipple && lineRippleFactory(lineRipple),
+        helperText: helperText && helperTextFactory(helperText),
+        icon: icon && iconFactory(icon, () => this.$emit("icon")),
+        label: label && labelFactory(label),
+        outline: outline && outlineFactory(outline, outlinePath, idleOutline),
+      };
+    }
+  }
+};
+
+var Textfield$1 = {
+  functional: true,
+  props: {
+    textarea: Boolean
+  },
+  render(h, ctx) {
+    let tag = ctx.props.textarea ? Textarea : Textfield$2;
+    return h(tag, ctx.data, ctx.children);
+  }
+};
+
+var TextfieldHelpertext = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('p',{staticClass:"mdc-text-field-helper-text",class:_vm.cssClasses,attrs:{"aria-hidden":"true"}},[_vm._t("default")],2)},staticRenderFns: [],
+  name: "MdcTextfieldHelpertext",
+  props: {
+    persistent: Boolean,
+    validation: Boolean
+  },
+  computed: {
+    cssClasses() {
+      return {
+        "mdc-text-field-helper-text--persistent": this.persistent,
+        "mdc-text-field-helper-text--validation-msg": this.validation
+      };
+    }
+  }
+};
+
+function install$21(Vue) {
+  Vue.component("mdc-textfield", Textfield$1);
+  Vue.component(TextfieldHelpertext.name, TextfieldHelpertext);
+}
+
+var Textfield = Object.freeze({
+	Textfield: Textfield$1,
+	TextfieldHelpertext: TextfieldHelpertext,
+	install: install$21
+});
+
+/**
+ * Copyright 2017 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+const cssClasses$20 = {
   FIXED: 'mdc-toolbar--fixed',
   FIXED_LASTROW: 'mdc-toolbar--fixed-lastrow-only',
   FIXED_AT_LAST_ROW: 'mdc-toolbar--fixed-at-last-row',
@@ -10675,13 +17101,13 @@ const cssClasses$4 = {
   FLEXIBLE_MIN: 'mdc-toolbar--flexible-space-minimized',
 };
 
-const strings$4 = {
+const strings$20 = {
   TITLE_SELECTOR: '.mdc-toolbar__title',
   FIRST_ROW_SELECTOR: '.mdc-toolbar__row:first-child',
   CHANGE_EVENT: 'MDCToolbar:change',
 };
 
-const numbers$2 = {
+const numbers$5 = {
   MAX_TITLE_SIZE: 2.125,
   MIN_TITLE_SIZE: 1.25,
   TOOLBAR_ROW_HEIGHT: 64,
@@ -10706,15 +17132,15 @@ const numbers$2 = {
  */
 class MDCToolbarFoundation extends MDCFoundation {
   static get cssClasses() {
-    return cssClasses$4;
+    return cssClasses$20;
   }
 
   static get strings() {
-    return strings$4;
+    return strings$20;
   }
 
   static get numbers() {
-    return numbers$2;
+    return numbers$5;
   }
 
   static get defaultAdapter() {
@@ -10926,11 +17352,11 @@ class MDCToolbarFoundation extends MDCFoundation {
  * limitations under the License.
  */
 
-let supportsPassive_$1;
+let supportsPassive_$2;
 
 // Determine whether the current browser supports passive event listeners, and if so, use them.
-function applyPassive$1(globalObj = window, forceRefresh = false) {
-  if (supportsPassive_$1 === undefined || forceRefresh) {
+function applyPassive$2(globalObj = window, forceRefresh = false) {
+  if (supportsPassive_$2 === undefined || forceRefresh) {
     let isSupported = false;
     try {
       globalObj.document.addEventListener('test', null, {get passive() {
@@ -10938,10 +17364,10 @@ function applyPassive$1(globalObj = window, forceRefresh = false) {
       }});
     } catch (e) { }
 
-    supportsPassive_$1 = isSupported;
+    supportsPassive_$2 = isSupported;
   }
 
-  return supportsPassive_$1 ? {passive: true} : false;
+  return supportsPassive_$2 ? {passive: true} : false;
 }
 
 var Toolbar$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('header',{staticClass:"mdc-toolbar",class:_vm.cssClasses},[_vm._t("default")],2)},staticRenderFns: [],
@@ -10949,21 +17375,10 @@ var Toolbar$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _
   props: {
     flexible: Boolean,
     waterfall: Boolean,
-    fixed: {
-      type: String,
-      validator: value => value === "" || value === "lastrow"
-    }
-  },
-  data() {
-    return { fixedAdjustElement: null };
+    fixed: Boolean,
+    fixedLastrow: Boolean
   },
   watch: {
-    fixed(value) {
-      const isStr = typeof value === "string";
-
-      this.foundation.fixed_ = isStr;
-      this.foundation.fixedLastrow_ = isStr && value === "lastrow";
-    },
     flexible(value) {
       this.foundation.hasFlexibleRow_ = value;
       this.foundation.useFlexDefaultBehaviour_ = value;
@@ -10974,25 +17389,32 @@ var Toolbar$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _
       //TODO: minimize flexible and fixed to a string
       return {
         "mdc-toolbar--waterfall": this.waterfall,
-        "mdc-toolbar--fixed": typeof this.fixed === "string",
-        "mdc-toolbar--fixed-lastrow-only": this.fixed === "lastrow",
+        "mdc-toolbar--fixed": this.isFixed,
+        "mdc-toolbar--fixed-lastrow-only": this.fixedLastrow,
         "mdc-toolbar--flexible": this.flexible,
         "mdc-toolbar--flexible-default-behavior": this.flexible
       };
+    },
+    isFixed() {
+      if(this.foundation) {
+        this.foundation.fixed_ = this.fixed;
+        this.foundation.fixedLastrow_ = this.fixedLastrow;
+      }
+
+      return this.fixed || this.fixedLastrow;
     }
   },
   mounted() {
     const { $el } = this;
     const findTitle = () => $el.querySelector(".mdc-toolbar__title");
     const findRow = () => $el.querySelector(".mdc-toolbar__row:first-child");
-    const findFixedAdjust = () => (typeof this.fixed === "string" && $el.nextElementSibling) || null;
 
     this.foundation = new MDCToolbarFoundation({
       hasClass: className => $el.classList.contains(className),
       addClass: className => $el.classList.add(className),
       removeClass: className => $el.classList.remove(className),
-      registerScrollHandler: handler => window.addEventListener("scroll", handler, applyPassive$1()),
-      deregisterScrollHandler: handler => window.removeEventListener("scroll", handler, applyPassive$1()),
+      registerScrollHandler: handler => window.addEventListener("scroll", handler, applyPassive$2()),
+      deregisterScrollHandler: handler => window.removeEventListener("scroll", handler, applyPassive$2()),
       registerResizeHandler: handler => window.addEventListener("resize", handler),
       deregisterResizeHandler: handler => window.removeEventListener("resize", handler),
       getViewportWidth: () => window.innerWidth,
@@ -11004,7 +17426,7 @@ var Toolbar$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _
       setStyleForTitleElement: (prop, value) => findTitle().style.setProperty(prop, value),
       setStyleForFlexibleRowElement: (prop, value) => findRow().style.setProperty(prop, value),
       setStyleForFixedAdjustElement: (prop, value) => {
-        const $fixedAdjust = findFixedAdjust();
+        const $fixedAdjust = this.isFixed && $el.nextElementSibling;
         if ($fixedAdjust) {
           $fixedAdjust.style.setProperty(prop, value);
         }
@@ -11026,14 +17448,14 @@ var ToolbarSection = {render: function(){var _vm=this;var _h=_vm.$createElement;
   props: {
     alignStart: Boolean,
     alignEnd: Boolean,
-    shrink: Boolean
+    shrinkToFit: Boolean
   },
   computed: {
     cssClasses() {
       return {
         "mdc-toolbar__section--align-start": this.alignStart,
         "mdc-toolbar__section--align-end": this.alignEnd,
-        "mdc-toolbar__section--shrink-to-fit": this.shrink,
+        "mdc-toolbar__section--shrink-to-fit": this.shrinkToFit,
       };
     }
   }
@@ -11043,21 +17465,38 @@ var ToolbarTitle = {render: function(){var _vm=this;var _h=_vm.$createElement;va
   name: "MdcToolbarTitle"
 };
 
-var ToolbarIcon = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c(_vm.link ? "a" : "button",{tag:"component",staticClass:"material-icons mdc-toolbar__icon"},[_vm._t("default")],2)},staticRenderFns: [],
+//component.material-icons.mdc-toolbar__icon(:is="tag", :href="link", :aria-label="label")
+var ToolbarIcon = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('mdc-icon',{attrs:{"tag":_vm.tag,"name":"toolbar","icon":_vm.icon,"label":_vm.label,"href":_vm.link}},[_vm._v(_vm._s(_vm.icon))])},staticRenderFns: [],
   name: "MdcToolbarIcon",
+  components: { MdcIcon: MdcIcon$1 },
   props: {
-    link: String
+    link: String,
+    label: String,
+    icon: {
+      type: String,
+      required: true
+    }
+  },
+  computed: {
+    tag() {
+      return this.link ? "a" : "button";
+    }
   }
 };
 
-var ToolbarMenuIcon = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c(_vm.link ? "a" : "button",_vm._g({tag:"component",staticClass:"material-icons mdc-toolbar__menu-icon",attrs:{"href":_vm.link}},_vm.$listeners),[_vm._v("menu")])},staticRenderFns: [],
+var ToolbarMenuIcon = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c(_vm.tag,_vm._g({tag:"component",staticClass:"material-icons mdc-toolbar__menu-icon",attrs:{"href":_vm.link}},_vm.$listeners),[_vm._v("menu")])},staticRenderFns: [],
   name: "MdcToolbarMenuIcon",
   props: {
     link: String
+  },
+  computed: {
+    tag() {
+      return this.link ? "a" : "button";
+    }
   }
 };
 
-function install$7(Vue) {
+function install$22(Vue) {
   Vue.component(Toolbar$1.name, Toolbar$1);
   Vue.component(ToolbarRow.name, ToolbarRow);
   Vue.component(ToolbarSection.name, ToolbarSection);
@@ -11073,28 +17512,12 @@ var Toolbar = Object.freeze({
 	ToolbarTitle: ToolbarTitle,
 	ToolbarIcon: ToolbarIcon,
 	ToolbarMenuIcon: ToolbarMenuIcon,
-	install: install$7
+	install: install$22
 });
 
-//import * as Drawer from "./packages/drawer";
-//import * as Elevation from "./packages/elevation";
-//import * as FormField from "./packages/form-field";
-//import * as GridList from "./packages/grid-list";
-//import * as Icon from "./packages/icon";
-//import * as LayoutGrid from "./packages/layout-grid";
-//import * as LinearProgress from "./packages/linear-progress";
-//import * as List from "./packages/list";
-//import * as Menu from "./packages/menu";
-//import * as Radio from "./packages/radio";
-//import * as Select from "./packages/select";
-//import * as Slider from "./packages/slider";
-//import * as Snackbar from "./packages/snackbar";
-//import * as Switch from "./packages/switch";
-//import * as Tabs from "./packages/tabs";
-//import * as Textfield from "./packages/textfield";
 const DEFAULT_OPTS = {
-  theme: null,
-  typography: true
+  theme: "",
+  typography: false
 };
 
 //TODO: make option manager in mixins and other stuff...instead of having options in components
@@ -11102,52 +17525,169 @@ var VueMDC = {
   install(Vue, opts) {
     const { body } = document;
     opts = Object.assign({}, DEFAULT_OPTS, opts);
+
     // Add typography on body
     if (opts.typography) {
       body.classList.add("mdc-typography");
     }
     // Apply theme on body
     if (opts.theme) {
-      body.classList.add(`theme--${opts.theme}`);
+      body.classList.add(`mdc-theme--${opts.theme}`);
     }
     
     // Add all the packages as global components
+    Vue.use(App);
     Vue.use(Button);
     Vue.use(Card);
     Vue.use(Checkbox);
+    Vue.use(Chips);
     Vue.use(Dialog);
-    //Vue.use(Drawer);
-    //Vue.use(Elevation);
+    Vue.use(Drawer);
     Vue.use(Fab);
-    //Vue.use(FormField);
-    //Vue.use(GridList);
-    //Vue.use(Icon);
+    Vue.use(FormField);
+    Vue.use(GridList);
     Vue.use(IconToggle);
-    //Vue.use(LayoutGrid);
-    //Vue.use(LinearProgress);
-    //Vue.use(List);
-    //Vue.use(Menu);
-    //Vue.use(Radio);
-    Vue.use(Ripple);
-    //Vue.use(Select);
+    Vue.use(LayoutGrid);
+    Vue.use(LinearProgress);
+    Vue.use(List);
+    Vue.use(Menu);
+    Vue.use(Radio);
+    Vue.use(Select);
     //Vue.use(Slider);
-    //Vue.use(Snackbar);
-    //Vue.use(Switch);
-    //Vue.use(Tabs);
-    //Vue.use(Textfield);
+    Vue.use(Snackbar);
+    Vue.use(Switch);
+    Vue.use(Tabs);
+    Vue.use(Textfield);
     Vue.use(Toolbar);
   }
 };
 
-var Test = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{attrs:{"id":"app"}},[_c('mdc-toolbar',{attrs:{"fixed":"lastrow","waterfall":"","flexible":""}},[_c('mdc-toolbar-row',[_c('mdc-toolbar-section',{attrs:{"align-start":""}},[_c('mdc-toolbar-menu-icon',{on:{"click":function($event){_vm.$refs.drawer.open();}}}),_c('mdc-toolbar-title',[_vm._v("Material Components In Vuejs")])],1)],1),_c('mdc-toolbar-row',[_c('mdc-toolbar-section',{attrs:{"align-end":""}},[_c('mdc-toolbar-icon',{attrs:{"aria-label":"Download","alt":"Download"}},[_vm._v("file_download ")]),_c('mdc-toolbar-icon',{attrs:{"aria-label":"Print this page","alt":"Print this page"}},[_vm._v("print")]),_c('mdc-toolbar-icon',{attrs:{"aria-label":"Bookmark this page","alt":"Bookmark this page"}},[_vm._v("bookmark")])],1)],1)],1),_c('main',{ref:"main",staticStyle:{"height":"100vh"}},[_c('h2',[_vm._v("Buttons")]),_c('mdc-button',[_vm._v("Click me")]),_c('mdc-button',{attrs:{"icon":"accessibility","raised":""}},[_vm._v("Icon Button")]),_c('mdc-button',{attrs:{"raised":""}},[_vm._v("Raised button")]),_c('mdc-fab',{attrs:{"icon":"add","label":"Add"}}),_c('mdc-icon-toggle',{attrs:{"on":{content: "favorite", label: "Remove from favorites"},"off":{content: "favorite_border", label: "Add to favorites"}}}),_c('h2',[_vm._v("Dialog")]),_c('mdc-button',{attrs:{"raised":""},on:{"click":_vm.openDialog}},[_vm._v("Show Dialog")]),_c('p',[_vm._v("Result: "+_vm._s(_vm.dialogResult))]),_c('mdc-dialog',{ref:"dialog",on:{"action":_vm.dialogAction}},[_c('mdc-dialog-title',{attrs:{"slot":"header"},slot:"header"},[_vm._v("Test dialog")]),_vm._v("This is just a test dialog click accept or decline to close the window")],1),_c('h2',[_vm._v("Checkbox")]),_c('mdc-checkbox',{attrs:{"indeterminate":""},model:{value:(_vm.checked),callback:function ($$v) {_vm.checked=$$v;},expression:"checked"}}),_c('p',[_vm._v("Checked: "+_vm._s(_vm.checked))])],1)],1)},staticRenderFns: [],
+/*
+#app(style="display: flex; flex-direction: column; padding: 0; margin: 0; box-sizing: border-box; min-height: 100%;")
+  mdc-toolbar(fixed)
+    mdc-toolbar-row
+      mdc-toolbar-section(align-start)
+        mdc-toolbar-menu-icon(@click="$refs.drawer.open()")
+        mdc-toolbar-title Material Components In Vuejs
+
+      mdc-toolbar-section(align-end)
+        mdc-toolbar-icon(icon="file_download", label="Download") 
+        mdc-toolbar-icon(icon="print", label="Print this page")
+        mdc-toolbar-icon(icon="bookmark", label="Bookmark this page")
+
+  .mdc-toolbar-fixed-adjust(style="display: flex; flex: 1 1 auto; height: 100%; box-sizing: border-box;")
+    mdc-permanent-drawer(spacer)
+      mdc-drawer-item(text="Inbox")
+        mdc-list-item-graphic(slot="graphic", icon="inbox")
+      mdc-drawer-item(text="Star")
+        mdc-list-item-graphic(slot="graphic", icon="star")
+      mdc-drawer-item(text="Sent mail")
+        mdc-list-item-graphic(slot="graphic", icon="send")
+      mdc-drawer-item(text="Drafts")
+        mdc-list-item-graphic(slot="graphic", icon="drafts")
+      mdc-drawer-divider
+      mdc-drawer-item(text="All mail")
+        mdc-list-item-graphic(slot="graphic", icon="email")
+      mdc-drawer-item(text="Trash")
+        mdc-list-item-graphic(slot="graphic", icon="delete")
+      mdc-drawer-item(text="Spam")
+        mdc-list-item-graphic(slot="graphic", icon="report")      
+    // Main content
+    main
+      // Button
+      h2 Buttons
+      mdc-button Click me
+      mdc-button(icon="accessibility", raised) Icon Button
+      mdc-button(raised) Raised button
+
+      mdc-fab(icon="add", label="Add")
+      mdc-icon-toggle(:on=`{content: "favorite", label: "Remove from favorites"}`, :off=`{content: "favorite_border", label: "Add to favorites"}`)
+
+      // Dialog
+      h2 Dialog
+      mdc-button(raised, @click="openDialog") Show Dialog
+      p Result: {{dialogResult}}
+      mdc-dialog(ref="dialog", @action="dialogAction")
+        mdc-dialog-title(slot="header") Test dialog
+        | This is just a test dialog click accept or decline to close the window
+
+      h2 Slider
+      mdc-slider(v-model="sliderValue", min="0", max="50", @input="onSliderInput")
+      p Slider@change {{sliderValue}} Slider@input {{sliderInput}}
+
+      h2 Linear Progress
+      mdc-linear-progress(v-model="linearProgress", :buffer="linearBuffer")
+      p Progress: {{linearProgress}}; Buffer: {{linearBuffer}}
+      mdc-button(raised, @click="randomProgress") Change progress
+
+      h2 Form fields
+      mdc-form-field(:label="`Checked: ${checked}`")
+        mdc-checkbox(indeterminate, v-model="checked")
+
+      mdc-form-field(label="Switch")
+        mdc-switch
+      mdc-form-field(label="Apple")
+        mdc-radio(v-model="radio", value="apple")
+      mdc-form-field(label="Banana")  
+        mdc-radio(v-model="radio", value="banana")
+
+      h2 Textfield
+      mdc-textfield(v-model="myName", box, icon="mail", click-icon, trailing-icon, pattern="[A-Za-z]{5,10}") Enter your name
+      mdc-textfield(v-model="myName", pattern="[A-Za-z]{5,10}") Name
+      mdc-textfield-helpertext(validation) Enter a name between 5 and 10 characters
+
+      h2 Menu
+      div
+        mdc-button(@click="$refs.menu.show()") Open menu
+        mdc-menu(ref="menu", anchor, @selected="menuSelected")
+          mdc-menu-item(text="Hello")
+          mdc-menu-item(text="Kek")
+          mdc-menu-item(text="Lels")
+
+      h2 Select (value: {{selectValue}})
+      mdc-select(label="Fruits?" v-model="selectValue")
+        mdc-select-item(value="banana", label="Banana")
+        mdc-select-item(label="Kiwi (bleh)", disabled)
+        mdc-select-item(label="Orange")
+
+      h2 Snackbar
+      mdc-button(raised, @click="showSnack") Show snack # {{snackCount}}
+      mdc-snackbar(ref="snackbar", align-start)
+
+      h2 Layout Grid
+      mdc-layout-grid
+        mdc-layout-cell 4
+        mdc-layout-cell 4
+        mdc-layout-cell 4
+
+      mdc-layout-grid
+        mdc-layout-cell(span="1") 1
+        mdc-layout-cell(span="1") 1
+        mdc-layout-cell(span="1") 1
+        mdc-layout-cell(span="1") 1
+        mdc-layout-cell(span="1") 1
+        mdc-layout-cell(span="1") 1
+        mdc-layout-cell(span="1") 1
+        mdc-layout-cell(span="1") 1
+        mdc-layout-cell(span="1") 1
+        mdc-layout-cell(span="1") 1
+        mdc-layout-cell(span="1") 1
+        mdc-layout-cell(span="1") 1
+*/
+
+var Test = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('mdc-app',{attrs:{"flip":"","align-start":""}},[_c('mdc-toolbar',{attrs:{"slot":"toolbar"},slot:"toolbar"},[_c('mdc-toolbar-row',[_c('mdc-toolbar-section',{attrs:{"align-start":""}},[_c('mdc-toolbar-icon',{attrs:{"icon":"keyboard_backspace"}}),_c('mdc-toolbar-title',[_vm._v("Material Components In Vuejs")])],1),_c('mdc-toolbar-section',{attrs:{"align-end":""}},[_c('mdc-toolbar-icon',{attrs:{"icon":"file_download","label":"Download"}}),_c('mdc-toolbar-icon',{attrs:{"icon":"print","label":"Print this page"}}),_c('mdc-toolbar-icon',{attrs:{"icon":"bookmark","label":"Bookmark this page"}})],1)],1)],1),_c('mdc-permanent-drawer',{ref:"drawer",attrs:{"slot":"drawer","spacer":""},slot:"drawer"},[_c('h2',{attrs:{"slot":"header"},slot:"header"},[_vm._v("Hello there friends")]),_c('mdc-drawer-item',{attrs:{"text":"Inbox"}},[_c('mdc-list-item-graphic',{attrs:{"slot":"graphic","icon":"inbox"},slot:"graphic"})],1),_c('mdc-drawer-item',{attrs:{"text":"Star"}},[_c('mdc-list-item-graphic',{attrs:{"slot":"graphic","icon":"star"},slot:"graphic"})],1),_c('mdc-drawer-item',{attrs:{"text":"Sent mail"}},[_c('mdc-list-item-graphic',{attrs:{"slot":"graphic","icon":"send"},slot:"graphic"})],1),_c('mdc-drawer-item',{attrs:{"text":"Drafts"}},[_c('mdc-list-item-graphic',{attrs:{"slot":"graphic","icon":"drafts"},slot:"graphic"})],1),_c('mdc-drawer-divider'),_c('mdc-drawer-item',{attrs:{"text":"All mail"}},[_c('mdc-list-item-graphic',{attrs:{"slot":"graphic","icon":"email"},slot:"graphic"})],1),_c('mdc-drawer-item',{attrs:{"text":"Trash"}},[_c('mdc-list-item-graphic',{attrs:{"slot":"graphic","icon":"delete"},slot:"graphic"})],1),_c('mdc-drawer-item',{attrs:{"text":"Spam"}},[_c('mdc-list-item-graphic',{attrs:{"slot":"graphic","icon":"report"},slot:"graphic"})],1)],1),_c('main',[_c('h2',[_vm._v("Buttons")]),_c('mdc-button',[_vm._v("Click me")]),_c('mdc-button',{attrs:{"icon":"accessibility","raised":""}},[_vm._v("Icon Button")]),_c('mdc-button',{attrs:{"raised":""}},[_vm._v("Raised button")]),_c('mdc-fab',{attrs:{"icon":"add","label":"Add"}}),_c('mdc-icon-toggle',{attrs:{"on":{content: "favorite", label: "Remove from favorites"},"off":{content: "favorite_border", label: "Add to favorites"}}}),_c('h2',[_vm._v("Chips")]),_c('mdc-chip-set',[_c('mdc-chip',{attrs:{"action":"wb_sunny","text":"Turn on lights"}}),_c('mdc-chip',{attrs:{"action":"bookmark","text":"Bookmark"}}),_c('mdc-chip',{attrs:{"action":"alarm","text":"Set alarm"}}),_c('mdc-chip',{attrs:{"action":"directions","text":"Get directions"}})],1),_c('h2',[_vm._v("Dialog")]),_c('mdc-button',{attrs:{"raised":""},on:{"click":_vm.openDialog}},[_vm._v("Show Dialog")]),_c('p',[_vm._v("Result: "+_vm._s(_vm.dialogResult))]),_c('mdc-dialog',{ref:"dialog",attrs:{"title":"Test Dialog"},on:{"action":_vm.dialogAction}},[_vm._v("This is just a test dialog click accept or decline to close the window")]),_c('h2',[_vm._v("Linear Progress")]),_c('mdc-linear-progress',{attrs:{"buffer":_vm.linearBuffer},model:{value:(_vm.linearProgress),callback:function ($$v) {_vm.linearProgress=$$v;},expression:"linearProgress"}}),_c('p',[_vm._v("Progress: "+_vm._s(_vm.linearProgress)+"; Buffer: "+_vm._s(_vm.linearBuffer))]),_c('mdc-button',{attrs:{"raised":""},on:{"click":_vm.randomProgress}},[_vm._v("Change progress")]),_c('h2',[_vm._v("Form fields")]),_c('mdc-form-field',{attrs:{"label":`Checked: ${_vm.checked}`}},[_c('mdc-checkbox',{attrs:{"indeterminate":""},model:{value:(_vm.checked),callback:function ($$v) {_vm.checked=$$v;},expression:"checked"}})],1),_c('mdc-form-field',{attrs:{"label":"Switch"}},[_c('mdc-switch')],1),_c('mdc-form-field',{attrs:{"label":"Apple"}},[_c('mdc-radio',{attrs:{"value":"apple"},model:{value:(_vm.radio),callback:function ($$v) {_vm.radio=$$v;},expression:"radio"}})],1),_c('mdc-form-field',{attrs:{"label":"Banana"}},[_c('mdc-radio',{attrs:{"value":"banana"},model:{value:(_vm.radio),callback:function ($$v) {_vm.radio=$$v;},expression:"radio"}})],1),_c('h2',[_vm._v("Textfield")]),_c('mdc-textfield',{attrs:{"box":"","trailing-icon":"mail","pattern":"[A-Za-z]{5,10}","label":"Enter your name"},model:{value:(_vm.myName),callback:function ($$v) {_vm.myName=$$v;},expression:"myName"}}),_c('mdc-textfield',{attrs:{"leading-icon":"lock","pattern":"[A-Za-z]{5,10}","label":"Name"},on:{"icon":function($event){_vm.console.log('kek');}},model:{value:(_vm.myName),callback:function ($$v) {_vm.myName=$$v;},expression:"myName"}}),_c('mdc-textfield-helpertext',{attrs:{"validation":""}},[_vm._v("Enter a name between 5 and 10 characters")]),_c('mdc-textfield',{attrs:{"outlined":"","label":"Outlined"}}),_c('mdc-textfield',{attrs:{"textarea":"","value":"kek","label":"kekks","rows":"8","cols":"40"}}),_c('h2',[_vm._v("Menu")]),_c('div',[_c('mdc-button',{on:{"click":function($event){_vm.$refs.menu.show();}}},[_vm._v("Open menu")]),_c('mdc-menu',{ref:"menu",attrs:{"anchor":""},on:{"selected":_vm.menuSelected}},[_c('mdc-menu-item',{attrs:{"text":"Hello"}}),_c('mdc-menu-item',{attrs:{"text":"Kek"}}),_c('mdc-menu-item',{attrs:{"text":"Lels"}})],1)],1),_c('h2',[_vm._v("Select (value: "+_vm._s(_vm.selectValue)+")")]),_c('mdc-select',{attrs:{"label":"Fruits?"},model:{value:(_vm.selectValue),callback:function ($$v) {_vm.selectValue=$$v;},expression:"selectValue"}},[_c('mdc-select-item',{attrs:{"value":"banana","label":"Banana"}}),_c('mdc-select-item',{attrs:{"label":"Kiwi (bleh)","disabled":"disabled"}}),_c('mdc-select-item',{attrs:{"label":"Orange"}})],1),_c('h2',[_vm._v("Snackbar")]),_c('mdc-button',{attrs:{"raised":""},on:{"click":_vm.showSnack}},[_vm._v("Show snack # "+_vm._s(_vm.snackCount))]),_c('mdc-snackbar',{ref:"snackbar",attrs:{"align-start":""}}),_c('h2',[_vm._v("Tabs")]),_c('mdc-tab-bar',[_c('mdc-tab',{attrs:{"link":"#kek","text":"Kek"}}),_c('mdc-tab',{attrs:{"link":"#lel","text":"Lel"}}),_c('mdc-tab',{attrs:{"link":"#batkek","text":"Batkek"}})],1),_c('h2',[_vm._v("Layout Grid")]),_c('mdc-layout-grid',[_c('mdc-layout-cell',[_vm._v("4")]),_c('mdc-layout-cell',[_vm._v("4")]),_c('mdc-layout-cell',[_vm._v("4")])],1),_c('mdc-layout-grid',[_c('mdc-layout-cell',{attrs:{"span":"1"}},[_vm._v("1")]),_c('mdc-layout-cell',{attrs:{"span":"1"}},[_vm._v("1")]),_c('mdc-layout-cell',{attrs:{"span":"1"}},[_vm._v("1")]),_c('mdc-layout-cell',{attrs:{"span":"1"}},[_vm._v("1")]),_c('mdc-layout-cell',{attrs:{"span":"1"}},[_vm._v("1")]),_c('mdc-layout-cell',{attrs:{"span":"1"}},[_vm._v("1")]),_c('mdc-layout-cell',{attrs:{"span":"1"}},[_vm._v("1")]),_c('mdc-layout-cell',{attrs:{"span":"1"}},[_vm._v("1")]),_c('mdc-layout-cell',{attrs:{"span":"1"}},[_vm._v("1")]),_c('mdc-layout-cell',{attrs:{"span":"1"}},[_vm._v("1")]),_c('mdc-layout-cell',{attrs:{"span":"1"}},[_vm._v("1")]),_c('mdc-layout-cell',{attrs:{"span":"1"}},[_vm._v("1")])],1)],1)],1)},staticRenderFns: [],
   name: "Test",
   data() {
     return { 
       dialogResult: "<none>", sliderValue: 25, sliderInput: 0, myName: "Cooldude",
-      checked: false, snackCount: 1
+      checked: false, snackCount: 1, radio: null,
+      linearProgress: 50, linearBuffer: 0, selectValue: "Orange"
     };
   },
   methods: {
+    menuSelected(index) {
+      console.log(`Selected: ${index}`);
+    },
     openDialog() {
       this.$refs.dialog.open();
     },
@@ -11157,13 +17697,18 @@ var Test = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm
     onSliderInput(value) {
       this.sliderInput = value;
     },
+    randomProgress() {
+      const progress = Math.round(Math.random() * 10) / 10;
+      this.linearProgress = progress;
+      this.linearBuffer = Math.min(1, progress + 0.1);
+    },
     showSnack() {
       const count = this.snackCount++;
       const snack = {
         message: `Hello i'm #${count}`,
         multiline: count % 2 === 0,
         actionOnBottom: count % 4 === 0,
-        action: item => console.log(item.message),
+        actionHandler: item => console.log(item.message),
         actionText: "Hide"
       };
       this.$refs.snackbar.show(snack);
@@ -11171,7 +17716,6 @@ var Test = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm
   }
 };
 
-//SUI modules
 Vue$3$1.use(VueMDC);
 
 const vm = new Vue$3$1({

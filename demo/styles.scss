@@ -1,0 +1,68 @@
+// Material.io Table styles
+table {
+  display: inline-block;
+  overflow-x: auto;
+  margin: 8px 0 32px;
+  max-width: 100%;
+  border: 1px solid #eee;
+
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+
+thead, tbody, tfoot, tr {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  font-size: 100%;
+  font: inherit;
+  vertical-align: baseline;
+}
+
+th, td {
+  border: 1px solid #eee;
+  padding: 12px 12px 12px 24px;
+
+  &:first-child {
+    border-left: none;
+  }
+  &:last-child {
+    border-right: none
+  }
+}
+
+th {
+  background: #fafafa;
+  border-top: none;
+  //color: #0000008a;
+  color: rgba(0,0,0,138);
+  font-weight: 500;
+  text-align: left;
+}
+
+pre[class*="language-"] {
+  padding-right: 2em !important;
+
+  &, code[class*="language-"] {  
+    font-family: "Roboto Mono", "Consolas", "Monaco", "Ubuntu Mono", monospace;
+    font-size: 14px;
+    letter-spacing: .5px;
+    line-height: 2;
+  }
+}
+
+.mdc-drawer {
+  //max-height: 100vh;
+  & .mdc-list-divider {
+    margin: 8px 0;
+  }
+
+  & .mdc-drawer__content {
+    overflow-y: auto;
+  }
+
+  & .mdc-drawer__header-content {
+    background-color: var(--mdc-theme-primary, #6200ee) !important;
+    color: var(--mdc-theme-text-primary-on-primary, white) !important;
+  }
+}

@@ -1,13 +1,13 @@
 <template lang="pug">
-aside.mdc-dialog(aria-labelledby="" aria-describedby="")
-  .mdc-dialog__surface(ref="surface" )
-    header.mdc-dialog__header(v-if="$slots.header")
-      slot(name="header")
-    section.mdc-dialog__body(v-if="$slots.default", :class=`{"mdc-dialog__body--scrollable": scrollable}`)
+aside.mdc-dialog(role="alertdialog")
+  .mdc-dialog__surface(ref="surface")
+    header.mdc-dialog__header(v-if="title")
+      h2.mdc-dialog__header__title {{ title }}
+    section.mdc-dialog__body(v-if="hasContent", :class="cssBodyClasses")
       slot
     footer.mdc-dialog__footer
-      mdc-button.mdc-dialog__footer__button.mdc-dialog__footer__button--cancel(ref="cancel") Cancel
-      mdc-button.mdc-dialog__footer__button.mdc-dialog__footer__button--accept(ref="accept") Ok
+      mdc-button.mdc-dialog__footer__button.mdc-dialog__footer__button--cancel(ref="cancel") {{ cancelText }}
+      mdc-button.mdc-dialog__footer__button.mdc-dialog__footer__button--accept(ref="accept", raised) {{ acceptText }}
   .mdc-dialog__backdrop
 </template>
 
@@ -21,6 +21,8 @@ const transitionEnd = getCorrectEventName(window, "transitionend");
 export default {
   name: "MdcDialog",
   props: {
+    title: String,
+    scrollable: Boolean,
     acceptText: {
       type: String,
       default: "Ok"
@@ -28,8 +30,15 @@ export default {
     cancelText: {
       type: String,
       default: "Cancel"
+    }
+  },
+  computed: {
+    cssBodyClasses() {
+      return this.scrollable && "mdc-dialog__body--scrollable";
     },
-    scrollable: Boolean
+    hasContent() {
+      return !!this.$slots.default;
+    }
   },
   mounted() {
     const { $el } = this;
@@ -75,15 +84,18 @@ export default {
   },
   methods: {
     open() {
-      if(this.foundation.isOpen()) return false;
-      this.foundation.open();
-      return true;
+      if(!this.foundation.isOpen()) {
+        this.foundation.open();
+        return true;
+      }
+      return false;
     },
     close() {
-      if(!this.foundation.isOpen()) return false;
-      
-      this.foundation.close();
-      return true;
+      if(this.foundation.isOpen()) {
+        this.foundation.close();
+        return true;
+      }
+      return false;
     }
   }
 };

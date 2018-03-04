@@ -1,4 +1,4 @@
-import IconToggle from "./icon-toggle.vue";
+import IconToggle from "./IconToggle.vue";
 import "@material/icon-toggle/mdc-icon-toggle.scss";
 
 export { IconToggle };

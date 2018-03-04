@@ -1,21 +1,17 @@
 <template lang="pug">
 .mdc-card(:class="cssClasses")
   slot
-
 </template>
 
 <script>
 export default {
   name: "MdcCard",
   props: {
-    dark: Boolean
+    stroked: Boolean
   },
   computed: {
     cssClasses() {
-      return {
-        // TODO: move theming to a mixin
-        "mdc-card--theme-dark": this.dark
-      };
+      return this.stroked && "mdc-card--stroked";
     }
   }
 };

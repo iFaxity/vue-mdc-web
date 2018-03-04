@@ -25,7 +25,7 @@ const plugins = [
   vue(),
   sass({
     output: SASS_OUTPUT,
-    include: "**/*.scss",
+    include: [ "**/*.scss", "**/*.css" ],
     exclude: [],
     options: {
       sourceMap: true,

@@ -1,9 +1,7 @@
-import Dialog from "./dialog.vue";
-import DialogTitle from "./title.vue";
+import Dialog from "./Dialog.vue";
 import "@material/dialog/mdc-dialog.scss";
 
-export { Dialog, DialogTitle };
+export { Dialog };
 export function install(Vue) {
   Vue.component(Dialog.name, Dialog);
-  Vue.component(DialogTitle.name, DialogTitle);
 }

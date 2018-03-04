@@ -1,21 +1,22 @@
 <template lang="pug">
-.mdc-switch(:class=`cssClasses`)
-  input.mdc-switch__native-control(type="checkbox" v-bind="$attrs" v-model="model", :disabled="disabled")
+.mdc-switch(:class="cssClasses")
+  input.mdc-switch__native-control(type="checkbox", v-bind="$attrs", v-model="model", :disabled="disabled")
   .mdc-switch__background
-    .mdc-switch__knob  
+    .mdc-switch__knob
 </template>
 
 <script>
 export default {
   name: "MdcSwitch",
   inheritAttrs: false,
-  props: {
-    disabled: Boolean,
-    checked: Boolean
-  },
   model: {
     prop: "checked",
     event: "change"
+  },
+  
+  props: {
+    disabled: Boolean,
+    checked: [Boolean, Array]
   },
   computed: {
     model: {

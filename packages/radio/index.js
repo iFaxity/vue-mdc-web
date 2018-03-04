@@ -1,8 +1,7 @@
-import { default as MDCRadio } from "./radio.vue";
-export { MDCRadio };
+import Radio from "./Radio.vue";
+import "@material/radio/mdc-radio.scss";
 
-export default {
-  install(Vue) {
-    Vue.component(MDCRadio.name, MDCRadio);
-  }
-};
+export { Radio };
+export function install(Vue) {
+  Vue.component(Radio.name, Radio);
+}

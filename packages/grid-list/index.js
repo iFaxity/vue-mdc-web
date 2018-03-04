@@ -1,8 +1,9 @@
-import { default as MDCButton } from "./button.vue";
-export { MDCButton };
+import GridList from "./GridList.vue";
+import GridTile from "./GridTile.vue";
+import "@material/grid-list/mdc-grid-list.scss";
 
-export default {
-  install(Vue) {
-    Vue.component(MDCButton.name, MDCButton);
-  }
-};
+export { GridList, GridTile };
+export function install(Vue) {
+  Vue.component(GridList.name, GridList);
+  Vue.component(GridTile.name, GridTile);
+}

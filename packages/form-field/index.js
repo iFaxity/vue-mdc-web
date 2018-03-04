@@ -1,8 +1,7 @@
-import { default as MDCFormField } from "./form-field.vue";
-export { MDCFormField };
+import FormField from "./FormField.vue";
+import "@material/form-field/mdc-form-field.scss";
 
-export default {
-  install(Vue) {
-    Vue.component(MDCFormField.name, MDCFormField);
-  }
-};
+export { FormField };
+export function install(Vue) {
+  Vue.component(FormField.name, FormField);
+}
