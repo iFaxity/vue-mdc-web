@@ -14,34 +14,6 @@
 import Foundation from "@material/tabs/tab-bar-scroller/foundation";
 import { getCorrectPropertyName } from "@material/animation";
 import MdcTabBar from "./TabBar.vue";
-/*
-<div id="my-mdc-tab-bar-scroller" class="mdc-tab-bar-scroller">
-  <div class="mdc-tab-bar-scroller__indicator mdc-tab-bar-scroller__indicator--back">
-    <a class="mdc-tab-bar-scroller__indicator__inner material-icons" href="#" aria-label="scroll back button">
-      navigate_before
-    </a>
-  </div>
-  <div class="mdc-tab-bar-scroller__scroll-frame">
-    <nav id="my-scrollable-tab-bar" class="mdc-tab-bar mdc-tab-bar-scroller__scroll-frame__tabs">
-      <a class="mdc-tab mdc-tab--active" href="#one">Item One</a>
-      <a class="mdc-tab" href="#two">Item Two</a>
-      <a class="mdc-tab" href="#three">Item Three</a>
-      <a class="mdc-tab" href="#four">Item Four</a>
-      <a class="mdc-tab" href="#five">Item Five</a>
-      <a class="mdc-tab" href="#six">Item Six</a>
-      <a class="mdc-tab" href="#seven">Item Seven</a>
-      <a class="mdc-tab" href="#eight">Item Eight</a>
-      <a class="mdc-tab" href="#nine">Item Nine</a>
-      <span class="mdc-tab-bar__indicator"></span>
-    </nav>
-  </div>
-  <div class="mdc-tab-bar-scroller__indicator mdc-tab-bar-scroller__indicator--forward">
-    <a class="mdc-tab-bar-scroller__indicator__inner material-icons" href="#" aria-label="scroll forward button">
-      navigate_next
-    </a>
-  </div>
-</div>
-*/
 
 export default {
   name: "MdcTabScroller",
