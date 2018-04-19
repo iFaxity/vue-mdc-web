@@ -19,6 +19,17 @@ export default {
     spacer: Boolean,
     header: String
   },
+  watch: {
+    open(value, oldValue) {
+      const isOpen = this.foundation.isOpen();
+      
+      if(value && !isOpen) {
+        this.foundation.open();
+      } else if(!value && isOpen) {
+        this.foundation.close();
+      }
+    }
+  },
   mounted() {
     const { $el } = this;
     const { drawer } = this.$refs;

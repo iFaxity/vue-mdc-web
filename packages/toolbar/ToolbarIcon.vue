@@ -3,7 +3,6 @@ mdc-icon(:tag="tag", name="toolbar", :icon="icon", :label="label", :href="link")
 </template>
 
 <script>
-//component.material-icons.mdc-toolbar__icon(:is="tag", :href="link", :aria-label="label")
 import MdcIcon from "../icon";
 
 export default {

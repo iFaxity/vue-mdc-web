@@ -1,4 +1,4 @@
-import Button from "./button.vue";
+import Button from "./Button.vue";
 import "@material/button/mdc-button.scss";
 
 export { Button };

@@ -1,5 +1,4 @@
 <template lang="pug">
-//a.mdc-list-item(:href="link")
 mdc-link.mdc-list-item(tag="a", :link="link", v-bind="$_link", v-on="$listeners")
   slot(name="graphic")
   | {{ text }}

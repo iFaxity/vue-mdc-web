@@ -3,7 +3,6 @@ import SelectItem from "./SelectItem.vue";
 import "@material/select/mdc-select.scss";
 
 export { Select, SelectItem };
-export function install(Vue) {
-  Vue.component(Select.name, Select);
-  Vue.component(SelectItem.name, SelectItem);
+export function install(Vue, register) {
+  register(Select, SelectItem);
 }

@@ -1,5 +1,5 @@
 <template lang="pug">
-button.mdc-fab.material-icons(:aria-label="label", :class="cssClasses")
+button.mdc-fab.material-icons(:class="cssClasses", :aria-label="label", :title="label")
   span.mdc-fab__icon {{ icon }}
 </template>
 

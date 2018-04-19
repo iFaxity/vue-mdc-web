@@ -1,18 +1,18 @@
-const TYPES = ["temporary", "permanent", "persistent"];
+const TYPES = ["permanent", "persistent", "temporary"];
 
 export default {
-  name: "MdcDrawer",
+  name: "MDCDrawer",
   functional: true,
   inheritAttrs: true,
 
   props: {
     type: {
       type: String,
-      validator: value => TYPES.includes(value)
+      default: "permanent"
     },
     temporary: Boolean,
     permanent: Boolean,
-    persistent: Boolean
+    persistent: Boolean,
   },
 
   render(h, ctx) {

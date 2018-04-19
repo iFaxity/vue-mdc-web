@@ -1,5 +1,5 @@
 <template lang="pug">
-component.material-icons(:is="tag", :class="cssClasses", :tabindex="action && '0'", :role="action && 'button'", :aria-hidden="!action && 'true'", :aria-label="label") {{ icon }}
+component.material-icons(:is="tag", :class="cssClasses", :tabindex="action && '0'", :role="action && 'button'", :aria-hidden="!action && 'true'", :aria-label="label", title="label") {{ icon }}
 </template>
 
 <script>

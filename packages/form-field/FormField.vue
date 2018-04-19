@@ -1,7 +1,7 @@
 <template lang="pug">
 .mdc-form-field(:class="cssClasses")
   slot
-  label {{ label }}
+  label(:for="for") {{ label }}
 </template>
 
 <script>
@@ -12,7 +12,8 @@ export default {
       type: String,
       required: true
     },
-    alignEnd: Boolean
+    for: String,
+    alignEnd: Boolean,
   },
   computed: {
     cssClasses() {

@@ -8,7 +8,6 @@
 </template>
 
 <script>
-//, v-model="model"
 import Foundation from "@material/checkbox/foundation";
 import { getCorrectEventName } from "@material/animation";
 import { Ripple, matches } from "../ripple";
@@ -42,10 +41,7 @@ export default {
   },
   watch: {
     checked(value) {
-      if(Array.isArray(value)) {
-        value = value.includes(this.value);
-      }
-      this.foundation.setChecked(value);
+      this.$_syncChecked(value);
     },
     disabled(value) {
       this.foundation.setDisabled(value);
@@ -54,6 +50,7 @@ export default {
       this.foundation.setIndeterminate(value);
     }
   },
+
   mounted() {
     const { $el } = this;
     const { input } = this.$refs;
@@ -62,47 +59,49 @@ export default {
     this.foundation = new Foundation({
       addClass: className => $el.classList.add(className),
       removeClass: className => $el.classList.remove(className),
+      setNativeControlAttr: (attr, value) => input.setAttribute(attr, value),
+      removeNativeControlAttr: attr => input.removeAttribute(attr),
       registerAnimationEndHandler: handler => $el.removeEventListener(animationEnd, handler),
       deregisterAnimationEndHandler: handler => $el.removeEventListener(animationEnd, handler),
       registerChangeHandler: handler => input.addEventListener("change", handler),
       deregisterChangeHandler: handler => input.removeEventListener("change", handler),
       getNativeControl: () => input,
       forceLayout: () => this.$forceUpdate(),
-      isAttachedToDOM: () => !!$el.parentNode
+      isAttachedToDOM: () => !!$el.parentNode,
     });
     this.foundation.init();
     this.foundation.setDisabled(this.disabled);
     this.foundation.setIndeterminate(this.indeterminate);
 
-    if(Array.isArray(this.checked)) {
-      this.foundation.setChecked(this.checked.includes(this.value));
-    } else {
-      this.foundation.setChecked(this.checked);
-    }
+    // Check for initial checked
+    this.$_syncChecked(this.checked);
   },
   beforeDestroy() {
     this.foundation.destroy();
   },
   methods: {
+    $_syncChecked(checked) {
+      if(Array.isArray(checked)) {
+        checked = checked.includes(this.value);
+      }
+      this.foundation.setChecked(checked);
+    },
     onChange(e) {
-      let value = e.target.checked;
+      let { checked } = e.target;
       this.$emit("update:indeterminate", this.foundation.isIndeterminate());
 
       if(Array.isArray(this.checked)) {
-        const arr = this.checked;
-        if(value) {
-          arr.push(this.value);
+        checked = this.checked;
+        if(checked) {
+          checked.push(this.value);
         } else {
-          const index = arr.indexOf(this.value);
-          arr.splice(index, 1);
+          checked.splice(arr.indexOf(this.value), 1);
         }
-        
-        value = arr;
       } else if(this.value) {
-        value = this.value;
+        checked = this.value;
       }
 
-      this.$emit("change", value);
+      this.$emit("change", checked);
     }
   }
 };

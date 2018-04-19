@@ -7,11 +7,7 @@ import DrawerDivider from "./DrawerDivider.vue";
 import "@material/drawer/mdc-drawer.scss";
 
 export { PermanentDrawer, PersistentDrawer, TemporaryDrawer, DrawerItem, DrawerDivider };
-export function install(Vue) {
-  Vue.component(Drawer.name, Drawer);
-  Vue.component(PermanentDrawer.name, PermanentDrawer);
-  Vue.component(PersistentDrawer.name, PersistentDrawer);
-  Vue.component(TemporaryDrawer.name, TemporaryDrawer);
-  Vue.component(DrawerItem.name, DrawerItem);
-  Vue.component(DrawerDivider.name, DrawerDivider);
+export function install(Vue, register) {
+  register(Drawer, PermanentDrawer, PersistentDrawer,
+    TemporaryDrawer, DrawerItem, DrawerDivider);
 }

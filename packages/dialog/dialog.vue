@@ -6,7 +6,7 @@ aside.mdc-dialog(role="alertdialog")
     section.mdc-dialog__body(v-if="hasContent", :class="cssBodyClasses")
       slot
     footer.mdc-dialog__footer
-      mdc-button.mdc-dialog__footer__button.mdc-dialog__footer__button--cancel(ref="cancel") {{ cancelText }}
+      mdc-button.mdc-dialog__footer__button.mdc-dialog__footer__button--cancel {{ cancelText }}
       mdc-button.mdc-dialog__footer__button.mdc-dialog__footer__button--accept(ref="accept", :disabled="!valid") {{ acceptText }}
   .mdc-dialog__backdrop
 </template>
@@ -25,6 +25,7 @@ export default {
   props: {
     header: String,
     scroll: Boolean,
+    open: Boolean, // experimental
     valid: {
       type: Boolean,
       default: true
@@ -38,6 +39,17 @@ export default {
       default: "Cancel"
     }
   },
+
+  watch: {
+    open(value, oldValue) {
+      const isOpen = this.foundation.isOpen();
+      if(value && !isOpen) {
+        this.foundation.open();
+      } else if(!value && isOpen) {
+        this.foundation.close();
+      }
+    }
+  },
   computed: {
     cssBodyClasses() {
       return this.scroll && "mdc-dialog__body--scrollable";
@@ -46,9 +58,10 @@ export default {
       return !!this.$slots.default;
     }
   },
+
   mounted() {
     const { $el } = this;
-    const { cancel, accept, surface } = this.$refs;
+    const { accept, surface } = this.$refs;
     const focusTrap = createFocusTrapInstance(surface, accept);
 
     this.foundation = new Foundation({
@@ -78,30 +91,20 @@ export default {
       trapFocusOnSurface: () => focusTrap.activate(),
       untrapFocusOnSurface: () => focusTrap.deactivate(),
       isDialog: el => el === surface,
-      layoutFooterRipples: () => {
-        accept._ripple.layout();
-        cancel._ripple.layout();
-      }
     });
     this.foundation.init();
+    this.open && this.foundation.open();
   },
   beforeDestroy() {
     this.foundation.destroy();
   },
   methods: {
-    open() {
-      if(!this.foundation.isOpen()) {
-        this.foundation.open();
-        return true;
-      }
-      return false;
-    },
-    close() {
+    toggle() {
       if(this.foundation.isOpen()) {
         this.foundation.close();
-        return true;
+      } else {
+        this.foundation.open();
       }
-      return false;
     }
   }
 };

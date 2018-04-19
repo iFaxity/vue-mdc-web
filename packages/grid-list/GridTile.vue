@@ -7,8 +7,6 @@ li.mdc-grid-tile
     mdc-icon(v-if="icon", name="grid-tile", :icon="icon")
     span.mdc-grid-tile__title(v-if="title") {{ title }}
     span.mdc-grid-tile__support-text(v-if="text") {{ text }}
-
-
 </template>
 
 <script>
