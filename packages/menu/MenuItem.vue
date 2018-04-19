@@ -4,7 +4,7 @@ li.mdc-list-item(role="menuitem", tabindex="0") {{ text }}
 
 <script>
 export default {
-  name: "MdcMenuItem",
+  name: "MDCMenuItem",
   props: {
     text: {
       type: String,

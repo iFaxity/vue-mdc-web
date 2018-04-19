@@ -10,7 +10,7 @@ import { Corner } from "@material/menu/constants";
 import { getTransformPropertyName } from "@material/menu/util";
 
 export default {
-  name: "MdcMenu",
+  name: "MDCMenu",
   props: {
     anchor: Boolean,
 

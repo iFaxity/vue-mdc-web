@@ -2,14 +2,12 @@
 .mdc-text-field(:class="cssClasses")
   // Leading Icon
   mdc-icon(v-if="leadingIcon", ref="icon", name="text-field", :icon="leadingIcon")
-  //i.material-icons.mdc-text-field__icon(v-if="leadingIcon", ref="icon") {{ leadingIcon }}
 
-  input.mdc-text-field__input(ref="input", v-bind="$attrs", v-model="model", :placeholder="fullwidth && label")
-  label.mdc-text-field__label(v-if="!fullwidth", ref="label") {{ label }}
+  input.mdc-text-field__input(ref="input", v-model="model", v-bind="inputAttrs")
+  label.mdc-floating-label(v-if="!fullwidth", ref="label", :for="uuid") {{ label }}
     
   // Trailing Icon
   mdc-icon(v-if="!leadingIcon && trailingIcon", ref="icon", name="text-field", :icon="trailingIcon")
-  //i.material-icons.mdc-text-field__icon(v-if="!leadingIcon && trailingIcon", ref="icon") {{ trailingIcon }}
     
   .mdc-line-ripple(v-if="!outlined", ref="lineRipple")
   template(v-else)
@@ -21,41 +19,39 @@
 
 <script>
 import Foundation from "@material/textfield/foundation";
-import { Ripple, matches } from "../ripple";
 import { lineRippleFactory, helperTextFactory, iconFactory, labelFactory, outlineFactory } from "./foundations";
 import MdcIcon from "../icon";
-
-const rippleAdapter = {
-  isSurfaceActive() {
-    return this.$refs.input[matches]("active");
-  },
-  registerInteractionHandler(type, handler) {
-    this.$refs.input.addEventListener(type, handler);
-  },
-  deregisterInteractionHandler(type, handler) {
-    this.$refs.input.removeEventListener(type, handler);
-  }
-};
 
 function getHelperText(helperText) {
   return helperText.classList.contains("mdc-text-field-helper-text") ? helperText : null;
 }
+function uuid() {
+  return "_mdtf_" + Math.random().toString(36).substr(2);
+}
 
 export default {
-  name: "MdcTextfield",
-  inheritAttrs: false,
-  mixins: [ Ripple(rippleAdapter) ],
+  name: "MDCTextfield",
   components: { MdcIcon },
   props: {
     box: Boolean,
     outlined: Boolean,
     fullwidth: Boolean,
-    disabled: Boolean,
     dense: Boolean,
     required: Boolean,
-    // For v-model
+    disabled: Boolean,
+
+    id: String,
+    type: String,
     value: String,
     label: String,
+
+    // Validation
+    pattern: String,
+    min: Number,
+    max: Number,
+    step: Number,
+    minlength: Number,
+    maxlength: Number,
 
     // Icon definitions
     trailingIcon: String,
@@ -64,9 +60,6 @@ export default {
   watch: {
     disabled(value) {
       this.foundation.setDisabled(value);
-    },
-    required(value) {
-      this.foundation.setRequired(value);
     }
   },
   computed: {
@@ -90,7 +83,29 @@ export default {
       set(value) {
         this.$emit("input", value);
       }
+    },
+    inputAttrs() {
+      const label = this.fullwidth && this.label;
+
+      return {
+        required: this.required,
+        placeholder: label,
+        ariaLabel: label,
+
+        // Validation
+        id: this.uuid,
+        type: this.type,
+        pattern: this.pattern,
+        min: this.min,
+        max: this.max,
+        step: this.step,
+        minlength: this.minlength,
+        maxlength: this.maxlength,
+      };
     }
+  },
+  data() {
+    return { uuid: this.id || uuid()  };
   },
 
   mounted() {
@@ -98,11 +113,16 @@ export default {
     const { input } = this.$refs;
 
     const styles = getComputedStyle($el);
-    const foundationMap = this.$_getFoundationMap();
-    const { lineRipple } = foundationMap;
+    this.foundationMap = this.$_getFoundationMap();
 
-    if(!this.box || !this.outlined) {
-      this._ripple.destroy();
+    if(this.$refs.lineRipple) {
+      this._lineRipple = lineRippleFactory(this.$refs.lineRipple);
+    }
+    if(this.$refs.label) {
+      this._label = labelFactory(this.$refs.label);
+    }
+    if(this.$refs.outline) {
+      this._outline = outlineFactory(this.$refs.outline, this.$refs);
     }
 
     this.foundation = new Foundation({
@@ -114,35 +134,62 @@ export default {
       deregisterTextFieldInteractionHandler: (type, handler) => $el.removeEventListener(type, handler),
       registerInputInteractionHandler: (type, handler) => input.addEventListener(type, handler),
       deregisterInputInteractionHandler: (type, handler) => input.removeEventListener(type, handler),
+      registerValidationAttributeChangeHandler: handler => {
+        const observer = new MutationObserver(handler);
+        observer.observe(this.$refs.input, { attributes: true });
+        return observer;
+      },
+      deregisterValidationAttributeChangeHandler: observer => observer.disconnect(),
       
       getNativeInput: () => input,
       isFocused: () => document.activeElement === input,
       isRtl: () => styles.direction === "rtl",
-      activateLineRipple: () => lineRipple && lineRipple.activate(),
-      deactivateLineRipple: () => lineRipple && lineRipple.deactivate(),
-      setLineRippleTransformOrigin: normalizedX => lineRipple && lineRipple.setRippleCenter(normalizedX),
-    }, foundationMap);
 
-    // Initialize line ripple before foundation
-    lineRipple && lineRipple.init();
+      // Line Ripple methods
+      activateLineRipple: () => this._lineRipple && this._lineRipple.activate(),
+      deactivateLineRipple: () => this._lineRipple && this._lineRipple.deactivate(),
+      setLineRippleTransformOrigin: normalizedX => this._lineRipple && this._lineRipple.setRippleCenter(normalizedX),
+      // Label methods
+      shakeLabel: shouldShake => this._label.shake(shouldShake),
+      floatLabel: shouldFloat => this._label.float(shouldFloat),
+      hasLabel: () => !!this._label,
+      getLabelWidth: () => this._label.getWidth(),
+      // Outline methods
+      hasOutline: () => !!this._outline,
+      notchOutline: (labelWidth, isRtl) => this._outline.notch(labelWidth, isRtl),
+      closeOutline: () => this._outline.closeNotch(),
+    }, this.foundationMap);
+
     this.foundation.init();
     this.foundation.setDisabled(this.disabled);
-    this.foundation.setRequired(this.required);
   },
   beforeDestroy() {
     this.foundation.destroy();
+
+    if(this.foundationMap.helperText) {
+      this.foundationMap.helperText.destroy();
+    }
+    if(this.foundationMap.icon) {
+      this.foundationMap.icon.destroy();
+    }
+    if(this._lineRipple) {
+      this._lineRipple.destroy();
+    }
+    if(this._label) {
+      this._label.destroy();
+    }
+    if(this._outline) {
+      this._outline.destroy();
+    }
   },
   methods: {
     $_getFoundationMap() {
-      const { lineRipple, icon, label, outline, outlinePath, idleOutline } = this.$refs;
-      let helperText = getHelperText(this.$el.nextElementSibling);
+      const { icon } = this.$refs;
+      const helperText = getHelperText(this.$el.nextElementSibling);
 
       return {
-        lineRipple: lineRipple && lineRippleFactory(lineRipple),
         helperText: helperText && helperTextFactory(helperText),
         icon: icon && this.hasIconListener && iconFactory(icon.$el, () => this.$emit("icon")),
-        label: label && labelFactory(label),
-        outline: outline && outlineFactory(outline, outlinePath, idleOutline),
       };
     }
   }

@@ -1,7 +1,7 @@
 <template lang="pug">
 .mdc-text-field.mdc-text-field--textarea(:class="cssClasses")
   textarea.mdc-text-field__input(ref="input", v-bind="$attrs", v-model="model", :label="fullwidth && label")
-  label.mdc-text-field__label(v-if="!fullwidth", ref="label") {{ label }}
+  label.mdc-floating-label(v-if="!fullwidth", ref="label") {{ label }}
 </template>
 
 <script>
@@ -13,7 +13,7 @@ function getHelperText(helperText) {
 }
 
 export default {
-  name: "MdcTextarea",
+  name: "MDCTextarea",
   inheritAttrs: false,
   props: {
     fullwidth: Boolean,

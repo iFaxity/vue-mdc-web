@@ -4,7 +4,7 @@ component.mdc-list-item__graphic(:is="tag", :class="cssClasses", :aria-label="ic
 
 <script>
 export default {
-  name: "MdcListItemGraphic",
+  name: "MDCListItemGraphic",
   props: {
     icon: String,
     label: String,

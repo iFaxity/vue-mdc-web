@@ -5,7 +5,7 @@ p.mdc-text-field-helper-text(aria-hidden="true", :class="cssClasses")
 
 <script>
 export default {
-  name: "MdcTextfieldHelpertext",
+  name: "MDCTextfieldHelpertext",
   props: {
     persistent: Boolean,
     validation: Boolean

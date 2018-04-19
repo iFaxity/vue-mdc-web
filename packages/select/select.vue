@@ -19,7 +19,7 @@ const getEventType = type => type.substr(type.indexOf(":") + 1);
 
 //TODO: complete after created mdc-list and mdc-menu
 export default {
-  name: "MdcSelect",
+  name: "MDCSelect",
   mixins: [ Ripple() ],
   model: {
     prop: "value",

@@ -16,7 +16,7 @@ import { getCorrectPropertyName } from "@material/animation";
 import MdcTabBar from "./TabBar.vue";
 
 export default {
-  name: "MdcTabScroller",
+  name: "MDCTabScroller",
   inheritAttrs: false,
   components: { MdcTabBar },
   computed: {},

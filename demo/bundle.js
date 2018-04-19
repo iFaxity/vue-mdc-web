@@ -252,6 +252,8 @@ function isPrimitive (value) {
   return (
     typeof value === 'string' ||
     typeof value === 'number' ||
+    // $flow-disable-line
+    typeof value === 'symbol' ||
     typeof value === 'boolean'
   )
 }
@@ -556,6 +558,7 @@ var config = ({
   /**
    * Option merge strategies (used in core/util/options)
    */
+  // $flow-disable-line
   optionMergeStrategies: Object.create(null),
 
   /**
@@ -596,6 +599,7 @@ var config = ({
   /**
    * Custom user key aliases for v-on
    */
+  // $flow-disable-line
   keyCodes: Object.create(null),
 
   /**
@@ -931,9 +935,9 @@ var VNode = function VNode (
   this.elm = elm;
   this.ns = undefined;
   this.context = context;
-  this.functionalContext = undefined;
-  this.functionalOptions = undefined;
-  this.functionalScopeId = undefined;
+  this.fnContext = undefined;
+  this.fnOptions = undefined;
+  this.fnScopeId = undefined;
   this.key = data && data.key;
   this.componentOptions = componentOptions;
   this.componentInstance = undefined;
@@ -992,6 +996,9 @@ function cloneVNode (vnode, deep) {
   cloned.isStatic = vnode.isStatic;
   cloned.key = vnode.key;
   cloned.isComment = vnode.isComment;
+  cloned.fnContext = vnode.fnContext;
+  cloned.fnOptions = vnode.fnOptions;
+  cloned.fnScopeId = vnode.fnScopeId;
   cloned.isCloned = true;
   if (deep) {
     if (vnode.children) {
@@ -1027,8 +1034,7 @@ var arrayMethods = Object.create(arrayProto);[
   'splice',
   'sort',
   'reverse'
-]
-.forEach(function (method) {
+].forEach(function (method) {
   // cache original method
   var original = arrayProto[method];
   def(arrayMethods, method, function mutator () {
@@ -1360,18 +1366,18 @@ function mergeDataOrFn (
     // it has to be a function to pass previous merges.
     return function mergedDataFn () {
       return mergeData(
-        typeof childVal === 'function' ? childVal.call(this) : childVal,
-        typeof parentVal === 'function' ? parentVal.call(this) : parentVal
+        typeof childVal === 'function' ? childVal.call(this, this) : childVal,
+        typeof parentVal === 'function' ? parentVal.call(this, this) : parentVal
       )
     }
   } else {
     return function mergedInstanceDataFn () {
       // instance merge
       var instanceData = typeof childVal === 'function'
-        ? childVal.call(vm)
+        ? childVal.call(vm, vm)
         : childVal;
       var defaultData = typeof parentVal === 'function'
-        ? parentVal.call(vm)
+        ? parentVal.call(vm, vm)
         : parentVal;
       if (instanceData) {
         return mergeData(instanceData, defaultData)
@@ -1523,13 +1529,23 @@ var defaultStrat = function (parentVal, childVal) {
  */
 function checkComponents (options) {
   for (var key in options.components) {
-    var lower = key.toLowerCase();
-    if (isBuiltInTag(lower) || config.isReservedTag(lower)) {
-      warn(
-        'Do not use built-in or reserved HTML elements as component ' +
-        'id: ' + key
-      );
-    }
+    validateComponentName(key);
+  }
+}
+
+function validateComponentName (name) {
+  if (!/^[a-zA-Z][\w-]*$/.test(name)) {
+    warn(
+      'Invalid component name: "' + name + '". Component names ' +
+      'can only contain alphanumeric characters and the hyphen, ' +
+      'and must start with a letter.'
+    );
+  }
+  if (isBuiltInTag(name) || config.isReservedTag(name)) {
+    warn(
+      'Do not use built-in or reserved HTML elements as component ' +
+      'id: ' + name
+    );
   }
 }
 
@@ -1576,6 +1592,7 @@ function normalizeProps (options, vm) {
  */
 function normalizeInject (options, vm) {
   var inject = options.inject;
+  if (!inject) { return }
   var normalized = options.inject = {};
   if (Array.isArray(inject)) {
     for (var i = 0; i < inject.length; i++) {
@@ -1588,7 +1605,7 @@ function normalizeInject (options, vm) {
         ? extend({ from: key }, val)
         : { from: val };
     }
-  } else if (process.env.NODE_ENV !== 'production' && inject) {
+  } else if (process.env.NODE_ENV !== 'production') {
     warn(
       "Invalid value for option \"inject\": expected an Array or an Object, " +
       "but got " + (toRawType(inject)) + ".",
@@ -1730,7 +1747,11 @@ function validateProp (
     observe(value);
     observerState.shouldConvert = prevShouldConvert;
   }
-  if (process.env.NODE_ENV !== 'production') {
+  if (
+    process.env.NODE_ENV !== 'production' &&
+    // skip validation for weex recycle-list child component props
+    !(false && isObject(value) && ('@binding' in value))
+  ) {
     assertProp(prop, key, value, vm, absent);
   }
   return value
@@ -2210,11 +2231,12 @@ function updateListeners (
   remove$$1,
   vm
 ) {
-  var name, cur, old, event;
+  var name, def, cur, old, event;
   for (name in on$$1) {
-    cur = on$$1[name];
+    def = cur = on$$1[name];
     old = oldOn[name];
     event = normalizeEvent(name);
+    /* istanbul ignore if */
     if (isUndef(cur)) {
       process.env.NODE_ENV !== 'production' && warn(
         "Invalid handler for event \"" + (event.name) + "\": got " + String(cur),
@@ -2224,7 +2246,7 @@ function updateListeners (
       if (isUndef(cur.fns)) {
         cur = on$$1[name] = createFnInvoker(cur);
       }
-      add(event.name, cur, event.once, event.capture, event.passive);
+      add(event.name, cur, event.once, event.capture, event.passive, event.params);
     } else if (cur !== old) {
       old.fns = cur;
       on$$1[name] = old;
@@ -2718,6 +2740,8 @@ function eventsMixin (Vue) {
 
 /*  */
 
+
+
 /**
  * Runtime helper for resolving raw children VNodes into a slot object.
  */
@@ -2738,13 +2762,13 @@ function resolveSlots (
     }
     // named slots should only be respected if the vnode was rendered in the
     // same context.
-    if ((child.context === context || child.functionalContext === context) &&
+    if ((child.context === context || child.fnContext === context) &&
       data && data.slot != null
     ) {
-      var name = child.data.slot;
+      var name = data.slot;
       var slot = (slots[name] || (slots[name] = []));
       if (child.tag === 'template') {
-        slot.push.apply(slot, child.children);
+        slot.push.apply(slot, child.children || []);
       } else {
         slot.push(child);
       }
@@ -2958,7 +2982,10 @@ function mountComponent (
     };
   }
 
-  vm._watcher = new Watcher(vm, updateComponent, noop);
+  // we set this to vm._watcher inside the watcher's constructor
+  // since the watcher's initial patch may call $forceUpdate (e.g. inside child
+  // component's mounted hook), which relies on vm._watcher being already defined
+  new Watcher(vm, updateComponent, noop, null, true /* isRenderWatcher */);
   hydrating = false;
 
   // manually mounted instance, call mounted on self
@@ -3245,9 +3272,13 @@ var Watcher = function Watcher (
   vm,
   expOrFn,
   cb,
-  options
+  options,
+  isRenderWatcher
 ) {
   this.vm = vm;
+  if (isRenderWatcher) {
+    vm._watcher = this;
+  }
   vm._watchers.push(this);
   // options
   if (options) {
@@ -3578,6 +3609,7 @@ function getData (data, vm) {
 var computedWatcherOptions = { lazy: true };
 
 function initComputed (vm, computed) {
+  // $flow-disable-line
   var watchers = vm._computedWatchers = Object.create(null);
   // computed properties are just getters during SSR
   var isSSR = isServerRendering();
@@ -3808,11 +3840,11 @@ function resolveInject (inject, vm) {
     // inject is :any because flow is not smart enough to figure out cached
     var result = Object.create(null);
     var keys = hasSymbol
-        ? Reflect.ownKeys(inject).filter(function (key) {
-          /* istanbul ignore next */
-          return Object.getOwnPropertyDescriptor(inject, key).enumerable
-        })
-        : Object.keys(inject);
+      ? Reflect.ownKeys(inject).filter(function (key) {
+        /* istanbul ignore next */
+        return Object.getOwnPropertyDescriptor(inject, key).enumerable
+      })
+      : Object.keys(inject);
 
     for (var i = 0; i < keys.length; i++) {
       var key = keys[i];
@@ -4018,19 +4050,9 @@ function bindObjectProps (
  */
 function renderStatic (
   index,
-  isInFor,
-  isOnce
+  isInFor
 ) {
-  // render fns generated by compiler < 2.5.4 does not provide v-once
-  // information to runtime so be conservative
-  var isOldVersion = arguments.length < 3;
-  // if a static tree is generated by v-once, it is cached on the instance;
-  // otherwise it is purely static and can be cached on the shared options
-  // across all instances.
-  var renderFns = this.$options.staticRenderFns;
-  var cached = isOldVersion || isOnce
-    ? (this._staticTrees || (this._staticTrees = []))
-    : (renderFns.cached || (renderFns.cached = []));
+  var cached = this._staticTrees || (this._staticTrees = []);
   var tree = cached[index];
   // if has already-rendered static tree and not inside v-for,
   // we can reuse the same tree by doing a shallow clone.
@@ -4040,7 +4062,11 @@ function renderStatic (
       : cloneVNode(tree)
   }
   // otherwise, render a fresh tree.
-  tree = cached[index] = renderFns[index].call(this._renderProxy, null, this);
+  tree = cached[index] = this.$options.staticRenderFns[index].call(
+    this._renderProxy,
+    null,
+    this // for render fns generated for functional component templates
+  );
   markStatic(tree, ("__static__" + index), false);
   return tree
 }
@@ -4158,8 +4184,8 @@ function FunctionalRenderContext (
     this._c = function (a, b, c, d) {
       var vnode = createElement(contextVm, a, b, c, d, needNormalization);
       if (vnode) {
-        vnode.functionalScopeId = options._scopeId;
-        vnode.functionalContext = parent;
+        vnode.fnScopeId = options._scopeId;
+        vnode.fnContext = parent;
       }
       return vnode
     };
@@ -4200,8 +4226,8 @@ function createFunctionalComponent (
   var vnode = options.render.call(null, renderContext._c, renderContext);
 
   if (vnode instanceof VNode) {
-    vnode.functionalContext = contextVm;
-    vnode.functionalOptions = options;
+    vnode.fnContext = contextVm;
+    vnode.fnOptions = options;
     if (data.slot) {
       (vnode.data || (vnode.data = {})).slot = data.slot;
     }
@@ -4215,6 +4241,25 @@ function mergeProps (to, from) {
     to[camelize(key)] = from[key];
   }
 }
+
+/*  */
+
+
+
+
+// Register the component hook to weex native render engine.
+// The hook will be triggered by native, not javascript.
+
+
+// Updates the state of the component to weex native render engine.
+
+/*  */
+
+// https://github.com/Hanks10100/weex-native-directive/tree/master/component
+
+// listening on native callback
+
+/*  */
 
 /*  */
 
@@ -4383,6 +4428,11 @@ function createComponent (
     { Ctor: Ctor, propsData: propsData, listeners: listeners, tag: tag, children: children },
     asyncFactory
   );
+
+  // Weex specific: invoke recycle-list optimized @render function for
+  // extracting cell-slot template.
+  // https://github.com/Hanks10100/weex-native-directive/tree/master/component
+  /* istanbul ignore if */
   return vnode
 }
 
@@ -4392,15 +4442,10 @@ function createComponentInstanceForVnode (
   parentElm,
   refElm
 ) {
-  var vnodeComponentOptions = vnode.componentOptions;
   var options = {
     _isComponent: true,
     parent: parent,
-    propsData: vnodeComponentOptions.propsData,
-    _componentTag: vnodeComponentOptions.tag,
     _parentVnode: vnode,
-    _parentListeners: vnodeComponentOptions.listeners,
-    _renderChildren: vnodeComponentOptions.children,
     _parentElm: parentElm || null,
     _refElm: refElm || null
   };
@@ -4410,7 +4455,7 @@ function createComponentInstanceForVnode (
     options.render = inlineTemplate.render;
     options.staticRenderFns = inlineTemplate.staticRenderFns;
   }
-  return new vnodeComponentOptions.Ctor(options)
+  return new vnode.componentOptions.Ctor(options)
 }
 
 function mergeHooks (data) {
@@ -4498,11 +4543,13 @@ function _createElement (
   if (process.env.NODE_ENV !== 'production' &&
     isDef(data) && isDef(data.key) && !isPrimitive(data.key)
   ) {
-    warn(
-      'Avoid using non-primitive value as key, ' +
-      'use string/number value instead.',
-      context
-    );
+    {
+      warn(
+        'Avoid using non-primitive value as key, ' +
+        'use string/number value instead.',
+        context
+      );
+    }
   }
   // support single function children as default scoped slot
   if (Array.isArray(children) &&
@@ -4744,14 +4791,18 @@ function initMixin (Vue) {
 function initInternalComponent (vm, options) {
   var opts = vm.$options = Object.create(vm.constructor.options);
   // doing this because it's faster than dynamic enumeration.
+  var parentVnode = options._parentVnode;
   opts.parent = options.parent;
-  opts.propsData = options.propsData;
-  opts._parentVnode = options._parentVnode;
-  opts._parentListeners = options._parentListeners;
-  opts._renderChildren = options._renderChildren;
-  opts._componentTag = options._componentTag;
+  opts._parentVnode = parentVnode;
   opts._parentElm = options._parentElm;
   opts._refElm = options._refElm;
+
+  var vnodeComponentOptions = parentVnode.componentOptions;
+  opts.propsData = vnodeComponentOptions.propsData;
+  opts._parentListeners = vnodeComponentOptions.listeners;
+  opts._renderChildren = vnodeComponentOptions.children;
+  opts._componentTag = vnodeComponentOptions.tag;
+
   if (options.render) {
     opts.render = options.render;
     opts.staticRenderFns = options.staticRenderFns;
@@ -4885,14 +4936,8 @@ function initExtend (Vue) {
     }
 
     var name = extendOptions.name || Super.options.name;
-    if (process.env.NODE_ENV !== 'production') {
-      if (!/^[a-zA-Z][\w-]*$/.test(name)) {
-        warn(
-          'Invalid component name: "' + name + '". Component names ' +
-          'can only contain alphanumeric characters and the hyphen, ' +
-          'and must start with a letter.'
-        );
-      }
+    if (process.env.NODE_ENV !== 'production' && name) {
+      validateComponentName(name);
     }
 
     var Sub = function VueComponent (options) {
@@ -4974,13 +5019,8 @@ function initAssetRegisters (Vue) {
         return this.options[type + 's'][id]
       } else {
         /* istanbul ignore if */
-        if (process.env.NODE_ENV !== 'production') {
-          if (type === 'component' && config.isReservedTag(id)) {
-            warn(
-              'Do not use built-in or reserved HTML elements as component ' +
-              'id: ' + id
-            );
-          }
+        if (process.env.NODE_ENV !== 'production' && type === 'component') {
+          validateComponentName(id);
         }
         if (type === 'component' && isPlainObject(definition)) {
           definition.name = definition.name || id;
@@ -5036,7 +5076,7 @@ function pruneCacheEntry (
   current
 ) {
   var cached$$1 = cache[key];
-  if (cached$$1 && cached$$1 !== current) {
+  if (cached$$1 && (!current || cached$$1.tag !== current.tag)) {
     cached$$1.componentInstance.$destroy();
   }
   cache[key] = null;
@@ -5187,7 +5227,7 @@ Object.defineProperty(Vue$3$1.prototype, '$ssrContext', {
   }
 });
 
-Vue$3$1.version = '2.5.7';
+Vue$3$1.version = '2.5.13';
 
 /*  */
 
@@ -5239,12 +5279,12 @@ function genClassForVnode (vnode) {
   var childNode = vnode;
   while (isDef(childNode.componentInstance)) {
     childNode = childNode.componentInstance._vnode;
-    if (childNode.data) {
+    if (childNode && childNode.data) {
       data = mergeClassData(childNode.data, data);
     }
   }
   while (isDef(parentNode = parentNode.parent)) {
-    if (parentNode.data) {
+    if (parentNode && parentNode.data) {
       data = mergeClassData(data, parentNode.data);
     }
   }
@@ -5755,11 +5795,14 @@ function createPatchFunction (backend) {
 
   function createChildren (vnode, children, insertedVnodeQueue) {
     if (Array.isArray(children)) {
+      if (process.env.NODE_ENV !== 'production') {
+        checkDuplicateKeys(children);
+      }
       for (var i = 0; i < children.length; ++i) {
         createElm(children[i], insertedVnodeQueue, vnode.elm, null, true);
       }
     } else if (isPrimitive(vnode.text)) {
-      nodeOps.appendChild(vnode.elm, nodeOps.createTextNode(vnode.text));
+      nodeOps.appendChild(vnode.elm, nodeOps.createTextNode(String(vnode.text)));
     }
   }
 
@@ -5786,7 +5829,7 @@ function createPatchFunction (backend) {
   // of going through the normal attribute patching process.
   function setScope (vnode) {
     var i;
-    if (isDef(i = vnode.functionalScopeId)) {
+    if (isDef(i = vnode.fnScopeId)) {
       nodeOps.setAttribute(vnode.elm, i, '');
     } else {
       var ancestor = vnode;
@@ -5800,7 +5843,7 @@ function createPatchFunction (backend) {
     // for slot content they should also get the scopeId from the host instance.
     if (isDef(i = activeInstance) &&
       i !== vnode.context &&
-      i !== vnode.functionalContext &&
+      i !== vnode.fnContext &&
       isDef(i = i.$options._scopeId)
     ) {
       nodeOps.setAttribute(vnode.elm, i, '');
@@ -5886,6 +5929,10 @@ function createPatchFunction (backend) {
     // during leaving transitions
     var canMove = !removeOnly;
 
+    if (process.env.NODE_ENV !== 'production') {
+      checkDuplicateKeys(newCh);
+    }
+
     while (oldStartIdx <= oldEndIdx && newStartIdx <= newEndIdx) {
       if (isUndef(oldStartVnode)) {
         oldStartVnode = oldCh[++oldStartIdx]; // Vnode has been moved left
@@ -5918,13 +5965,6 @@ function createPatchFunction (backend) {
           createElm(newStartVnode, insertedVnodeQueue, parentElm, oldStartVnode.elm);
         } else {
           vnodeToMove = oldCh[idxInOld];
-          /* istanbul ignore if */
-          if (process.env.NODE_ENV !== 'production' && !vnodeToMove) {
-            warn(
-              'It seems there are duplicate keys that is causing an update error. ' +
-              'Make sure each v-for item has a unique key.'
-            );
-          }
           if (sameVnode(vnodeToMove, newStartVnode)) {
             patchVnode(vnodeToMove, newStartVnode, insertedVnodeQueue);
             oldCh[idxInOld] = undefined;
@@ -5942,6 +5982,24 @@ function createPatchFunction (backend) {
       addVnodes(parentElm, refElm, newCh, newStartIdx, newEndIdx, insertedVnodeQueue);
     } else if (newStartIdx > newEndIdx) {
       removeVnodes(parentElm, oldCh, oldStartIdx, oldEndIdx);
+    }
+  }
+
+  function checkDuplicateKeys (children) {
+    var seenKeys = {};
+    for (var i = 0; i < children.length; i++) {
+      var vnode = children[i];
+      var key = vnode.key;
+      if (isDef(key)) {
+        if (seenKeys[key]) {
+          warn(
+            ("Duplicate keys detected: '" + key + "'. This may cause an update error."),
+            vnode.context
+          );
+        } else {
+          seenKeys[key] = true;
+        }
+      }
     }
   }
 
@@ -6327,17 +6385,20 @@ function normalizeDirectives$1 (
 ) {
   var res = Object.create(null);
   if (!dirs) {
+    // $flow-disable-line
     return res
   }
   var i, dir;
   for (i = 0; i < dirs.length; i++) {
     dir = dirs[i];
     if (!dir.modifiers) {
+      // $flow-disable-line
       dir.modifiers = emptyModifiers;
     }
     res[getRawDirName(dir)] = dir;
     dir.def = resolveAsset(vm.$options, 'directives', dir.name, true);
   }
+  // $flow-disable-line
   return res
 }
 
@@ -6390,7 +6451,7 @@ function updateAttrs (oldVnode, vnode) {
   // #4391: in IE9, setting type can reset value for input[type=radio]
   // #6666: IE/Edge forces progress value down to 1 before setting a max
   /* istanbul ignore if */
-  if ((isIE9 || isEdge) && attrs.value !== oldAttrs.value) {
+  if ((isIE || isEdge) && attrs.value !== oldAttrs.value) {
     setAttr(elm, 'value', attrs.value);
   }
   for (key in oldAttrs) {
@@ -6430,6 +6491,23 @@ function setAttr (el, key, value) {
     if (isFalsyAttrValue(value)) {
       el.removeAttribute(key);
     } else {
+      // #7138: IE10 & 11 fires input event when setting placeholder on
+      // <textarea>... block the first input event and remove the blocker
+      // immediately.
+      /* istanbul ignore if */
+      if (
+        isIE && !isIE9 &&
+        el.tagName === 'TEXTAREA' &&
+        key === 'placeholder' && !el.__ieph
+      ) {
+        var blocker = function (e) {
+          e.stopImmediatePropagation();
+          el.removeEventListener('input', blocker);
+        };
+        el.addEventListener('input', blocker);
+        // $flow-disable-line
+        el.__ieph = true; /* IE placeholder patched */
+      }
       el.setAttribute(key, value);
     }
   }
@@ -6488,6 +6566,9 @@ var klass = {
 
 
 
+
+
+// add a raw attr (use this in preTransforms)
 
 
 
@@ -6658,12 +6739,12 @@ function updateDOMProps (oldVnode, vnode) {
 function shouldUpdateValue (elm, checkVal) {
   return (!elm.composing && (
     elm.tagName === 'OPTION' ||
-    isDirty(elm, checkVal) ||
-    isInputChanged(elm, checkVal)
+    isNotInFocusAndDirty(elm, checkVal) ||
+    isDirtyWithModifiers(elm, checkVal)
   ))
 }
 
-function isDirty (elm, checkVal) {
+function isNotInFocusAndDirty (elm, checkVal) {
   // return true when textbox (.number and .trim) loses focus and its value is
   // not equal to the updated value
   var notInFocus = true;
@@ -6673,14 +6754,20 @@ function isDirty (elm, checkVal) {
   return notInFocus && elm.value !== checkVal
 }
 
-function isInputChanged (elm, newVal) {
+function isDirtyWithModifiers (elm, newVal) {
   var value = elm.value;
   var modifiers = elm._vModifiers; // injected by v-model runtime
-  if (isDef(modifiers) && modifiers.number) {
-    return toNumber(value) !== toNumber(newVal)
-  }
-  if (isDef(modifiers) && modifiers.trim) {
-    return value.trim() !== newVal.trim()
+  if (isDef(modifiers)) {
+    if (modifiers.lazy) {
+      // inputs with lazy should only be updated when not in focus
+      return false
+    }
+    if (modifiers.number) {
+      return toNumber(value) !== toNumber(newVal)
+    }
+    if (modifiers.trim) {
+      return value.trim() !== newVal.trim()
+    }
   }
   return value !== newVal
 }
@@ -6738,7 +6825,10 @@ function getStyle (vnode, checkChild) {
     var childNode = vnode;
     while (childNode.componentInstance) {
       childNode = childNode.componentInstance._vnode;
-      if (childNode.data && (styleData = normalizeStyleData(childNode.data))) {
+      if (
+        childNode && childNode.data &&
+        (styleData = normalizeStyleData(childNode.data))
+      ) {
         extend(res, styleData);
       }
     }
@@ -7894,7 +7984,7 @@ var TransitionGroup = {
       this._vnode,
       this.kept,
       false, // hydrating
-      true // removeOnly (!important, avoids unnecessary moves)
+      true // removeOnly (!important avoids unnecessary moves)
     );
     this._vnode = this.kept;
   },
@@ -10680,6 +10770,7 @@ var App$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_v
     cssClasses() {
       return {
         "mdc-app--flipped": this.flip,
+        "mdc-app--align-start": this.alignStart,
         "mdc-app--drawer-hide-mobile": this.drawerHideMobile
       };
     },
@@ -11571,10 +11662,26 @@ function createRipple(vm, adapter, { unbounded }) {
   return new MDCRippleFoundation(rippleAdapter);
 }
 
-// Exports the directive and the matches property
 function Ripple(adapter = null, opts = {}, assert) {
   return {
     data() { return { _ripple: null } },
+    beforeMount() {
+      if(opts.surface) {
+        if(this.$vnode.data.staticClass) {
+          this.$vnode.data.staticClass += " mdc-ripple-surface";
+        } else {
+          this.$vnode.data.staticClass = "mdc-ripple-surface";
+        }
+        
+        if(opts.unbounded) {
+          if(this.$vnode.data.attrs) {
+            this.$vnode.data.attrs = {};
+          }
+          debugger;
+          this.$vnode.data.attrs["data-mdc-ripple-is-unbounded"] = true;
+        }
+      }
+    },
     mounted() {
       this._ripple = createRipple(this, adapter, opts);
       this._ripple.init();
@@ -11585,7 +11692,7 @@ function Ripple(adapter = null, opts = {}, assert) {
   };
 }
 
-var Button$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c(_vm.link ? "a" : "button",_vm._g({tag:"component",class:_vm.cssClasses,attrs:{"href":_vm.link}},_vm.$listeners),[(_vm.icon)?_c('i',{staticClass:"material-icons mdc-button__icon"},[_vm._v(_vm._s(_vm.icon))]):_vm._e(),_vm._t("default")],2)},staticRenderFns: [],
+var MdcButton = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c(_vm.link ? "a" : "button",_vm._g({tag:"component",staticClass:"mdc-button",class:_vm.cssClasses,attrs:{"href":_vm.link,"disabled":_vm.disabled}},_vm.$listeners),[(_vm.icon)?_c('i',{staticClass:"material-icons mdc-button__icon"},[_vm._v(_vm._s(_vm.icon))]):_vm._e(),_vm._t("default")],2)},staticRenderFns: [],
   name: "MdcButton",
   mixins: [ Ripple() ],
   props: {
@@ -11595,13 +11702,13 @@ var Button$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c
     stroked: Boolean,
     dense: Boolean,
     compact: Boolean,
+    disabled: Boolean,
 
     link: String
   },
   computed: {
     cssClasses() {
       return {
-        "mdc-button": true,
         "mdc-button--raised": this.raised,
         "mdc-button--unelevated": this.unelevated,
         "mdc-button--stroked": this.stroked,
@@ -11613,11 +11720,11 @@ var Button$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c
 };
 
 function install$2(Vue) {
-  Vue.component(Button$1.name, Button$1);
+  Vue.component(MdcButton.name, MdcButton);
 }
 
 var Button = Object.freeze({
-	Button: Button$1,
+	Button: MdcButton,
 	install: install$2
 });
 
@@ -11633,7 +11740,7 @@ var Card$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_
   }
 };
 
-var CardActions = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-card__actions",class:_vm.cssClasses},[_vm._t("default"),(_vm.hasButtons)?_c('div',{staticClass:"mdc-card__action-buttons"},[_vm._t("buttons")],2):_vm._e(),(_vm.hasIcons)?_c('div',{staticClass:"mdc-card__action-icons"},[_vm._t("icons")],2):_vm._e()],2)},staticRenderFns: [],
+var CardActions = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-card__actions",class:_vm.cssClasses},[_vm._t("default"),(_vm.hasButtons)?_c('div',{staticClass:"mdc-card__action-buttons"},[_vm._t("button")],2):_vm._e(),(_vm.hasIcons)?_c('div',{staticClass:"mdc-card__action-icons"},[_vm._t("icon")],2):_vm._e()],2)},staticRenderFns: [],
   name: "MdcCardActions",
   props: {
     fullBleed: Boolean
@@ -11643,47 +11750,37 @@ var CardActions = {render: function(){var _vm=this;var _h=_vm.$createElement;var
       return this.fullBleed && "mdc-card__actions--full-bleed";
     },
     hasButtons() {
-      return !!this.$slots.buttons;
+      return !!this.$slots.button;
     },
     hasIcons() {
-      return !!this.$slots.icons;
+      return !!this.$slots.icon;
     }
   },
-  mounted() {
-    const buttons = this.$el.querySelectorAll(".mdc-button");
-    const icons = this.$el.querySelectorAll(".mdc-icon-toggle");
-
-    buttons.forEach(button => {
-      button.classList.add("mdc-card__action");
-      button.classList.add("mdc-card__action--button");
-    });
-    icons.forEach(icon => {
-      icon.classList.add("mdc-card__action");
-      icon.classList.add("mdc-card__action--icon");
-    });
+  beforeMount() {
+    const addClass = ({ data }, className) => {
+      if(data.staticClass) {
+        data.staticClass += ` ${className}`;
+      } else {
+        data.staticClass = className;
+      }
+    };
+    this.$slots.button.forEach(button => addClass(button, "mdc-card__action mdc-card__action--button"));
+    this.$slots.icon.forEach(icon => addClass(icon, "mdc-card__action mdc-card__action--icon"));
   }
 };
-
-const RATIOS = ["16x9", "square"];
 
 var CardMedia = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-card__media",class:_vm.cssClasses,style:(_vm.cssStyles)},[(_vm.hasContent)?_c('div',{staticClass:"mdc-card__media-content"},[_vm._t("default")],2):_vm._e()])},staticRenderFns: [],
   name: "MdcCardMedia",
   props: {
-    ratio: {
-      type: String,
-      validator: value => RATIOS.includes(value)
-    },
+    square: Boolean,
     image: String
   },
   computed: {
     cssStyles() {
-      return this.image && `background-image: ${this.image};`;
+      return this.image && `background-image: url(${this.image});`;
     },
     cssClasses() {
-      return {
-        "mdc-card__media--square": this.ratio === "square",
-        "mdc-card__media--16-9": this.ratio === "16x9"
-      };
+      return this.square ? "mdc-card__media--square" : "mdc-card__media--16-9";
     },
     hasContent() {
       return !!this.$slots.default;
@@ -12259,8 +12356,12 @@ function getCorrectPropertyName(windowObj, eventType) {
   return getAnimationName(windowObj, eventType);
 }
 
+//, v-model="model"
 const animationEnd = getCorrectEventName(window, "animationend");
 const rippleAdapter = {
+  isSurfaceActive() {
+    return this.$refs.input[matches$1](":active");
+  },
   registerInteractionHandler(typeName, handler) {
     this.$refs.input.addEventListener(typeName, handler);
   },
@@ -12269,7 +12370,7 @@ const rippleAdapter = {
   }
 };
 
-var Checkbox$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-checkbox"},[_c('input',_vm._b({directives:[{name:"model",rawName:"v-model",value:(_vm.model),expression:"model"}],ref:"input",staticClass:"mdc-checkbox__native-control",attrs:{"type":"checkbox"},domProps:{"checked":Array.isArray(_vm.model)?_vm._i(_vm.model,null)>-1:(_vm.model)},on:{"change":function($event){var $$a=_vm.model,$$el=$event.target,$$c=$$el.checked?(true):(false);if(Array.isArray($$a)){var $$v=null,$$i=_vm._i($$a,$$v);if($$el.checked){$$i<0&&(_vm.model=$$a.concat([$$v]));}else{$$i>-1&&(_vm.model=$$a.slice(0,$$i).concat($$a.slice($$i+1)));}}else{_vm.model=$$c;}}}},'input',_vm.$attrs,false)),_c('div',{staticClass:"mdc-checkbox__background"},[_c('svg',{staticClass:"mdc-checkbox__checkmark",attrs:{"viewBox":"0 0 24 24"}},[_c('path',{staticClass:"mdc-checkbox__checkmark-path",attrs:{"fill":"none","stroke":"white","d":"M1.73,12.91 8.1,19.28 22.79,4.59"}})]),_c('div',{staticClass:"mdc-checkbox__mixedmark"})])])},staticRenderFns: [],
+var Checkbox$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-checkbox"},[_c('input',_vm._b({ref:"input",staticClass:"mdc-checkbox__native-control",attrs:{"type":"checkbox"},on:{"change":_vm.onChange}},'input',_vm.$attrs,false)),_c('div',{staticClass:"mdc-checkbox__background"},[_c('svg',{staticClass:"mdc-checkbox__checkmark",attrs:{"viewBox":"0 0 24 24"}},[_c('path',{staticClass:"mdc-checkbox__checkmark-path",attrs:{"fill":"none","stroke":"white","d":"M1.73,12.91 8.1,19.28 22.79,4.59"}})]),_c('div',{staticClass:"mdc-checkbox__mixedmark"})])])},staticRenderFns: [],
   name: "MdcCheckbox",
   mixins: [ Ripple(rippleAdapter, { unbounded: true }) ],
   inheritAttrs: false,
@@ -12283,6 +12384,9 @@ var Checkbox$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var 
     indeterminate: Boolean,
   },
   watch: {
+    checked(value) {
+      this.foundation.setChecked(value);
+    },
     disabled(value) {
       this.foundation.setDisabled(value);
     },
@@ -12290,17 +12394,6 @@ var Checkbox$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var 
       this.foundation.setIndeterminate(value);
     }
   },
-  computed: {
-    model: {
-      get() {
-        return this.checked;
-      },
-      set(value) {
-        this.$emit("change", value);
-      }
-    }
-  },
-
   mounted() {
     const { $el } = this;
     const { input } = this.$refs;
@@ -12324,6 +12417,12 @@ var Checkbox$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var 
   },
   beforeDestroy() {
     this.foundation.destroy();
+  },
+  methods: {
+    onChange(e) {
+      this.$emit("update:indeterminate", this.foundation.isIndeterminate());
+      this.$emit("change", e.target.value);
+    }
   }
 };
 
@@ -12387,6 +12486,13 @@ var Checkbox = Object.freeze({
 /** @enum {string} */
 const strings$2 = {
   INTERACTION_EVENT: 'MDCChip:interaction',
+  TRAILING_ICON_INTERACTION_EVENT: 'MDCChip:trailingIconInteraction',
+  TRAILING_ICON_SELECTOR: '.mdc-chip__icon--trailing',
+};
+
+/** @enum {string} */
+const cssClasses$2 = {
+  SELECTED: 'mdc-chip--selected',
 };
 
 /**
@@ -12412,6 +12518,11 @@ class MDCChipFoundation extends MDCFoundation {
     return strings$2;
   }
 
+  /** @return enum {string} */
+  static get cssClasses() {
+    return cssClasses$2;
+  }
+
   /**
    * {@see MDCChipAdapter} for typing information on parameters and return
    * types.
@@ -12419,9 +12530,15 @@ class MDCChipFoundation extends MDCFoundation {
    */
   static get defaultAdapter() {
     return /** @type {!MDCChipAdapter} */ ({
+      addClass: () => {},
+      removeClass: () => {},
+      hasClass: () => {},
       registerInteractionHandler: () => {},
       deregisterInteractionHandler: () => {},
+      registerTrailingIconInteractionHandler: () => {},
+      deregisterTrailingIconInteractionHandler: () => {},
       notifyInteraction: () => {},
+      notifyTrailingIconInteraction: () => {},
     });
   }
 
@@ -12433,18 +12550,39 @@ class MDCChipFoundation extends MDCFoundation {
 
     /** @private {function(!Event): undefined} */
     this.interactionHandler_ = (evt) => this.handleInteraction_(evt);
+    /** @private {function(!Event): undefined} */
+    this.trailingIconInteractionHandler_ = (evt) => this.handleTrailingIconInteraction_(evt);
   }
 
   init() {
     ['click', 'keydown'].forEach((evtType) => {
       this.adapter_.registerInteractionHandler(evtType, this.interactionHandler_);
+      this.adapter_.registerTrailingIconInteractionHandler(evtType, this.trailingIconInteractionHandler_);
+    });
+    ['touchstart', 'pointerdown', 'mousedown'].forEach((evtType) => {
+      this.adapter_.registerTrailingIconInteractionHandler(evtType, this.trailingIconInteractionHandler_);
     });
   }
 
   destroy() {
     ['click', 'keydown'].forEach((evtType) => {
       this.adapter_.deregisterInteractionHandler(evtType, this.interactionHandler_);
+      this.adapter_.deregisterTrailingIconInteractionHandler(evtType, this.trailingIconInteractionHandler_);
     });
+    ['touchstart', 'pointerdown', 'mousedown'].forEach((evtType) => {
+      this.adapter_.deregisterTrailingIconInteractionHandler(evtType, this.trailingIconInteractionHandler_);
+    });
+  }
+
+  /**
+   * Toggles the selected class on the chip element.
+   */
+  toggleSelected() {
+    if (this.adapter_.hasClass(cssClasses$2.SELECTED)) {
+      this.adapter_.removeClass(cssClasses$2.SELECTED);
+    } else {
+      this.adapter_.addClass(cssClasses$2.SELECTED);
+    }
   }
 
   /**
@@ -12456,38 +12594,54 @@ class MDCChipFoundation extends MDCFoundation {
       this.adapter_.notifyInteraction();
     }
   }
+
+  /**
+   * Handles an interaction event on the trailing icon element. This is used to
+   * prevent the ripple from activating on interaction with the trailing icon.
+   * @param {!Event} evt
+   */
+  handleTrailingIconInteraction_(evt) {
+    evt.stopPropagation();
+    if (evt.type === 'click' || evt.key === 'Enter' || evt.keyCode === 13) {
+      this.adapter_.notifyTrailingIconInteraction();
+    }
+  }
 }
 
 var MdcIcon$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c(_vm.tag,{tag:"component",staticClass:"material-icons",class:_vm.cssClasses,attrs:{"tabindex":_vm.action && '0',"role":_vm.action && 'button',"aria-hidden":!_vm.action && 'true',"aria-label":_vm.label}},[_vm._v(_vm._s(_vm.icon))])},staticRenderFns: [],
   name: "MdcIcon",
+  mixins: [ Ripple(null, { unbounded: true, surface: true }) ],
   props: {
-    name: {
-      type: String,
-      required: true
-    },
     icon: {
       type: String,
       required: true
     },
-    
-    action: Boolean,
+    name: String,
     label: String,
     tag: {
       type: String,
       default: "i"
-    }
+    },
+    
+    ripple: Boolean,
+    action: Boolean
   },
   computed: {
     cssClasses() {
-      return `mdc-${name}__icon`;
+      return !!this.name && `mdc-${this.name}__icon`;
+    }
+  },
+  mounted() {
+    if(!this.ripple) {
+      this._ripple.destroy();
     }
   }
 };
 
-var Chip = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-chip"},[(_vm.leadingIcon)?_c('mdc-icon',_vm._b({staticClass:"mdc-chip__icon--leading"},'mdc-icon',_vm.leadingIcon,false)):_vm._e(),_c('div',{staticClass:"mdc-chip__text"},[_vm._v(_vm._s(_vm.text))]),(_vm.trailingIcon)?_c('mdc-icon',_vm._b({staticClass:"mdc-chip__icon--trailing"},'mdc-icon',_vm.trailinIcon,false)):_vm._e()],1)},staticRenderFns: [],
+var Chip = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-chip"},[(_vm.leadingIcon)?_c('mdc-icon',_vm._b({staticClass:"mdc-chip__icon--leading"},'mdc-icon',_vm.leadingIcon,false)):_vm._e(),_c('div',{staticClass:"mdc-chip__text"},[_vm._v(_vm._s(_vm.text))]),(_vm.trailingIcon)?_c('mdc-icon',_vm._b({staticClass:"mdc-chip__icon--trailing"},'mdc-icon',_vm.trailingIcon,false)):_vm._e()],1)},staticRenderFns: [],
   name: "MdcChip",
   mixins: [ Ripple() ],
-  components: [ MdcIcon$1 ],
+  components: { MdcIcon: MdcIcon$1 },
   props: {
     text: {
       type: String,
@@ -12509,8 +12663,7 @@ var Chip = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm
       } else if(this.action) {
         return {
           name: "chip",
-          icon: this.action,
-          action: true
+          icon: this.action
         };
       }
     },
@@ -12540,6 +12693,9 @@ var Chip = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm
       notifyInteraction: () => this.$emit("click")
     });
     this.foundation.init();
+  },
+  beforeDestroy() {
+    this.foundation.destroy();
   }
 };
 
@@ -12591,7 +12747,7 @@ var Chips = Object.freeze({
  * limitations under the License.
  */
 
-const cssClasses$2 = {
+const cssClasses$3 = {
   ROOT: 'mdc-dialog',
   OPEN: 'mdc-dialog--open',
   ANIMATING: 'mdc-dialog--animating',
@@ -12627,7 +12783,7 @@ const strings$3 = {
 
 class MDCDialogFoundation extends MDCFoundation {
   static get cssClasses() {
-    return cssClasses$2;
+    return cssClasses$3;
   }
 
   static get strings() {
@@ -12662,7 +12818,7 @@ class MDCDialogFoundation extends MDCFoundation {
     super(Object.assign(MDCDialogFoundation.defaultAdapter, adapter));
     this.isOpen_ = false;
     this.componentClickHandler_ = (evt) => {
-      if (this.adapter_.eventTargetHasClass(evt.target, cssClasses$2.BACKDROP)) {
+      if (this.adapter_.eventTargetHasClass(evt.target, cssClasses$3.BACKDROP)) {
         this.cancel(true);
       }
     };
@@ -12733,9 +12889,9 @@ class MDCDialogFoundation extends MDCFoundation {
 
   handleDialogClick_(evt) {
     const {target} = evt;
-    if (this.adapter_.eventTargetHasClass(target, cssClasses$2.ACCEPT_BTN)) {
+    if (this.adapter_.eventTargetHasClass(target, cssClasses$3.ACCEPT_BTN)) {
       this.accept(true);
-    } else if (this.adapter_.eventTargetHasClass(target, cssClasses$2.CANCEL_BTN)) {
+    } else if (this.adapter_.eventTargetHasClass(target, cssClasses$3.CANCEL_BTN)) {
       this.cancel(true);
     }
   }
@@ -12754,11 +12910,11 @@ class MDCDialogFoundation extends MDCFoundation {
   };
 
   disableScroll_() {
-    this.adapter_.addBodyClass(cssClasses$2.SCROLL_LOCK);
+    this.adapter_.addBodyClass(cssClasses$3.SCROLL_LOCK);
   }
 
   enableScroll_() {
-    this.adapter_.removeBodyClass(cssClasses$2.SCROLL_LOCK);
+    this.adapter_.removeBodyClass(cssClasses$3.SCROLL_LOCK);
   }
 }
 
@@ -13158,11 +13314,16 @@ function createFocusTrapInstance(surfaceEl, acceptButtonEl, focusTrapFactory = f
 
 const transitionEnd = getCorrectEventName(window, "transitionend");
 
-var Dialog$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('aside',{staticClass:"mdc-dialog",attrs:{"role":"alertdialog"}},[_c('div',{ref:"surface",staticClass:"mdc-dialog__surface"},[(_vm.title)?_c('header',{staticClass:"mdc-dialog__header"},[_c('h2',{staticClass:"mdc-dialog__header__title"},[_vm._v(_vm._s(_vm.title))])]):_vm._e(),(_vm.hasContent)?_c('section',{staticClass:"mdc-dialog__body",class:_vm.cssBodyClasses},[_vm._t("default")],2):_vm._e(),_c('footer',{staticClass:"mdc-dialog__footer"},[_c('mdc-button',{ref:"cancel",staticClass:"mdc-dialog__footer__button mdc-dialog__footer__button--cancel"},[_vm._v(_vm._s(_vm.cancelText))]),_c('mdc-button',{ref:"accept",staticClass:"mdc-dialog__footer__button mdc-dialog__footer__button--accept",attrs:{"raised":""}},[_vm._v(_vm._s(_vm.acceptText))])],1)]),_c('div',{staticClass:"mdc-dialog__backdrop"})])},staticRenderFns: [],
+var Dialog$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('aside',{staticClass:"mdc-dialog",attrs:{"role":"alertdialog"}},[_c('div',{ref:"surface",staticClass:"mdc-dialog__surface"},[(_vm.header)?_c('header',{staticClass:"mdc-dialog__header"},[_c('h2',{staticClass:"mdc-dialog__header__title"},[_vm._v(_vm._s(_vm.header))])]):_vm._e(),(_vm.hasContent)?_c('section',{staticClass:"mdc-dialog__body",class:_vm.cssBodyClasses},[_vm._t("default")],2):_vm._e(),_c('footer',{staticClass:"mdc-dialog__footer"},[_c('mdc-button',{ref:"cancel",staticClass:"mdc-dialog__footer__button mdc-dialog__footer__button--cancel"},[_vm._v(_vm._s(_vm.cancelText))]),_c('mdc-button',{ref:"accept",staticClass:"mdc-dialog__footer__button mdc-dialog__footer__button--accept",attrs:{"disabled":!_vm.valid}},[_vm._v(_vm._s(_vm.acceptText))])],1)]),_c('div',{staticClass:"mdc-dialog__backdrop"})])},staticRenderFns: [],
   name: "MdcDialog",
+  components: { MdcButton },
   props: {
-    title: String,
-    scrollable: Boolean,
+    header: String,
+    scroll: Boolean,
+    valid: {
+      type: Boolean,
+      default: true
+    },
     acceptText: {
       type: String,
       default: "Ok"
@@ -13174,7 +13335,7 @@ var Dialog$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c
   },
   computed: {
     cssBodyClasses() {
-      return this.scrollable && "mdc-dialog__body--scrollable";
+      return this.scroll && "mdc-dialog__body--scrollable";
     },
     hasContent() {
       return !!this.$slots.default;
@@ -13575,7 +13736,7 @@ class MDCSlidableDrawerFoundation extends MDCFoundation {
  * limitations under the License.
  */
 
-const cssClasses$3 = {
+const cssClasses$4 = {
   ROOT: 'mdc-drawer--persistent',
   OPEN: 'mdc-drawer--open',
   ANIMATING: 'mdc-drawer--animating',
@@ -13606,7 +13767,7 @@ const strings$4 = {
 
 class MDCPersistentDrawerFoundation extends MDCSlidableDrawerFoundation {
   static get cssClasses() {
-    return cssClasses$3;
+    return cssClasses$4;
   }
 
   static get strings() {
@@ -13804,7 +13965,7 @@ var PersistentDrawer = {render: function(){var _vm=this;var _h=_vm.$createElemen
  * limitations under the License.
  */
 
-const cssClasses$4 = {
+const cssClasses$5 = {
   ROOT: 'mdc-drawer--temporary',
   OPEN: 'mdc-drawer--open',
   ANIMATING: 'mdc-drawer--animating',
@@ -13837,7 +13998,7 @@ const strings$5 = {
 
 class MDCTemporaryDrawerFoundation extends MDCSlidableDrawerFoundation {
   static get cssClasses() {
-    return cssClasses$4;
+    return cssClasses$5;
   }
 
   static get strings() {
@@ -13862,7 +14023,7 @@ class MDCTemporaryDrawerFoundation extends MDCSlidableDrawerFoundation {
       MDCTemporaryDrawerFoundation.cssClasses.OPEN);
 
     this.componentClickHandler_ = (evt) => {
-      if (this.adapter_.eventTargetHasClass(evt.target, cssClasses$4.ROOT)) {
+      if (this.adapter_.eventTargetHasClass(evt.target, cssClasses$5.ROOT)) {
         this.close(true);
       }
     };
@@ -13924,11 +14085,11 @@ class MDCTemporaryDrawerFoundation extends MDCSlidableDrawerFoundation {
   };
 
   disableScroll_() {
-    this.adapter_.addBodyClass(cssClasses$4.SCROLL_LOCK);
+    this.adapter_.addBodyClass(cssClasses$5.SCROLL_LOCK);
   }
 
   enableScroll_() {
-    this.adapter_.removeBodyClass(cssClasses$4.SCROLL_LOCK);
+    this.adapter_.removeBodyClass(cssClasses$5.SCROLL_LOCK);
   }
 }
 
@@ -14230,7 +14391,7 @@ class MDCGridListFoundation extends MDCFoundation {
   }
 }
 
-const RATIOS$1 = ["1x1", "16x9", "2x3", "3x2", "4x3", "3x4"];
+const RATIOS = ["1x1", "16x9", "2x3", "3x2", "4x3", "3x4"];
 
 var GridList$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-grid-list"},[_c('ul',{ref:"tiles",staticClass:"mdc-grid-list__tiles"},[_vm._t("default")],2)])},staticRenderFns: [],
   name: "MdcGridList",
@@ -14242,7 +14403,7 @@ var GridList$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var 
     thinGutter: Boolean,
     ratio: {
       type: String,
-      validator: value => RATIOS$1.includes(value)
+      validator: value => RATIOS.includes(value)
     }
   },
   mounted() {
@@ -14282,7 +14443,7 @@ var GridList$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var 
 
 var GridTile = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('li',{staticClass:"mdc-grid-tile"},[_c('div',{staticClass:"mdc-grid-tile__primary"},[(_vm.cover)?_c('div',{staticClass:"mdc-grid-tile__primary-content",style:(_vm.coverStyle)}):_c('img',{staticClass:"mdc-grid-tile__primary-content",attrs:{"src":_vm.src}})]),(_vm.hasSecondary)?_c('span',{staticClass:"mdc-grid-tile__secondary"},[(_vm.icon)?_c('mdc-icon',{attrs:{"name":"grid-tile","icon":_vm.icon}}):_vm._e(),(_vm.title)?_c('span',{staticClass:"mdc-grid-tile__title"},[_vm._v(_vm._s(_vm.title))]):_vm._e(),(_vm.text)?_c('span',{staticClass:"mdc-grid-tile__support-text"},[_vm._v(_vm._s(_vm.text))]):_vm._e()],1):_vm._e()])},staticRenderFns: [],
   name: "MdcGridTile",
-  components: [ MdcIcon$1 ],
+  components: { MdcIcon: MdcIcon$1 },
   props: {
     cover: Boolean,
     title: String,
@@ -14370,7 +14531,7 @@ var GridList = Object.freeze({
  */
 
 /** @enum {string} */
-const cssClasses$5 = {
+const cssClasses$6 = {
   ROOT: 'mdc-icon-toggle',
   DISABLED: 'mdc-icon-toggle--disabled',
 };
@@ -14404,7 +14565,7 @@ const strings$7 = {
 
 class MDCIconToggleFoundation extends MDCFoundation {
   static get cssClasses() {
-    return cssClasses$5;
+    return cssClasses$6;
   }
 
   static get strings() {
@@ -14763,7 +14924,7 @@ var LayoutGrid = Object.freeze({
  * limitations under the License.
  */
 
-const cssClasses$6 = {
+const cssClasses$7 = {
   CLOSED_CLASS: 'mdc-linear-progress--closed',
   INDETERMINATE_CLASS: 'mdc-linear-progress--indeterminate',
   REVERSED_CLASS: 'mdc-linear-progress--reversed',
@@ -14792,7 +14953,7 @@ const strings$8 = {
 
 class MDCLinearProgressFoundation extends MDCFoundation {
   static get cssClasses() {
-    return cssClasses$6;
+    return cssClasses$7;
   }
 
   static get strings() {
@@ -14815,18 +14976,18 @@ class MDCLinearProgressFoundation extends MDCFoundation {
   }
 
   init() {
-    this.determinate_ = !this.adapter_.hasClass(cssClasses$6.INDETERMINATE_CLASS);
-    this.reverse_ = this.adapter_.hasClass(cssClasses$6.REVERSED_CLASS);
+    this.determinate_ = !this.adapter_.hasClass(cssClasses$7.INDETERMINATE_CLASS);
+    this.reverse_ = this.adapter_.hasClass(cssClasses$7.REVERSED_CLASS);
     this.progress_ = 0;
   }
 
   setDeterminate(isDeterminate) {
     this.determinate_ = isDeterminate;
     if (this.determinate_) {
-      this.adapter_.removeClass(cssClasses$6.INDETERMINATE_CLASS);
+      this.adapter_.removeClass(cssClasses$7.INDETERMINATE_CLASS);
       this.setScale_(this.adapter_.getPrimaryBar(), this.progress_);
     } else {
-      this.adapter_.addClass(cssClasses$6.INDETERMINATE_CLASS);
+      this.adapter_.addClass(cssClasses$7.INDETERMINATE_CLASS);
       this.setScale_(this.adapter_.getPrimaryBar(), 1);
       this.setScale_(this.adapter_.getBuffer(), 1);
     }
@@ -14848,18 +15009,18 @@ class MDCLinearProgressFoundation extends MDCFoundation {
   setReverse(isReversed) {
     this.reverse_ = isReversed;
     if (this.reverse_) {
-      this.adapter_.addClass(cssClasses$6.REVERSED_CLASS);
+      this.adapter_.addClass(cssClasses$7.REVERSED_CLASS);
     } else {
-      this.adapter_.removeClass(cssClasses$6.REVERSED_CLASS);
+      this.adapter_.removeClass(cssClasses$7.REVERSED_CLASS);
     }
   }
 
   open() {
-    this.adapter_.removeClass(cssClasses$6.CLOSED_CLASS);
+    this.adapter_.removeClass(cssClasses$7.CLOSED_CLASS);
   }
 
   close() {
-    this.adapter_.addClass(cssClasses$6.CLOSED_CLASS);
+    this.adapter_.addClass(cssClasses$7.CLOSED_CLASS);
   }
 
   setScale_(el, scaleValue) {
@@ -14879,7 +15040,7 @@ function assertNumber(value, fn) {
   fn(value);
 }
 
-var LinearProgress$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-linear-progress",attrs:{"role":"progressbar"}},[_c('div',{staticClass:"mdc-linear-progress__buffering-dots"}),_c('div',{ref:"buffer",staticClass:"mdc-linear-progress__buffer"}),_c('div',{ref:"primary",staticClass:"mdc-linear-progress__bar mdc-linear-progress__primary-bar"},[_c('span',{staticClass:"mdc-linear-progress__bar-inner"})]),_vm._m(0,false,false)])},staticRenderFns: [function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-linear-progress__bar mdc-linear-progress__secondary-bar"},[_c('span',{staticClass:"mdc-linear-progress__bar-inner"})])}],
+var LinearProgress$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-linear-progress",attrs:{"role":"progressbar"}},[_c('div',{staticClass:"mdc-linear-progress__buffering-dots"}),_c('div',{ref:"buffer",staticClass:"mdc-linear-progress__buffer"}),_c('div',{ref:"primary",staticClass:"mdc-linear-progress__bar mdc-linear-progress__primary-bar"},[_c('span',{staticClass:"mdc-linear-progress__bar-inner"})]),_vm._m(0)])},staticRenderFns: [function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-linear-progress__bar mdc-linear-progress__secondary-bar"},[_c('span',{staticClass:"mdc-linear-progress__bar-inner"})])}],
   name: "MdcLinearProgress",
   model: {
     prop: "value",
@@ -15145,7 +15306,7 @@ var List = Object.freeze({
  */
 
 /** @enum {string} */
-const cssClasses$7 = {
+const cssClasses$8 = {
   ROOT: 'mdc-menu',
   OPEN: 'mdc-menu--open',
   ANIMATING_OPEN: 'mdc-menu--animating-open',
@@ -15238,7 +15399,7 @@ const Corner = {
 class MDCMenuFoundation extends MDCFoundation {
   /** @return enum{cssClasses} */
   static get cssClasses() {
-    return cssClasses$7;
+    return cssClasses$8;
   }
 
   /** @return enum{strings} */
@@ -15824,13 +15985,13 @@ class MDCMenuFoundation extends MDCFoundation {
     const prevSelectedIndex = this.selectedIndex_;
     if (prevSelectedIndex >= 0) {
       this.adapter_.rmAttrForOptionAtIndex(prevSelectedIndex, 'aria-selected');
-      this.adapter_.rmClassForOptionAtIndex(prevSelectedIndex, cssClasses$7.SELECTED_LIST_ITEM);
+      this.adapter_.rmClassForOptionAtIndex(prevSelectedIndex, cssClasses$8.SELECTED_LIST_ITEM);
     }
 
     this.selectedIndex_ = index >= 0 && index < this.adapter_.getNumberOfItems() ? index : -1;
     if (this.selectedIndex_ >= 0) {
       this.adapter_.setAttrForOptionAtIndex(this.selectedIndex_, 'aria-selected', 'true');
-      this.adapter_.addClassForOptionAtIndex(this.selectedIndex_, cssClasses$7.SELECTED_LIST_ITEM);
+      this.adapter_.addClassForOptionAtIndex(this.selectedIndex_, cssClasses$8.SELECTED_LIST_ITEM);
     }
   }
 }
@@ -16054,7 +16215,7 @@ const strings$10 = {
 };
 
 /** @enum {string} */
-const cssClasses$8 = {
+const cssClasses$9 = {
   ROOT: 'mdc-radio',
   DISABLED: 'mdc-radio--disabled',
 };
@@ -16079,7 +16240,7 @@ const cssClasses$8 = {
 class MDCRadioFoundation extends MDCFoundation {
   /** @return enum {cssClasses} */
   static get cssClasses() {
-    return cssClasses$8;
+    return cssClasses$9;
   }
 
   /** @return enum {strings} */
@@ -16157,7 +16318,7 @@ const rippleAdapter$2 = {
   }
 };
 
-var Radio$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-radio",class:_vm.cssClasses},[_c('input',_vm._b({directives:[{name:"model",rawName:"v-model",value:(_vm.model),expression:"model"}],ref:"input",staticClass:"mdc-radio__native-control",attrs:{"type":"radio"},domProps:{"value":_vm.value,"checked":_vm._q(_vm.model,_vm.value)},on:{"change":function($event){_vm.model=_vm.value;}}},'input',_vm.$attrs,false)),_vm._m(0,false,false)])},staticRenderFns: [function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-radio__background"},[_c('div',{staticClass:"mdc-radio__outer-circle"}),_c('div',{staticClass:"mdc-radio__inner-circle"})])}],
+var Radio$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-radio",class:_vm.cssClasses},[_c('input',_vm._b({directives:[{name:"model",rawName:"v-model",value:(_vm.model),expression:"model"}],ref:"input",staticClass:"mdc-radio__native-control",attrs:{"type":"radio"},domProps:{"value":_vm.value,"checked":_vm._q(_vm.model,_vm.value)},on:{"change":function($event){_vm.model=_vm.value;}}},'input',_vm.$attrs,false)),_vm._m(0)])},staticRenderFns: [function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-radio__background"},[_c('div',{staticClass:"mdc-radio__outer-circle"}),_c('div',{staticClass:"mdc-radio__inner-circle"})])}],
   name: "MdcRadio",
   mixins: [ Ripple(rippleAdapter$2, { unbounded: true }) ],
   inheritAttrs: false,
@@ -16234,12 +16395,9 @@ var Radio = Object.freeze({
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-const cssClasses$9 = {
-  BOTTOM_LINE: 'mdc-select__bottom-line',
-  BOTTOM_LINE_ACTIVE: 'mdc-select__bottom-line--active',
+const cssClasses$10 = {
   BOX: 'mdc-select--box',
   DISABLED: 'mdc-select--disabled',
-  LABEL_FLOAT_ABOVE: 'mdc-select__label--float-above',
   OPEN: 'mdc-select--open',
   ROOT: 'mdc-select',
   SCROLL_LOCK: 'mdc-select-scroll-lock',
@@ -16295,7 +16453,7 @@ const OPENER_KEYS = [
 
 class MDCSelectFoundation extends MDCFoundation {
   static get cssClasses() {
-    return cssClasses$9;
+    return cssClasses$10;
   }
 
   static get strings() {
@@ -16306,11 +16464,9 @@ class MDCSelectFoundation extends MDCFoundation {
     return {
       addClass: (/* className: string */) => {},
       removeClass: (/* className: string */) => {},
-      addClassToLabel: (/* className: string */) => {},
-      removeClassFromLabel: (/* className: string */) => {},
-      addClassToBottomLine: (/* className: string */) => {},
-      removeClassFromBottomLine: (/* className: string */) => {},
-      setBottomLineAttr: (/* attr: string, value: string */) => {},
+      floatLabel: (/* value: boolean */) => {},
+      activateBottomLine: () => {},
+      deactivateBottomLine: () => {},
       addBodyClass: (/* className: string */) => {},
       removeBodyClass: (/* className: string */) => {},
       setAttr: (/* attr: string, value: string */) => {},
@@ -16375,9 +16531,8 @@ class MDCSelectFoundation extends MDCFoundation {
     };
     this.cancelHandler_ = () => {
       this.close_();
-
       if (this.selectedIndex_ === -1) {
-        this.adapter_.removeClassFromLabel(cssClasses$9.LABEL_FLOAT_ABOVE);
+        this.adapter_.floatLabel(false);
       }
     };
   }
@@ -16426,6 +16581,11 @@ class MDCSelectFoundation extends MDCFoundation {
     if (this.selectedIndex_ >= 0) {
       selectedTextContent = this.adapter_.getTextForOptionAtIndex(this.selectedIndex_).trim();
       this.adapter_.setAttrForOptionAtIndex(this.selectedIndex_, 'aria-selected', 'true');
+      this.adapter_.floatLabel(true);
+    } else {
+      if (!this.adapter_.isMenuOpen()) {
+        this.adapter_.floatLabel(false);
+      }
     }
     this.adapter_.setSelectedTextContent(selectedTextContent);
   }
@@ -16483,8 +16643,8 @@ class MDCSelectFoundation extends MDCFoundation {
     const focusIndex = this.selectedIndex_ < 0 ? 0 : this.selectedIndex_;
 
     this.setMenuStylesForOpenAtIndex_(focusIndex);
-    this.adapter_.addClassToLabel(cssClasses$9.LABEL_FLOAT_ABOVE);
-    this.adapter_.addClassToBottomLine(cssClasses$9.BOTTOM_LINE_ACTIVE);
+    this.adapter_.floatLabel(true);
+    this.adapter_.activateBottomLine();
     this.adapter_.addClass(OPEN);
     this.animationRequestId_ = requestAnimationFrame(() => {
       this.adapter_.openMenu(focusIndex);
@@ -16520,7 +16680,7 @@ class MDCSelectFoundation extends MDCFoundation {
   close_() {
     const {OPEN} = MDCSelectFoundation.cssClasses;
     this.adapter_.removeClass(OPEN);
-    this.adapter_.removeClassFromBottomLine(cssClasses$9.BOTTOM_LINE_ACTIVE);
+    this.adapter_.deactivateBottomLine();
     this.adapter_.focus();
     this.enableScroll_();
   }
@@ -16549,33 +16709,232 @@ class MDCSelectFoundation extends MDCFoundation {
   }
 
   disableScroll_() {
-    this.adapter_.addBodyClass(cssClasses$9.SCROLL_LOCK);
+    this.adapter_.addBodyClass(cssClasses$10.SCROLL_LOCK);
   }
 
   enableScroll_() {
-    this.adapter_.removeBodyClass(cssClasses$9.SCROLL_LOCK);
+    this.adapter_.removeBodyClass(cssClasses$10.SCROLL_LOCK);
+  }
+}
+
+/**
+ * @license
+ * Copyright 2017 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/* eslint no-unused-vars: [2, {"args": "none"}] */
+
+/**
+ * Adapter for MDC Select Label.
+ *
+ * Defines the shape of the adapter expected by the foundation. Implement this
+ * adapter to integrate the Select label into your framework. See
+ * https://github.com/material-components/material-components-web/blob/master/docs/authoring-components.md
+ * for more information.
+ *
+ * @record
+ */
+
+const cssClasses$11 = {
+  LABEL_FLOAT_ABOVE: 'mdc-select__label--float-above',
+};
+
+/**
+ * @license
+ * Copyright 2016 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+class MDCSelectLabelFoundation extends MDCFoundation {
+  /** @return enum {string} */
+  static get cssClasses() {
+    return cssClasses$11;
+  }
+
+  /**
+   * {@see MDCSelectLabelAdapter} for typing information on parameters and return
+   * types.
+   * @return {!MDCSelectLabelAdapter}
+   */
+  static get defaultAdapter() {
+    return /** @type {!MDCSelectLabelAdapter} */ ({
+      addClass: () => {},
+      removeClass: () => {},
+      getWidth: () => {},
+    });
+  }
+
+  /**
+   * @param {!MDCSelectLabelAdapter} adapter
+   */
+  constructor(adapter) {
+    super(Object.assign(MDCSelectLabelFoundation.defaultAdapter, adapter));
+  }
+
+  /**
+   * Styles the label to float or defloat as necessary.
+   * @param {string} value The value of the input.
+   */
+  styleFloat(value) {
+    const {LABEL_FLOAT_ABOVE} = MDCSelectLabelFoundation.cssClasses;
+    if (!!value) {
+      this.adapter_.addClass(LABEL_FLOAT_ABOVE);
+    } else {
+      this.adapter_.removeClass(LABEL_FLOAT_ABOVE);
+    }
+  }
+}
+
+/**
+ * @license
+ * Copyright 2017 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/* eslint no-unused-vars: [2, {"args": "none"}] */
+
+/**
+ * Adapter for MDC Select Bottom Line.
+ *
+ * Defines the shape of the adapter expected by the foundation. Implement this
+ * adapter to integrate the Select label into your framework. See
+ * https://github.com/material-components/material-components-web/blob/master/docs/authoring-components.md
+ * for more information.
+ *
+ * @record
+ */
+
+/**
+ * Copyright 2016 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+const cssClasses$12 = {
+  BOTTOM_LINE_ACTIVE: 'mdc-select__bottom-line--active',
+};
+
+/**
+ * @license
+ * Copyright 2016 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+class MDCSelectBottomLineFoundation extends MDCFoundation {
+  /** @return enum {string} */
+  static get cssClasses() {
+    return cssClasses$12;
+  }
+
+  /**
+   * {@see MDCSelectBottomLineAdapter} for typing information on parameters and return
+   * types.
+   * @return {!MDCSelectBottomLineAdapter}
+   */
+  static get defaultAdapter() {
+    return /** @type {!MDCSelectBottomLineAdapter} */ ({
+      addClass: () => {},
+      removeClass: () => {},
+    });
+  }
+
+  /**
+   * Adds the active class to bottom line
+   */
+  activate() {
+    this.adapter_.addClass(cssClasses$12.BOTTOM_LINE_ACTIVE);
+  }
+
+  /**
+   * Removes the active class from the bottom line
+   */
+  deactivate() {
+    this.adapter_.removeClass(cssClasses$12.BOTTOM_LINE_ACTIVE);
+  }
+
+  /**
+   * @param {!MDCSelectBottomLineAdapter} adapter
+   */
+  constructor(adapter) {
+    super(Object.assign(MDCSelectBottomLineFoundation.defaultAdapter, adapter));
   }
 }
 
 const getEventType = type => type.substr(type.indexOf(":") + 1);
-var Select$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-select",attrs:{"role":"listbox"}},[_c('div',{ref:"surface",staticClass:"mdc-select__surface"},[_c('div',{ref:"label",staticClass:"mdc-select__label"},[_vm._v(_vm._s(_vm.label))]),_c('div',{staticClass:"mdc-select__selected-text"},[_vm._v(_vm._s(_vm.selectedText))]),_c('div',{ref:"bottomLine",staticClass:"mdc-select__bottom-line"})]),_c('mdc-menu',{ref:"menu",staticClass:"mdc-select__menu"},[_vm._t("default")],2)],1)},staticRenderFns: [],
+
+//TODO: complete after created mdc-list and mdc-menu
+var Select$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-select",class:_vm.cssClasses,attrs:{"role":"listbox"}},[_c('div',{ref:"surface",staticClass:"mdc-select__surface"},[_c('div',{ref:"label",staticClass:"mdc-select__label"},[_vm._v(_vm._s(_vm.label))]),_c('div',{staticClass:"mdc-select__selected-text"},[_vm._v(_vm._s(_vm.selectedText))]),_c('div',{ref:"bottomLine",staticClass:"mdc-select__bottom-line"})]),_c('mdc-menu',{ref:"menu",staticClass:"mdc-select__menu"},[_vm._t("default")],2)],1)},staticRenderFns: [],
   name: "MdcSelect",
   mixins: [ Ripple() ],
   model: {
     prop: "value",
     event: "change"
   },
-
   props: {
     disabled: Boolean,
     value: String,
     label: {
       type: String,
       required: true
-    }
-
-    //TODO: multiple: Boolean
+    },
+    box: Boolean
   },
+
   watch: {
     value(value) {
       this.$_setIndexFromValue(value);
@@ -16584,24 +16943,34 @@ var Select$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c
       this.foundation.setDisabled(value);
     }
   },
+  computed: {
+    cssClasses() {
+      return this.box && "mdc-select--box";
+    }
+  },
   data() {
     return { selectedText: "" };
   },
+
   mounted() {
     const { $el } = this;
-    const { surface, label, bottomLine, menu } = this.$refs;
+    const { surface, menu } = this.$refs;
+
+    const bottomLine = new MDCSelectBottomLineFoundation({
+      addClass: className => this.$refs.bottomLine.classList.add(className),
+      removeClass: className => this.$refs.bottomLine.classList.remove(className)
+    });
+    const label = new MDCSelectLabelFoundation({
+      addClass: className => this.$refs.label.classList.add(className),
+      removeClass: className => this.$refs.label.classList.remove(className)
+    });
 
     this.foundation = new MDCSelectFoundation({
       addClass: className => $el.classList.add(className),
       removeClass: className => $el.classList.remove(className),
-      addClassToLabel: className => label.classList.add(className),
-      removeClassFromLabel: className => label.classList.remove(className),
-      addClassToBottomLine: className => bottomLine.classList.add(className),
-      removeClassFromBottomLine: className => bottomLine.classList.remove(className),
-      addBodyClass: className => document.body.classList.add(className),
-      removeBodyClass: className => document.body.classList.remove(className),
-
-      setBottomLineAttr: (attr, value) => bottomLine.setAttribute(attr, value),
+      floatLabel: value => label && label.styleFloat(value),
+      activateBottomLine: () => bottomLine.activate(),
+      deactivateBottomLine: () => bottomLine.deactivate(),
       setAttr: (attr, value) => $el.setAttribute(attr, value),
       rmAttr: (attr, value) => $el.removeAttribute(attr, value),
       computeBoundingRect: () => surface.getBoundingClientRect(),
@@ -16621,6 +16990,7 @@ var Select$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c
       setMenuElAttr: (attr, value) => menu.$el.setAttribute(attr, value),
       rmMenuElAttr: attr => menu.$el.removeAttribute(attr),
       getMenuElOffsetHeight: () => menu.$el.offsetHeight,
+
       openMenu: index => menu.show(index),
       isMenuOpen: () => menu.open,
       setSelectedTextContent: text => {
@@ -16635,7 +17005,9 @@ var Select$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c
       registerMenuInteractionHandler: (type, handler) => menu.$on(getEventType(type), handler), //menu.$el.addEventListener(type, handler),
       deregisterMenuInteractionHandler: (type, handler) => menu.$off(getEventType(type), handler), //menu.$el.removeEventListener(type, handler),
       notifyChange: () => this.$emit("change", this.foundation.getValue()),
-      getWindowInnerHeight: () => window.innerHeight
+      getWindowInnerHeight: () => window.innerHeight,
+      addBodyClass: className => document.body.classList.add(className),
+      removeBodyClass: className => document.body.classList.remove(className)
     });
     // Fix the selection handler before initializing
     const selectionHandler = this.foundation.selectionHandler_;
@@ -16704,7 +17076,7 @@ var Select = Object.freeze({
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-const cssClasses$10 = {
+const cssClasses$13 = {
   ROOT: 'mdc-snackbar',
   TEXT: 'mdc-snackbar__text',
   ACTION_WRAPPER: 'mdc-snackbar__action-wrapper',
@@ -16744,7 +17116,7 @@ const numbers$3 = {
 
 class MDCSnackbarFoundation extends MDCFoundation {
   static get cssClasses() {
-    return cssClasses$10;
+    return cssClasses$13;
   }
 
   static get strings() {
@@ -16869,7 +17241,7 @@ class MDCSnackbarFoundation extends MDCFoundation {
       this.adapter_.registerCapturedInteractionHandler(evtType, this.interactionHandler_);
     });
 
-    const {ACTIVE, MULTILINE, ACTION_ON_BOTTOM} = cssClasses$10;
+    const {ACTIVE, MULTILINE, ACTION_ON_BOTTOM} = cssClasses$13;
 
     this.adapter_.setMessageText(this.snackbarData_.message);
 
@@ -16933,7 +17305,7 @@ class MDCSnackbarFoundation extends MDCFoundation {
     const allowDismissal = !this.snackbarHasFocus_ || this.actionWasClicked_;
 
     if (allowDismissal) {
-      const {ACTIVE, MULTILINE, ACTION_ON_BOTTOM} = cssClasses$10;
+      const {ACTIVE, MULTILINE, ACTION_ON_BOTTOM} = cssClasses$13;
 
       this.adapter_.removeClass(ACTIVE);
 
@@ -17064,7 +17436,7 @@ var Snackbar = Object.freeze({
 	install: install$19
 });
 
-var Switch$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-switch",class:_vm.cssClasses},[_c('input',_vm._b({directives:[{name:"model",rawName:"v-model",value:(_vm.model),expression:"model"}],staticClass:"mdc-switch__native-control",attrs:{"type":"checkbox","disabled":_vm.disabled},domProps:{"checked":Array.isArray(_vm.model)?_vm._i(_vm.model,null)>-1:(_vm.model)},on:{"change":function($event){var $$a=_vm.model,$$el=$event.target,$$c=$$el.checked?(true):(false);if(Array.isArray($$a)){var $$v=null,$$i=_vm._i($$a,$$v);if($$el.checked){$$i<0&&(_vm.model=$$a.concat([$$v]));}else{$$i>-1&&(_vm.model=$$a.slice(0,$$i).concat($$a.slice($$i+1)));}}else{_vm.model=$$c;}}}},'input',_vm.$attrs,false)),_vm._m(0,false,false)])},staticRenderFns: [function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-switch__background"},[_c('div',{staticClass:"mdc-switch__knob"})])}],
+var Switch$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-switch",class:_vm.cssClasses},[_c('input',_vm._b({directives:[{name:"model",rawName:"v-model",value:(_vm.model),expression:"model"}],staticClass:"mdc-switch__native-control",attrs:{"type":"checkbox","disabled":_vm.disabled},domProps:{"checked":Array.isArray(_vm.model)?_vm._i(_vm.model,null)>-1:(_vm.model)},on:{"change":function($event){var $$a=_vm.model,$$el=$event.target,$$c=$$el.checked?(true):(false);if(Array.isArray($$a)){var $$v=null,$$i=_vm._i($$a,$$v);if($$el.checked){$$i<0&&(_vm.model=$$a.concat([$$v]));}else{$$i>-1&&(_vm.model=$$a.slice(0,$$i).concat($$a.slice($$i+1)));}}else{_vm.model=$$c;}}}},'input',_vm.$attrs,false)),_vm._m(0)])},staticRenderFns: [function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-switch__background"},[_c('div',{staticClass:"mdc-switch__knob"})])}],
   name: "MdcSwitch",
   inheritAttrs: false,
   model: {
@@ -17118,7 +17490,7 @@ var Switch = Object.freeze({
  * limitations under the License.
  */
 
-const cssClasses$11 = {
+const cssClasses$14 = {
   ACTIVE: 'mdc-tab--active',
 };
 
@@ -17144,7 +17516,7 @@ const strings$13 = {
 
 class MDCTabFoundation extends MDCFoundation {
   static get cssClasses() {
-    return cssClasses$11;
+    return cssClasses$14;
   }
 
   static get strings() {
@@ -17210,9 +17582,9 @@ class MDCTabFoundation extends MDCFoundation {
   setActive(isActive) {
     this.isActive_ = isActive;
     if (this.isActive_) {
-      this.adapter_.addClass(cssClasses$11.ACTIVE);
+      this.adapter_.addClass(cssClasses$14.ACTIVE);
     } else {
-      this.adapter_.removeClass(cssClasses$11.ACTIVE);
+      this.adapter_.removeClass(cssClasses$14.ACTIVE);
     }
   }
 
@@ -17233,7 +17605,7 @@ class MDCTabFoundation extends MDCFoundation {
 var Tab = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('mdc-link',_vm._b({staticClass:"mdc-tab",attrs:{"role":"tab","link":_vm.link}},'mdc-link',_vm.$_link,false),[(_vm.icon)?[_c('mdc-icon',{attrs:{"name":"tab","icon":_vm.icon}}),(_vm.text)?_c('span',{staticClass:"mdc-tab__icon-text"},[_vm._v(_vm._s(_vm.text))]):_vm._e()]:[_vm._v(_vm._s(_vm.text))]],2)},staticRenderFns: [],
   name: "MdcTab",
   mixins: [ Ripple(), install$8("mdc-tab--active") ],
-  components: [ MdcIcon$1 ],
+  components: { MdcIcon: MdcIcon$1 },
   props: {
     link: String,
     icon: String,
@@ -17298,7 +17670,7 @@ var Tab = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm.
  * limitations under the License.
  */
 
-const cssClasses$12 = {
+const cssClasses$15 = {
   UPGRADED: 'mdc-tab-bar-upgraded',
 };
 
@@ -17326,7 +17698,7 @@ const strings$14 = {
 
 class MDCTabBarFoundation extends MDCFoundation {
   static get cssClasses() {
-    return cssClasses$12;
+    return cssClasses$15;
   }
 
   static get strings() {
@@ -17368,7 +17740,7 @@ class MDCTabBarFoundation extends MDCFoundation {
   }
 
   init() {
-    this.adapter_.addClass(cssClasses$12.UPGRADED);
+    this.adapter_.addClass(cssClasses$15.UPGRADED);
     this.adapter_.bindOnMDCTabSelectedEvent();
     this.adapter_.registerResizeHandler(this.resizeHandler_);
     const activeTabIndex = this.findActiveTabIndex_();
@@ -17379,7 +17751,7 @@ class MDCTabBarFoundation extends MDCFoundation {
   }
 
   destroy() {
-    this.adapter_.removeClass(cssClasses$12.UPGRADED);
+    this.adapter_.removeClass(cssClasses$15.UPGRADED);
     this.adapter_.unbindOnMDCTabSelectedEvent();
     this.adapter_.deregisterResizeHandler(this.resizeHandler_);
   }
@@ -17474,7 +17846,7 @@ class MDCTabBarFoundation extends MDCFoundation {
   }
 }
 
-var TabBar = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('nav',{staticClass:"mdc-tab-bar",class:_vm.cssClasses},[_vm._t("default"),_c('span',{ref:"indicator",staticClass:"mdc-tab-bar__indicator",style:(_vm.getIndicatorStyle)})],2)},staticRenderFns: [],
+var MdcTabBar = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('nav',{staticClass:"mdc-tab-bar",class:_vm.cssClasses},[_vm._t("default"),_c('span',{ref:"indicator",staticClass:"mdc-tab-bar__indicator",style:(_vm.getIndicatorStyle)})],2)},staticRenderFns: [],
   name: "MdcTabBar",
   props: {
     icons: Boolean,
@@ -17539,30 +17911,368 @@ var TabBar = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_
   }
 };
 
-var TabScroller = {
+/**
+ * Copyright 2017 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+const cssClasses$16 = {
+  INDICATOR_FORWARD: 'mdc-tab-bar-scroller__indicator--forward',
+  INDICATOR_BACK: 'mdc-tab-bar-scroller__indicator--back',
+  INDICATOR_ENABLED: 'mdc-tab-bar-scroller__indicator--enabled',
+  TAB: 'mdc-tab',
+};
+
+const strings$15 = {
+  FRAME_SELECTOR: '.mdc-tab-bar-scroller__scroll-frame',
+  TABS_SELECTOR: '.mdc-tab-bar-scroller__scroll-frame__tabs',
+  TAB_SELECTOR: '.mdc-tab',
+  INDICATOR_FORWARD_SELECTOR: '.mdc-tab-bar-scroller__indicator--forward',
+  INDICATOR_BACK_SELECTOR: '.mdc-tab-bar-scroller__indicator--back',
+};
+
+/**
+ * Copyright 2017 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+
+class MDCTabBarScrollerFoundation extends MDCFoundation {
+  static get cssClasses() {
+    return cssClasses$16;
+  }
+
+  static get strings() {
+    return strings$15;
+  }
+
+  static get defaultAdapter() {
+    return {
+      addClass: (/* className: string */) => {},
+      removeClass: (/* className: string */) => {},
+      eventTargetHasClass: (/* target: EventTarget, className: string */) => /* boolean */ false,
+      addClassToForwardIndicator: (/* className: string */) => {},
+      removeClassFromForwardIndicator: (/* className: string */) => {},
+      addClassToBackIndicator: (/* className: string */) => {},
+      removeClassFromBackIndicator: (/* className: string */) => {},
+      isRTL: () => /* boolean */ false,
+      registerBackIndicatorClickHandler: (/* handler: EventListener */) => {},
+      deregisterBackIndicatorClickHandler: (/* handler: EventListener */) => {},
+      registerForwardIndicatorClickHandler: (/* handler: EventListener */) => {},
+      deregisterForwardIndicatorClickHandler: (/* handler: EventListener */) => {},
+      registerCapturedInteractionHandler: (/* evt: string, handler: EventListener */) => {},
+      deregisterCapturedInteractionHandler: (/* evt: string, handler: EventListener */) => {},
+      registerWindowResizeHandler: (/* handler: EventListener */) => {},
+      deregisterWindowResizeHandler: (/* handler: EventListener */) => {},
+      getNumberOfTabs: () => /* number */ 0,
+      getComputedWidthForTabAtIndex: () => /* number */ 0,
+      getComputedLeftForTabAtIndex: () => /* number */ 0,
+      getOffsetWidthForScrollFrame: () => /* number */ 0,
+      getScrollLeftForScrollFrame: () => /* number */ 0,
+      setScrollLeftForScrollFrame: (/* scrollLeftAmount: number */) => {},
+      getOffsetWidthForTabBar: () => /* number */ 0,
+      setTransformStyleForTabBar: (/* value: string */) => {},
+      getOffsetLeftForEventTarget: (/* target: EventTarget */) => /* number */ 0,
+      getOffsetWidthForEventTarget: (/* target: EventTarget */) => /* number */ 0,
+    };
+  }
+
+  constructor(adapter) {
+    super(Object.assign(MDCTabBarScrollerFoundation.defaultAdapter, adapter));
+
+    this.pointerDownRecognized_ = false;
+    this.currentTranslateOffset_ = 0;
+    this.focusedTarget_ = null;
+    this.layoutFrame_ = 0;
+    this.scrollFrameScrollLeft_ = 0;
+    this.forwardIndicatorClickHandler_ = (evt) => this.scrollForward(evt);
+    this.backIndicatorClickHandler_ = (evt) => this.scrollBack(evt);
+    this.resizeHandler_ = () => this.layout();
+    this.interactionHandler_ = (evt) => {
+      if (evt.type == 'touchstart' || evt.type == 'mousedown') {
+        this.pointerDownRecognized_ = true;
+      }
+      this.handlePossibleTabKeyboardFocus_(evt);
+
+      if (evt.type == 'focus') {
+        this.pointerDownRecognized_ = false;
+      }
+    };
+  }
+
+  init() {
+    this.adapter_.registerBackIndicatorClickHandler(this.backIndicatorClickHandler_);
+    this.adapter_.registerForwardIndicatorClickHandler(this.forwardIndicatorClickHandler_);
+    this.adapter_.registerWindowResizeHandler(this.resizeHandler_);
+    ['touchstart', 'mousedown', 'focus'].forEach((evtType) => {
+      this.adapter_.registerCapturedInteractionHandler(evtType, this.interactionHandler_);
+    });
+    this.layout();
+  }
+
+  destroy() {
+    this.adapter_.deregisterBackIndicatorClickHandler(this.backIndicatorClickHandler_);
+    this.adapter_.deregisterForwardIndicatorClickHandler(this.forwardIndicatorClickHandler_);
+    this.adapter_.deregisterWindowResizeHandler(this.resizeHandler_);
+    ['touchstart', 'mousedown', 'focus'].forEach((evtType) => {
+      this.adapter_.deregisterCapturedInteractionHandler(evtType, this.interactionHandler_);
+    });
+  }
+
+  scrollBack(evt = null) {
+    if (evt) {
+      evt.preventDefault();
+    }
+
+    let tabWidthAccumulator = 0;
+    let scrollTargetIndex = 0;
+
+    for (let i = this.adapter_.getNumberOfTabs() - 1; i > 0; i--) {
+      const tabOffsetLeft = this.adapter_.getComputedLeftForTabAtIndex(i);
+      const tabBarWidthLessTabOffsetLeft = this.adapter_.getOffsetWidthForTabBar() - tabOffsetLeft;
+
+      let tabIsNotOccluded = tabOffsetLeft > this.currentTranslateOffset_;
+      if (this.isRTL_()) {
+        tabIsNotOccluded = tabBarWidthLessTabOffsetLeft > this.currentTranslateOffset_;
+      }
+
+      if (tabIsNotOccluded) {
+        continue;
+      }
+
+      tabWidthAccumulator += this.adapter_.getComputedWidthForTabAtIndex(i);
+
+      const scrollTargetDetermined = tabWidthAccumulator > this.adapter_.getOffsetWidthForScrollFrame();
+      if (scrollTargetDetermined) {
+        scrollTargetIndex = this.isRTL_() ? i + 1 : i;
+        break;
+      }
+    }
+
+    this.scrollToTabAtIndex(scrollTargetIndex);
+  }
+
+  scrollForward(evt = null) {
+    if (evt) {
+      evt.preventDefault();
+    }
+
+    const scrollFrameOffsetWidth = this.adapter_.getOffsetWidthForScrollFrame() + this.currentTranslateOffset_;
+    let scrollTargetIndex = 0;
+
+    for (let i = 0; i < this.adapter_.getNumberOfTabs(); i++) {
+      const tabOffsetLeftAndWidth =
+        this.adapter_.getComputedLeftForTabAtIndex(i) + this.adapter_.getComputedWidthForTabAtIndex(i);
+      let scrollTargetDetermined = tabOffsetLeftAndWidth > scrollFrameOffsetWidth;
+
+      if (this.isRTL_()) {
+        const frameOffsetAndTabWidth =
+          scrollFrameOffsetWidth - this.adapter_.getComputedWidthForTabAtIndex(i);
+        const tabOffsetLeftAndWidth =
+          this.adapter_.getComputedLeftForTabAtIndex(i) + this.adapter_.getComputedWidthForTabAtIndex(i);
+        const tabRightOffset =
+          this.adapter_.getOffsetWidthForTabBar() - tabOffsetLeftAndWidth;
+
+        scrollTargetDetermined = tabRightOffset > frameOffsetAndTabWidth;
+      }
+
+      if (scrollTargetDetermined) {
+        scrollTargetIndex = i;
+        break;
+      }
+    }
+
+    this.scrollToTabAtIndex(scrollTargetIndex);
+  }
+
+  layout() {
+    cancelAnimationFrame(this.layoutFrame_);
+    this.scrollFrameScrollLeft_ = this.adapter_.getScrollLeftForScrollFrame();
+    this.layoutFrame_ = requestAnimationFrame(() => this.layout_());
+  }
+
+  isRTL_() {
+    return this.adapter_.isRTL();
+  }
+
+  handlePossibleTabKeyboardFocus_(evt) {
+    if (!this.adapter_.eventTargetHasClass(evt.target, cssClasses$16.TAB) || this.pointerDownRecognized_) {
+      return;
+    }
+
+    const resetAmt = this.isRTL_() ? this.scrollFrameScrollLeft_ : 0;
+    this.adapter_.setScrollLeftForScrollFrame(resetAmt);
+
+    this.focusedTarget_ = evt.target;
+    const scrollFrameWidth = this.adapter_.getOffsetWidthForScrollFrame();
+    const tabBarWidth = this.adapter_.getOffsetWidthForTabBar();
+    const leftEdge = this.adapter_.getOffsetLeftForEventTarget(this.focusedTarget_);
+    const rightEdge = leftEdge + this.adapter_.getOffsetWidthForEventTarget(this.focusedTarget_);
+
+    let shouldScrollBack = rightEdge <= this.currentTranslateOffset_;
+    let shouldScrollForward = rightEdge > this.currentTranslateOffset_ + scrollFrameWidth;
+
+    if (this.isRTL_()) {
+      const normalizedLeftOffset = tabBarWidth - leftEdge;
+      shouldScrollBack = leftEdge >= tabBarWidth - this.currentTranslateOffset_;
+      shouldScrollForward = normalizedLeftOffset > scrollFrameWidth + this.currentTranslateOffset_;
+    }
+
+    if (shouldScrollForward) {
+      this.scrollForward();
+    } else if (shouldScrollBack) {
+      this.scrollBack();
+    }
+
+    this.pointerDownRecognized_ = false;
+  }
+
+  layout_() {
+    const frameWidth = this.adapter_.getOffsetWidthForScrollFrame();
+    const isOverflowing = this.adapter_.getOffsetWidthForTabBar() > frameWidth;
+
+    if (!isOverflowing) {
+      this.currentTranslateOffset_ = 0;
+    }
+
+    this.shiftFrame_();
+    this.updateIndicatorEnabledStates_();
+  }
+
+  scrollToTabAtIndex(index) {
+    const scrollTargetOffsetLeft = this.adapter_.getComputedLeftForTabAtIndex(index);
+    const scrollTargetOffsetWidth = this.adapter_.getComputedWidthForTabAtIndex(index);
+
+    this.currentTranslateOffset_ =
+      this.normalizeForRTL_(scrollTargetOffsetLeft, scrollTargetOffsetWidth);
+
+    requestAnimationFrame(() => this.shiftFrame_());
+  }
+
+  normalizeForRTL_(left, width) {
+    return this.isRTL_() ? this.adapter_.getOffsetWidthForTabBar() - (left + width) : left;
+  }
+
+  shiftFrame_() {
+    const shiftAmount = this.isRTL_() ?
+      this.currentTranslateOffset_ : -this.currentTranslateOffset_;
+
+    this.adapter_.setTransformStyleForTabBar(`translateX(${shiftAmount}px)`);
+    this.updateIndicatorEnabledStates_();
+  }
+
+  updateIndicatorEnabledStates_() {
+    const {INDICATOR_ENABLED} = cssClasses$16;
+    if (this.currentTranslateOffset_ === 0) {
+      this.adapter_.removeClassFromBackIndicator(INDICATOR_ENABLED);
+    } else {
+      this.adapter_.addClassToBackIndicator(INDICATOR_ENABLED);
+    }
+
+    const remainingTabBarWidth = this.adapter_.getOffsetWidthForTabBar() - this.currentTranslateOffset_;
+    if (remainingTabBarWidth > this.adapter_.getOffsetWidthForScrollFrame()) {
+      this.adapter_.addClassToForwardIndicator(INDICATOR_ENABLED);
+    } else {
+      this.adapter_.removeClassFromForwardIndicator(INDICATOR_ENABLED);
+    }
+  }
+}
+
+var TabScroller = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-tab-bar-scroller"},[_c('div',{staticClass:"mdc-tab-bar-scroller__indicator mdc-tab-bar-scroller__indicator--back"},[_c('a',{ref:"backIndicator",staticClass:"mdc-tab-bar-scroller__indicator__inner material-icons",attrs:{"href":"#","aria-label":"scroll back button"}},[_vm._v("navigate_before")])]),_c('div',{ref:"scrollFrame",staticClass:"mdc-tab-bar-scroller__scroll-frame"},[_c('mdc-tab-bar',{ref:"tabBar",staticClass:"mdc-tab-bar-scroller__scroll-frame__tabs"},[_vm._t("default")],2)],1),_c('div',{staticClass:"mdc-tab-bar-scroller__indicator mdc-tab-bar-scroller__indicator--forward"},[_c('a',{ref:"forwardIndicator",staticClass:"mdc-tab-bar-scroller__indicator__inner material-icons",attrs:{"href":"#","aria-label":"scroll forward button"}},[_vm._v("navigate_next")])])])},staticRenderFns: [],
   name: "MdcTabScroller",
-  props: {},
-
-  data() { return {}; },
+  inheritAttrs: false,
+  components: { MdcTabBar },
   computed: {},
-  watch: {},
 
-  mounted() {},
-  beforeDestroy() {},
+  mounted() {
+    const { $el } = this;
+    const { backIndicator, forwardIndicator, scrollFrame, tabBar } = this.$refs;
 
-  methods: {},
+    const styles = getComputedStyle($el);
+    const transformProp = getCorrectPropertyName(window, "transform");
+
+    this.foundation = new MDCTabBarScrollerFoundation({
+      addClass: className => $el.classList.add(className),
+      removeClass: className => $el.classList.remove(className),
+      eventTargetHasClass: (target, className) => target.classList.contains(className),
+      addClassToForwardIndicator: className => forwardIndicator.classList.add(className),
+      removeClassFromForwardIndicator: className => forwardIndicator.classList.remove(className),
+      addClassToBackIndicator: className => backIndicator.classList.add(className),
+      removeClassFromBackIndicator: className => backIndicator.classList.remove(className),
+      isRTL: () => styles.direction === "rtl",
+      // Interaction handlers
+      registerBackIndicatorClickHandler: (handler) => backIndicator.addEventListener("click", handler),
+      deregisterBackIndicatorClickHandler: (handler) => backIndicator.removeEventListener("click", handler),
+      registerForwardIndicatorClickHandler: (handler) => forwardIndicator.addEventListener("click", handler),
+      deregisterForwardIndicatorClickHandler: (handler) => forwardIndicator.removeEventListener("click", handler),
+      registerCapturedInteractionHandler: (evt, handler) => $el.addEventListener(evt, handler, true),
+      deregisterCapturedInteractionHandler: (evt, handler) => $el.removeEventListener(evt, handler, true),
+      registerWindowResizeHandler: (handler) => window.addEventListener("resize", handler),
+      deregisterWindowResizeHandler: (handler) => window.removeEventListener("resize", handler),
+
+      getNumberOfTabs: () => tabBar.tabs.length,
+      getComputedWidthForTabAtIndex: index => tabBar.tabs[index].$el.computedWidth,
+      getComputedLeftForTabAtIndex: index => tabBar.tabs[index].$el.computedLeft,
+      getOffsetWidthForScrollFrame: () => scrollFrame.offsetWidth,
+      getScrollLeftForScrollFrame: () => scrollFrame.scrollLeft,
+      setScrollLeftForScrollFrame: value => {
+        scrollFrame.scrollLeft = value;
+      },
+      getOffsetWidthForTabBar: () => tabBar.$el.offsetWidth,
+      setTransformStyleForTabBar: value => {
+        tabBar.$el.style[transformProp] = value;
+      },
+      getOffsetLeftForEventTarget: target => target.offsetLeft,
+      getOffsetWidthForEventTarget: target => target.offsetWidth
+    });
+    this.foundation.init();
+  },
+  beforeDestroy() {
+    this.foundation.destroy();
+  }
+};
+
+var TabBar = {
+  functional: true,
+  props: {
+    scroller: Boolean
+  },
+  render(h, ctx) {
+    let tag = ctx.props.scroller ? TabScroller : MdcTabBar;
+    return h(tag, ctx.data, ctx.children);
+  }
 };
 
 function install$21(Vue) {
   Vue.component(Tab.name, Tab);
-  Vue.component(TabBar.name, TabBar);
-  //Vue.component(TabBarScroller.name, TabBarScroller);
+  Vue.component("mdc-tab-bar", TabBar);
 }
 
 var Tabs = Object.freeze({
 	Tab: Tab,
 	TabBar: TabBar,
-	TabBarScroller: TabScroller,
 	install: install$21
 });
 
@@ -17614,14 +18324,14 @@ var Tabs = Object.freeze({
  */
 
 /** @enum {string} */
-const cssClasses$13 = {
+const cssClasses$17 = {
   LINE_RIPPLE_ACTIVE: 'mdc-line-ripple--active',
   LINE_RIPPLE_DEACTIVATING: 'mdc-line-ripple--deactivating',
 };
 
 /**
  * @license
- * Copyright 2017 Google Inc. All Rights Reserved.
+ * Copyright 2018 Google Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17639,7 +18349,7 @@ const cssClasses$13 = {
 class MDCLineRippleFoundation extends MDCFoundation {
   /** @return enum {string} */
   static get cssClasses() {
-    return cssClasses$13;
+    return cssClasses$17;
   }
 
   /**
@@ -17680,8 +18390,8 @@ class MDCLineRippleFoundation extends MDCFoundation {
    * Activates the line ripple
    */
   activate() {
-    this.adapter_.removeClass(cssClasses$13.LINE_RIPPLE_DEACTIVATING);
-    this.adapter_.addClass(cssClasses$13.LINE_RIPPLE_ACTIVE);
+    this.adapter_.removeClass(cssClasses$17.LINE_RIPPLE_DEACTIVATING);
+    this.adapter_.addClass(cssClasses$17.LINE_RIPPLE_ACTIVE);
   }
 
   /**
@@ -17699,7 +18409,7 @@ class MDCLineRippleFoundation extends MDCFoundation {
    * Deactivates the line ripple
    */
   deactivate() {
-    this.adapter_.addClass(cssClasses$13.LINE_RIPPLE_DEACTIVATING);
+    this.adapter_.addClass(cssClasses$17.LINE_RIPPLE_DEACTIVATING);
   }
 
   /**
@@ -17709,12 +18419,12 @@ class MDCLineRippleFoundation extends MDCFoundation {
   handleTransitionEnd(evt) {
     // Wait for the line ripple to be either transparent or opaque
     // before emitting the animation end event
-    const isDeactivating = this.adapter_.hasClass(cssClasses$13.LINE_RIPPLE_DEACTIVATING);
+    const isDeactivating = this.adapter_.hasClass(cssClasses$17.LINE_RIPPLE_DEACTIVATING);
 
     if (evt.propertyName === 'opacity') {
       if (isDeactivating) {
-        this.adapter_.removeClass(cssClasses$13.LINE_RIPPLE_ACTIVE);
-        this.adapter_.removeClass(cssClasses$13.LINE_RIPPLE_DEACTIVATING);
+        this.adapter_.removeClass(cssClasses$17.LINE_RIPPLE_ACTIVE);
+        this.adapter_.removeClass(cssClasses$17.LINE_RIPPLE_DEACTIVATING);
       }
     }
   }
@@ -17768,13 +18478,13 @@ class MDCLineRippleFoundation extends MDCFoundation {
  */
 
 /** @enum {string} */
-const strings$15 = {
+const strings$16 = {
   ARIA_HIDDEN: 'aria-hidden',
   ROLE: 'role',
 };
 
 /** @enum {string} */
-const cssClasses$14 = {
+const cssClasses$18 = {
   HELPER_TEXT_PERSISTENT: 'mdc-text-field-helper-text--persistent',
   HELPER_TEXT_VALIDATION_MSG: 'mdc-text-field-helper-text--validation-msg',
 };
@@ -17799,12 +18509,12 @@ const cssClasses$14 = {
 class MDCTextFieldHelperTextFoundation extends MDCFoundation {
   /** @return enum {string} */
   static get cssClasses() {
-    return cssClasses$14;
+    return cssClasses$18;
   }
 
   /** @return enum {string} */
   static get strings() {
-    return strings$15;
+    return strings$16;
   }
 
   /**
@@ -17841,9 +18551,9 @@ class MDCTextFieldHelperTextFoundation extends MDCFoundation {
   /** @param {boolean} isPersistent Sets the persistency of the helper text. */
   setPersistent(isPersistent) {
     if (isPersistent) {
-      this.adapter_.addClass(cssClasses$14.HELPER_TEXT_PERSISTENT);
+      this.adapter_.addClass(cssClasses$18.HELPER_TEXT_PERSISTENT);
     } else {
-      this.adapter_.removeClass(cssClasses$14.HELPER_TEXT_PERSISTENT);
+      this.adapter_.removeClass(cssClasses$18.HELPER_TEXT_PERSISTENT);
     }
   }
 
@@ -17853,15 +18563,15 @@ class MDCTextFieldHelperTextFoundation extends MDCFoundation {
    */
   setValidation(isValidation) {
     if (isValidation) {
-      this.adapter_.addClass(cssClasses$14.HELPER_TEXT_VALIDATION_MSG);
+      this.adapter_.addClass(cssClasses$18.HELPER_TEXT_VALIDATION_MSG);
     } else {
-      this.adapter_.removeClass(cssClasses$14.HELPER_TEXT_VALIDATION_MSG);
+      this.adapter_.removeClass(cssClasses$18.HELPER_TEXT_VALIDATION_MSG);
     }
   }
 
   /** Makes the helper text visible to the screen reader. */
   showToScreenReader() {
-    this.adapter_.removeAttr(strings$15.ARIA_HIDDEN);
+    this.adapter_.removeAttr(strings$16.ARIA_HIDDEN);
   }
 
   /**
@@ -17869,14 +18579,14 @@ class MDCTextFieldHelperTextFoundation extends MDCFoundation {
    * @param {boolean} inputIsValid
    */
   setValidity(inputIsValid) {
-    const helperTextIsPersistent = this.adapter_.hasClass(cssClasses$14.HELPER_TEXT_PERSISTENT);
-    const helperTextIsValidationMsg = this.adapter_.hasClass(cssClasses$14.HELPER_TEXT_VALIDATION_MSG);
+    const helperTextIsPersistent = this.adapter_.hasClass(cssClasses$18.HELPER_TEXT_PERSISTENT);
+    const helperTextIsValidationMsg = this.adapter_.hasClass(cssClasses$18.HELPER_TEXT_VALIDATION_MSG);
     const validationMsgNeedsDisplay = helperTextIsValidationMsg && !inputIsValid;
 
     if (validationMsgNeedsDisplay) {
-      this.adapter_.setAttr(strings$15.ROLE, 'alert');
+      this.adapter_.setAttr(strings$16.ROLE, 'alert');
     } else {
-      this.adapter_.removeAttr(strings$15.ROLE);
+      this.adapter_.removeAttr(strings$16.ROLE);
     }
 
     if (!helperTextIsPersistent && !validationMsgNeedsDisplay) {
@@ -17889,7 +18599,7 @@ class MDCTextFieldHelperTextFoundation extends MDCFoundation {
    * @private
    */
   hide_() {
-    this.adapter_.setAttr(strings$15.ARIA_HIDDEN, 'true');
+    this.adapter_.setAttr(strings$16.ARIA_HIDDEN, 'true');
   }
 }
 
@@ -17941,7 +18651,7 @@ class MDCTextFieldHelperTextFoundation extends MDCFoundation {
  */
 
 /** @enum {string} */
-const strings$16 = {
+const strings$17 = {
   ICON_EVENT: 'MDCTextField:icon',
 };
 
@@ -17965,7 +18675,7 @@ const strings$16 = {
 class MDCTextFieldIconFoundation extends MDCFoundation {
   /** @return enum {string} */
   static get strings() {
-    return strings$16;
+    return strings$17;
   }
 
   /**
@@ -18047,10 +18757,10 @@ class MDCTextFieldIconFoundation extends MDCFoundation {
 /* eslint no-unused-vars: [2, {"args": "none"}] */
 
 /**
- * Adapter for MDC Text Field Label.
+ * Adapter for MDC Floating Label.
  *
  * Defines the shape of the adapter expected by the foundation. Implement this
- * adapter to integrate the Text Field label into your framework. See
+ * adapter to integrate the floating label into your framework. See
  * https://github.com/material-components/material-components-web/blob/master/docs/authoring-components.md
  * for more information.
  *
@@ -18075,9 +18785,9 @@ class MDCTextFieldIconFoundation extends MDCFoundation {
  */
 
 /** @enum {string} */
-const cssClasses$15 = {
-  LABEL_FLOAT_ABOVE: 'mdc-text-field__label--float-above',
-  LABEL_SHAKE: 'mdc-text-field__label--shake',
+const cssClasses$19 = {
+  LABEL_FLOAT_ABOVE: 'mdc-floating-label--float-above',
+  LABEL_SHAKE: 'mdc-floating-label--shake',
 };
 
 /**
@@ -18097,30 +18807,43 @@ const cssClasses$15 = {
  * limitations under the License.
  */
 
-class MDCTextFieldLabelFoundation extends MDCFoundation {
+class MDCFloatingLabelFoundation extends MDCFoundation {
   /** @return enum {string} */
   static get cssClasses() {
-    return cssClasses$15;
+    return cssClasses$19;
   }
 
   /**
-   * {@see MDCTextFieldLabelAdapter} for typing information on parameters and return
+   * {@see MDCFloatingLabelAdapter} for typing information on parameters and return
    * types.
-   * @return {!MDCTextFieldLabelAdapter}
+   * @return {!MDCFloatingLabelAdapter}
    */
   static get defaultAdapter() {
-    return /** @type {!MDCTextFieldLabelAdapter} */ ({
+    return /** @type {!MDCFloatingLabelAdapter} */ ({
       addClass: () => {},
       removeClass: () => {},
       getWidth: () => {},
+      registerInteractionHandler: () => {},
+      deregisterInteractionHandler: () => {},
     });
   }
 
   /**
-   * @param {!MDCTextFieldLabelAdapter} adapter
+   * @param {!MDCFloatingLabelAdapter} adapter
    */
   constructor(adapter) {
-    super(Object.assign(MDCTextFieldLabelFoundation.defaultAdapter, adapter));
+    super(Object.assign(MDCFloatingLabelFoundation.defaultAdapter, adapter));
+
+    /** @private {function(!Event): undefined} */
+    this.shakeAnimationEndHandler_ = () => this.handleShakeAnimationEnd_();
+  }
+
+  init() {
+    this.adapter_.registerInteractionHandler('animationend', this.shakeAnimationEndHandler_);
+  }
+
+  destroy() {
+    this.adapter_.deregisterInteractionHandler('animationend', this.shakeAnimationEndHandler_);
   }
 
   /**
@@ -18133,33 +18856,39 @@ class MDCTextFieldLabelFoundation extends MDCFoundation {
 
   /**
    * Styles the label to produce the label shake for errors.
-   * @param {boolean} isValid Whether the input's value is valid (passes all
-   *     validity checks).
-   * @param {boolean} isFocused Whether the input is focused.
+   * @param {boolean} shouldShake adds shake class if true,
+   * otherwise removes shake class.
    */
-  styleShake(isValid, isFocused) {
-    const {LABEL_SHAKE} = MDCTextFieldLabelFoundation.cssClasses;
-    if (isValid || isFocused) {
-      this.adapter_.removeClass(LABEL_SHAKE);
-    } else {
+  shake(shouldShake) {
+    const {LABEL_SHAKE} = MDCFloatingLabelFoundation.cssClasses;
+    if (shouldShake) {
       this.adapter_.addClass(LABEL_SHAKE);
+    } else {
+      this.adapter_.removeClass(LABEL_SHAKE);
     }
   }
 
   /**
-   * Styles the label to float or defloat as necessary.
-   * @param {string} value The value of the input.
-   * @param {boolean} isFocused Whether the input is focused.
-   * @param {boolean} isBadInput The input's `validity.badInput` value.
+   * Styles the label to float or dock.
+   * @param {boolean} shouldFloat adds float class if true, otherwise remove
+   * float and shake class to dock label.
    */
-  styleFloat(value, isFocused, isBadInput) {
-    const {LABEL_FLOAT_ABOVE, LABEL_SHAKE} = MDCTextFieldLabelFoundation.cssClasses;
-    if (!!value || isFocused) {
+  float(shouldFloat) {
+    const {LABEL_FLOAT_ABOVE, LABEL_SHAKE} = MDCFloatingLabelFoundation.cssClasses;
+    if (shouldFloat) {
       this.adapter_.addClass(LABEL_FLOAT_ABOVE);
-    } else if (!isBadInput) {
+    } else {
       this.adapter_.removeClass(LABEL_FLOAT_ABOVE);
       this.adapter_.removeClass(LABEL_SHAKE);
     }
+  }
+
+  /**
+   * Handles an interaction event on the root element.
+   */
+  handleShakeAnimationEnd_() {
+    const {LABEL_SHAKE} = MDCFloatingLabelFoundation.cssClasses;
+    this.adapter_.removeClass(LABEL_SHAKE);
   }
 }
 
@@ -18211,7 +18940,7 @@ class MDCTextFieldLabelFoundation extends MDCFoundation {
  */
 
 /** @enum {string} */
-const strings$17 = {
+const strings$18 = {
   PATH_SELECTOR: '.mdc-text-field__outline-path',
   IDLE_OUTLINE_SELECTOR: '.mdc-text-field__idle-outline',
 };
@@ -18236,7 +18965,7 @@ const strings$17 = {
 class MDCTextFieldOutlineFoundation extends MDCFoundation {
   /** @return enum {string} */
   static get strings() {
-    return strings$17;
+    return strings$18;
   }
 
   /**
@@ -18340,17 +19069,17 @@ class MDCTextFieldOutlineFoundation extends MDCFoundation {
  */
 
 /** @enum {string} */
-const strings$18 = {
+const strings$19 = {
   ARIA_CONTROLS: 'aria-controls',
   INPUT_SELECTOR: '.mdc-text-field__input',
-  LABEL_SELECTOR: '.mdc-text-field__label',
+  LABEL_SELECTOR: '.mdc-floating-label',
   ICON_SELECTOR: '.mdc-text-field__icon',
   OUTLINE_SELECTOR: '.mdc-text-field__outline',
   BOTTOM_LINE_SELECTOR: '.mdc-line-ripple',
 };
 
 /** @enum {string} */
-const cssClasses$16 = {
+const cssClasses$20 = {
   ROOT: 'mdc-text-field',
   UPGRADED: 'mdc-text-field--upgraded',
   DISABLED: 'mdc-text-field--disabled',
@@ -18384,20 +19113,38 @@ const numbers$4 = {
  * limitations under the License.
  */
 
+const VALIDATION_ATTR_WHITELIST = [
+  'pattern', 'min', 'max', 'required', 'step', 'minlength', 'maxlength',
+];
+
+/**
+ * @extends {MDCFoundation<!MDCTextFieldAdapter>}
+ * @final
+ */
 class MDCTextFieldFoundation extends MDCFoundation {
   /** @return enum {string} */
   static get cssClasses() {
-    return cssClasses$16;
+    return cssClasses$20;
   }
 
   /** @return enum {string} */
   static get strings() {
-    return strings$18;
+    return strings$19;
   }
 
   /** @return enum {string} */
   static get numbers() {
     return numbers$4;
+  }
+
+  /** @return {boolean} */
+  get shouldShake() {
+    return !this.isValid() && !this.isFocused_;
+  }
+
+  /** @return {boolean} */
+  get shouldFloat() {
+    return !this.isBadInput_() && (!!this.getValue() || this.isFocused_);
   }
 
   /**
@@ -18414,12 +19161,18 @@ class MDCTextFieldFoundation extends MDCFoundation {
       deregisterTextFieldInteractionHandler: () => {},
       registerInputInteractionHandler: () => {},
       deregisterInputInteractionHandler: () => {},
+      registerValidationAttributeChangeHandler: () => {},
+      deregisterValidationAttributeChangeHandler: () => {},
       getNativeInput: () => {},
       isFocused: () => {},
       isRtl: () => {},
       activateLineRipple: () => {},
       deactivateLineRipple: () => {},
       setLineRippleTransformOrigin: () => {},
+      shakeLabel: () => {},
+      floatLabel: () => {},
+      hasLabel: () => {},
+      getLabelWidth: () => {},
     });
   }
 
@@ -18434,8 +19187,6 @@ class MDCTextFieldFoundation extends MDCFoundation {
     this.helperText_ = foundationMap.helperText;
     /** @type {!MDCTextFieldIconFoundation|undefined} */
     this.icon_ = foundationMap.icon;
-    /** @type {!MDCTextFieldLabelFoundation|undefined} */
-    this.label_ = foundationMap.label;
     /** @type {!MDCTextFieldOutlineFoundation|undefined} */
     this.outline_ = foundationMap.outline;
 
@@ -18457,14 +19208,17 @@ class MDCTextFieldFoundation extends MDCFoundation {
     this.setPointerXOffset_ = (evt) => this.setTransformOrigin(evt);
     /** @private {function(!Event): undefined} */
     this.textFieldInteractionHandler_ = () => this.handleTextFieldInteraction();
+    /** @private {function(!Array): undefined} */
+    this.validationAttributeChangeHandler_ = (mutations) => this.handleValidationAttributeMutation_(mutations);
+    /** @private {!MutationObserver} */
+    this.validationObserver_;
   }
 
   init() {
     this.adapter_.addClass(MDCTextFieldFoundation.cssClasses.UPGRADED);
     // Ensure label does not collide with any pre-filled value.
-    if (this.label_ && this.getValue()) {
-      this.label_.styleFloat(
-        this.getValue(), this.isFocused_, this.isBadInput_());
+    if (this.adapter_.hasLabel() && this.getValue()) {
+      this.adapter_.floatLabel(this.shouldFloat);
     }
 
     if (this.adapter_.isFocused()) {
@@ -18480,6 +19234,8 @@ class MDCTextFieldFoundation extends MDCFoundation {
     ['click', 'keydown'].forEach((evtType) => {
       this.adapter_.registerTextFieldInteractionHandler(evtType, this.textFieldInteractionHandler_);
     });
+    this.validationObserver_ = this.adapter_.registerValidationAttributeChangeHandler(
+      this.validationAttributeChangeHandler_);
   }
 
   destroy() {
@@ -18493,6 +19249,7 @@ class MDCTextFieldFoundation extends MDCFoundation {
     ['click', 'keydown'].forEach((evtType) => {
       this.adapter_.deregisterTextFieldInteractionHandler(evtType, this.textFieldInteractionHandler_);
     });
+    this.adapter_.deregisterValidationAttributeChangeHandler(this.validationObserver_);
   }
 
   /**
@@ -18506,16 +19263,30 @@ class MDCTextFieldFoundation extends MDCFoundation {
   }
 
   /**
+   * Handles validation attribute changes
+   * @param {Array<MutationRecord>} mutationsList
+   * @private
+   */
+  handleValidationAttributeMutation_(mutationsList) {
+    mutationsList.some((mutation) => {
+      if (VALIDATION_ATTR_WHITELIST.indexOf(mutation.attributeName) > -1) {
+        this.styleValidity_(true);
+        return true;
+      }
+    });
+  }
+
+  /**
    * Updates the focus outline for outlined text fields.
    */
   updateOutline() {
-    if (!this.outline_ || !this.label_) {
+    if (!this.outline_ || !this.adapter_.hasLabel()) {
       return;
     }
 
-    const isDense = this.adapter_.hasClass(cssClasses$16.DENSE);
+    const isDense = this.adapter_.hasClass(cssClasses$20.DENSE);
     const labelScale = isDense ? numbers$4.DENSE_LABEL_SCALE : numbers$4.LABEL_SCALE;
-    const labelWidth = this.label_.getWidth() * labelScale;
+    const labelWidth = this.adapter_.getLabelWidth() * labelScale;
     const isRtl = this.adapter_.isRtl();
     this.outline_.updateSvgPath(labelWidth, isRtl);
   }
@@ -18530,10 +19301,9 @@ class MDCTextFieldFoundation extends MDCFoundation {
     if (this.outline_) {
       this.updateOutline();
     }
-    if (this.label_) {
-      this.label_.styleShake(this.isValid(), this.isFocused_);
-      this.label_.styleFloat(
-        this.getValue(), this.isFocused_, this.isBadInput_());
+    if (this.adapter_.hasLabel()) {
+      this.adapter_.shakeLabel(this.shouldShake);
+      this.adapter_.floatLabel(this.shouldFloat);
     }
     if (this.helperText_) {
       this.helperText_.showToScreenReader();
@@ -18573,10 +19343,9 @@ class MDCTextFieldFoundation extends MDCFoundation {
     const isValid = this.isValid();
     this.styleValidity_(isValid);
     this.styleFocused_(this.isFocused_);
-    if (this.label_) {
-      this.label_.styleShake(this.isValid(), this.isFocused_);
-      this.label_.styleFloat(
-        this.getValue(), this.isFocused_, this.isBadInput_());
+    if (this.adapter_.hasLabel()) {
+      this.adapter_.shakeLabel(this.shouldShake);
+      this.adapter_.floatLabel(this.shouldFloat);
     }
     if (shouldRemoveLabelFloat) {
       this.receivedUserInput_ = false;
@@ -18597,10 +19366,9 @@ class MDCTextFieldFoundation extends MDCFoundation {
     this.getNativeInput_().value = value;
     const isValid = this.isValid();
     this.styleValidity_(isValid);
-    if (this.label_) {
-      this.label_.styleShake(isValid, this.isFocused_);
-      this.label_.styleFloat(
-        this.getValue(), this.isFocused_, this.isBadInput_());
+    if (this.adapter_.hasLabel()) {
+      this.adapter_.shakeLabel(this.shouldShake);
+      this.adapter_.floatLabel(this.shouldFloat);
     }
   }
 
@@ -18622,8 +19390,8 @@ class MDCTextFieldFoundation extends MDCFoundation {
     // Retrieve from the getter to ensure correct logic is applied.
     isValid = this.isValid();
     this.styleValidity_(isValid);
-    if (this.label_) {
-      this.label_.styleShake(isValid, this.isFocused_);
+    if (this.adapter_.hasLabel()) {
+      this.adapter_.shakeLabel(this.shouldShake);
     }
   }
 
@@ -18640,23 +19408,6 @@ class MDCTextFieldFoundation extends MDCFoundation {
   setDisabled(disabled) {
     this.getNativeInput_().disabled = disabled;
     this.styleDisabled_(disabled);
-  }
-
-  /**
-   * @return {boolean} True if the Text Field is required.
-   */
-  isRequired() {
-    return this.getNativeInput_().required;
-  }
-
-  /**
-   * @param {boolean} isRequired Sets the text-field required or not.
-   */
-  setRequired(isRequired) {
-    this.getNativeInput_().required = isRequired;
-    // Addition of the asterisk is automatic based on CSS, but validity checking
-    // needs to be manually run.
-    this.styleValidity_(this.isValid());
   }
 
   /**
@@ -18784,10 +19535,12 @@ function iconFactory($el, notifyIconAction) {
 }
 
 function labelFactory($el) {
-  return new MDCTextFieldLabelFoundation({
+  return new MDCFloatingLabelFoundation({
     addClass: className => $el.classList.add(className),
     removeClass: className => $el.classList.remove(className),
-    getWidth: () => $el.offsetWidth
+    getWidth: () => $el.offsetWidth,
+    registerInteractionHandler: (evtType, handler) => $el.addEventListener(evtType, handler),
+    deregisterInteractionHandler: (evtType, handler) => $el.removeEventListener(evtType, handler)
   });
 }
 
@@ -18817,11 +19570,11 @@ function getHelperText(helperText) {
   return helperText.classList.contains("mdc-text-field-helper-text") ? helperText : null;
 }
 
-var Textfield$2 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-text-field",class:_vm.cssClasses},[(_vm.leadingIcon)?_c('mdc-icon',{ref:"icon",attrs:{"name":"text-field","icon":_vm.leadingIcon}}):_vm._e(),_c('input',_vm._b({directives:[{name:"model",rawName:"v-model",value:(_vm.model),expression:"model"}],ref:"input",staticClass:"mdc-text-field__input",attrs:{"placeholder":_vm.fullwidth && _vm.label},domProps:{"value":(_vm.model)},on:{"input":function($event){if($event.target.composing){ return; }_vm.model=$event.target.value;}}},'input',_vm.$attrs,false)),(!_vm.fullwidth)?_c('label',{ref:"label",staticClass:"mdc-text-field__label"},[_vm._v(_vm._s(_vm.label))]):_vm._e(),(!_vm.leadingIcon && _vm.trailingIcon)?_c('mdc-icon',{ref:"icon",attrs:{"name":"text-field","icon":_vm.trailingIcon}}):_vm._e(),(!_vm.outlined)?_c('div',{ref:"lineRipple",staticClass:"mdc-line-ripple"}):[_c('div',{ref:"outline",staticClass:"mdc-text-field__outline"},[_c('svg',[_c('path',{ref:"outlinePath",staticClass:"mdc-text-field__outline-path"})])]),_c('div',{ref:"idleOutline",staticClass:"mdc-text-field__idle-outline"})]],2)},staticRenderFns: [],
+var Textfield$2 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-text-field",class:_vm.cssClasses},[(_vm.leadingIcon)?_c('mdc-icon',{ref:"icon",attrs:{"name":"text-field","icon":_vm.leadingIcon}}):_vm._e(),_c('input',_vm._b({directives:[{name:"model",rawName:"v-model",value:(_vm.model),expression:"model"}],ref:"input",staticClass:"mdc-text-field__input",attrs:{"placeholder":_vm.fullwidth && _vm.label},domProps:{"value":(_vm.model)},on:{"input":function($event){if($event.target.composing){ return; }_vm.model=$event.target.value;}}},'input',_vm.$attrs,false)),(!_vm.fullwidth)?_c('label',{ref:"label",staticClass:"mdc-floating-label"},[_vm._v(_vm._s(_vm.label))]):_vm._e(),(!_vm.leadingIcon && _vm.trailingIcon)?_c('mdc-icon',{ref:"icon",attrs:{"name":"text-field","icon":_vm.trailingIcon}}):_vm._e(),(!_vm.outlined)?_c('div',{ref:"lineRipple",staticClass:"mdc-line-ripple"}):[_c('div',{ref:"outline",staticClass:"mdc-text-field__outline"},[_c('svg',[_c('path',{ref:"outlinePath",staticClass:"mdc-text-field__outline-path"})])]),_c('div',{ref:"idleOutline",staticClass:"mdc-text-field__idle-outline"})]],2)},staticRenderFns: [],
   name: "MdcTextfield",
   inheritAttrs: false,
   mixins: [ Ripple(rippleAdapter$3) ],
-  components: [ MdcIcon$1 ],
+  components: { MdcIcon: MdcIcon$1 },
   props: {
     box: Boolean,
     outlined: Boolean,
@@ -18856,7 +19609,7 @@ var Textfield$2 = {render: function(){var _vm=this;var _h=_vm.$createElement;var
         "mdc-text-field--with-trailing-icon": !this.leadingIcon && this.trailingIcon
       };
     },
-    hasIconlistener() {
+    hasIconListener() {
       return !!(this.$listeners && this.$listeners.icon);
     },
     model: {
@@ -18928,7 +19681,7 @@ function getHelperText$1(helperText) {
   return helperText.classList.contains("mdc-text-field-helper-text") ? helperText : null;
 }
 
-var Textarea = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-text-field mdc-text-field--textarea",class:_vm.cssClasses},[_c('textarea',_vm._b({directives:[{name:"model",rawName:"v-model",value:(_vm.model),expression:"model"}],ref:"input",staticClass:"mdc-text-field__input",attrs:{"label":_vm.fullwidth && _vm.label},domProps:{"value":(_vm.model)},on:{"input":function($event){if($event.target.composing){ return; }_vm.model=$event.target.value;}}},'textarea',_vm.$attrs,false)),(!_vm.fullwidth)?_c('label',{ref:"label",staticClass:"mdc-text-field__label"},[_vm._v(_vm._s(_vm.label))]):_vm._e()])},staticRenderFns: [],
+var Textarea = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-text-field mdc-text-field--textarea",class:_vm.cssClasses},[_c('textarea',_vm._b({directives:[{name:"model",rawName:"v-model",value:(_vm.model),expression:"model"}],ref:"input",staticClass:"mdc-text-field__input",attrs:{"label":_vm.fullwidth && _vm.label},domProps:{"value":(_vm.model)},on:{"input":function($event){if($event.target.composing){ return; }_vm.model=$event.target.value;}}},'textarea',_vm.$attrs,false)),(!_vm.fullwidth)?_c('label',{ref:"label",staticClass:"mdc-floating-label"},[_vm._v(_vm._s(_vm.label))]):_vm._e()])},staticRenderFns: [],
   name: "MdcTextarea",
   inheritAttrs: false,
   props: {
@@ -19068,7 +19821,7 @@ var Textfield = Object.freeze({
  * limitations under the License.
  */
 
-const cssClasses$17 = {
+const cssClasses$21 = {
   FIXED: 'mdc-toolbar--fixed',
   FIXED_LASTROW: 'mdc-toolbar--fixed-lastrow-only',
   FIXED_AT_LAST_ROW: 'mdc-toolbar--fixed-at-last-row',
@@ -19078,7 +19831,7 @@ const cssClasses$17 = {
   FLEXIBLE_MIN: 'mdc-toolbar--flexible-space-minimized',
 };
 
-const strings$19 = {
+const strings$20 = {
   TITLE_SELECTOR: '.mdc-toolbar__title',
   FIRST_ROW_SELECTOR: '.mdc-toolbar__row:first-child',
   CHANGE_EVENT: 'MDCToolbar:change',
@@ -19109,11 +19862,11 @@ const numbers$5 = {
  */
 class MDCToolbarFoundation extends MDCFoundation {
   static get cssClasses() {
-    return cssClasses$17;
+    return cssClasses$21;
   }
 
   static get strings() {
-    return strings$19;
+    return strings$20;
   }
 
   static get numbers() {
@@ -19445,7 +20198,7 @@ var ToolbarTitle = {render: function(){var _vm=this;var _h=_vm.$createElement;va
 //component.material-icons.mdc-toolbar__icon(:is="tag", :href="link", :aria-label="label")
 var ToolbarIcon = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('mdc-icon',{attrs:{"tag":_vm.tag,"name":"toolbar","icon":_vm.icon,"label":_vm.label,"href":_vm.link}},[_vm._v(_vm._s(_vm.icon))])},staticRenderFns: [],
   name: "MdcToolbarIcon",
-  components: [ MdcIcon$1 ],
+  components: { MdcIcon: MdcIcon$1 },
   props: {
     link: String,
     label: String,
@@ -19539,12 +20292,8 @@ var VueMDC = {
   }
 };
 
-var Home = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('main',[_c('p',[_vm._v("Home of BatKEK")]),_c('mdc-slider')],1)},staticRenderFns: [],
-  name: "DemoHome",
-  props: {},
-  computed: {},
-
-  methods: {},
+var Home = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _vm._m(0)},staticRenderFns: [function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('main',[_c('h1',[_vm._v("Vue MDC Web")]),_c('p',[_vm._v("This is a Vue Component wrapper for the official Material Design Components Web using the Foundation Adapters")]),_c('p',[_vm._v("Why this package over others? This package is focused of staying up to date and to follow the Vue Style Guides to ensure good Vue performance")]),_c('p',[_vm._v("All the props try to stay as close to the name of the MDC CSS class names so you can read both documentations without any abstraction so that both documentations can work together.")]),_c('p',[_vm._v("As the "),_c('a',{attrs:{"href":"//material.io/components/web/","target":"_blank"}},[_vm._v("material.io")]),_vm._v(" documentation is good to read to getmore in depth of the material design framework.")]),_c('p',[_vm._v("To download the package type this into npm")]),_c('p',[_vm._v("npm -i vue-mdc-web")]),_c('p',[_vm._v("Or if you use yarn type")]),_c('p',[_vm._v("yarn add vue-mdc-web")])])}],
+  name: "DemoHome"
 };
 
 var Demo = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c(_vm.view,{tag:"component"})},staticRenderFns: [],
@@ -19567,10 +20316,7 @@ const pascal = str => {
 var routes = [
   {
     path: "/",
-    component: Home,
-    meta: {
-      title: "Home"
-    }
+    component: Home
   },
   {
     path: "/demo/:view",
@@ -19588,10 +20334,11 @@ var routes = [
   }*/
 ];
 
-var Layout = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('mdc-app',{attrs:{"flip":""}},[_c('mdc-toolbar',{attrs:{"slot":"toolbar"},slot:"toolbar"},[_c('mdc-toolbar-row',[_c('mdc-toolbar-section',{attrs:{"align-start":""}},[_c('mdc-toolbar-menu-icon',{on:{"click":_vm.toggleDrawer}}),_c('mdc-toolbar-title',[_vm._v("MDC Vue Demo")])],1)],1)],1),_c('mdc-drawer',{ref:"drawer",attrs:{"slot":"drawer","type":_vm.drawer,"open":_vm.drawerOpen,"header":"Components"},slot:"drawer"},[_c('mdc-drawer-item',{attrs:{"to":"/","exact":"","text":"Home"}}),_c('mdc-drawer-divider'),_vm._l((_vm.routes),function(n){return _c('mdc-drawer-item',{key:n,attrs:{"to":'/demo/' + _vm.kebab(n),"text":n}})})],2),_c('router-view')],1)},staticRenderFns: [],
+var Layout = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('mdc-app',{attrs:{"flip":"","align-start":""}},[_c('mdc-toolbar',{attrs:{"slot":"toolbar"},slot:"toolbar"},[_c('mdc-toolbar-row',[_c('mdc-toolbar-section',{attrs:{"align-start":""}},[_c('mdc-toolbar-menu-icon',{on:{"click":_vm.toggleDrawer}}),_c('mdc-toolbar-title',[_vm._v(_vm._s(_vm.title))])],1)],1)],1),_c('mdc-drawer',{ref:"drawer",attrs:{"slot":"drawer","type":_vm.drawer,"open":_vm.drawerOpen,"header":"Components"},slot:"drawer"},[_c('mdc-drawer-item',{attrs:{"to":"/","exact":"","text":"Home"}}),_c('mdc-drawer-divider'),_vm._l((_vm.routes),function(n){return _c('mdc-drawer-item',{key:n,attrs:{"to":'/demo/' + _vm.kebab(n),"text":n}})})],2),_c('router-view')],1)},staticRenderFns: [],
   name: "AppRoot",
   data() {
     return {
+      title: "MDC Vue Demo",
       drawer: "persistent",
       drawerOpen: false,
       routes: [
@@ -19599,6 +20346,7 @@ var Layout = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_
         "Button",
         "Card",
         "Checkbox",
+        "Chips",
         "Dialog",
         "Drawer",
         "Elevation",
@@ -19635,6 +20383,12 @@ var Layout = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_
       this.drawer = mobile ? "temporary" : "persistent";
       this.drawerOpen = !mobile;
     });
+    this.$state.$on("demoRouted", title => {
+      this.title = `MDC ${title}`;
+    });
+  },
+  beforeDestroy() {
+    this.$state.$off("demoRouted");
   },
 
   methods: {
@@ -19650,6 +20404,7 @@ var Layout = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_
       this.$refs.drawer.toggle();
 
       // Trigger resize on toggle
+      // Simple hack for toggling resize on elements when drawer is toggled
       let event;
       try {
         event = new Event("resize");
@@ -19662,7 +20417,7 @@ var Layout = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_
   }
 };
 
-var DemoTemplate = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('main',[_vm._t("default"),_c('h2',[_vm._v("Usage")]),_c('p',[_vm._v("To use the component type this into your component")]),_vm._t("usage"),(_vm.hasSlots)?[_c('h2',[_vm._v("Slots")]),_c('demo-table',{attrs:{"slots":""}},[_vm._t("slots")],2)]:_vm._e(),_c('h2',[_vm._v("Props")]),_c('demo-table',{attrs:{"props":""}},[_vm._t("props")],2),(_vm.hasEvents)?[_c('h2',[_vm._v("Events")]),_c('demo-table',{attrs:{"events":""}},[_vm._t("events")],2)]:_vm._e()],2)},staticRenderFns: [],
+var DemoTemplate = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('main',{staticClass:"demo-app"},[(_vm.hasHero)?_c('section',{staticClass:"demo-app__hero"},[_vm._t("hero")],2):_vm._e(),_c('article',{staticClass:"demo-app__content"},[_c('section',{staticClass:"demo-app__usage"},[_c('h2',[_vm._v("Usage")]),_c('p',[_vm._v("To use the component type this into your Vue Component")]),_vm._t("usage")],2),_c('section',{staticClass:"demo-app__data"},[(_vm.hasSlots)?[_c('h2',[_vm._v("Slots")]),_c('demo-table',{attrs:{"slots":""}},[_vm._t("slots")],2)]:_vm._e(),_c('h2',[_vm._v("Props")]),_c('demo-table',{attrs:{"props":""}},[_vm._t("props")],2),(_vm.hasEvents)?[_c('h2',[_vm._v("Events")]),_c('demo-table',{attrs:{"events":""}},[_vm._t("events")],2)]:_vm._e()],2)])])},staticRenderFns: [],
   name: "DemoTemplate",
   computed: {
     hasSlots() {
@@ -19670,49 +20425,167 @@ var DemoTemplate = {render: function(){var _vm=this;var _h=_vm.$createElement;va
     },
     hasEvents() {
       return !!this.$slots.events;
+    },
+    hasHero() {
+      return !!this.$slots.hero;
     }
   }
 };
 
-var App$2 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('demo-template',[_c('h1',[_vm._v("MdcApp")]),_c('p',[_vm._v("MdcApp is a component made from the material.io page layout using flexbox to quickly rig the app layout")]),_c('template',{slot:"usage"},[_c('demo-code',{attrs:{"lang":"markup","code":"\n<mdc-app>\n  <mdc-toolbar slot=\"toolbar\">\n    ...toolbar content\n  </mdc-toolbar>\n  <mdc-drawer slot=\"drawer\">\n    ...drawer content\n  </mdc-drawer>\n\n  <main>\n    ...main content\n  </main>\n\n  ...other content such as footer etc\n</mdc-app>"}})],1),_c('template',{slot:"slots"},[_c('tr',[_c('td',[_vm._v("toolbar")]),_c('td',[_vm._v("Used to slot the mdc-toolbar component to be inserted correctly")])]),_c('tr',[_c('td',[_vm._v("drawer")]),_c('td',[_vm._v("Used to slot the mdc-drawer component to be inserted correctly")])])]),_c('template',{slot:"props"},[_c('tr',[_c('td',[_vm._v("flip")]),_c('td',[_vm._v("Boolean")]),_c('td',[_vm._v("false")]),_c('td',[_vm._v("Used to flip the positioning of the toolbar and the drawer.")])]),_c('tr',[_c('td',[_vm._v("drawer-hide-mobile")]),_c('td',[_vm._v("Boolean")]),_c('td',[_vm._v("false")]),_c('td',[_vm._v("Hide the drawer if the width is below 720px.")])]),_c('tr',[_c('td',[_vm._v("align-start")]),_c('td',[_vm._v("Boolean")]),_c('td',[_vm._v("false")]),_c('td',[_vm._v("Removes the center alignment on the main content.")])])])],2)},staticRenderFns: [],
+var App$2 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('demo-template',[_c('template',{slot:"usage"},[_c('demo-code',{attrs:{"lang":"markup","code":"\n<mdc-app>\n  <mdc-toolbar slot=\"toolbar\">\n    ...toolbar content\n  </mdc-toolbar>\n  <mdc-drawer slot=\"drawer\">\n    ...drawer content\n  </mdc-drawer>\n\n  <main>\n    ...main content\n  </main>\n\n  ...other content such as footer etc\n</mdc-app>"}})],1),_c('template',{slot:"slots"},[_c('tr',[_c('td',[_vm._v("toolbar")]),_c('td',[_vm._v("Used to slot the mdc-toolbar component to be inserted correctly")])]),_c('tr',[_c('td',[_vm._v("drawer")]),_c('td',[_vm._v("Used to slot the mdc-drawer component to be inserted correctly")])])]),_c('template',{slot:"props"},[_c('tr',[_c('td',[_vm._v("flip")]),_c('td',[_vm._v("Boolean")]),_c('td',[_vm._v("false")]),_c('td',[_vm._v("Used to flip the positioning of the toolbar and the drawer.")])]),_c('tr',[_c('td',[_vm._v("drawer-hide-mobile")]),_c('td',[_vm._v("Boolean")]),_c('td',[_vm._v("false")]),_c('td',[_vm._v("Hide the drawer if the width is below 720px.")])]),_c('tr',[_c('td',[_vm._v("align-start")]),_c('td',[_vm._v("Boolean")]),_c('td',[_vm._v("false")]),_c('td',[_vm._v("Removes the center alignment on the main content.")])])])],2)},staticRenderFns: [],
   name: "DemoApp",
   components: { DemoTemplate }
 };
 
-var Button$2 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('demo-template',[_c('h1',[_vm._v("MdcButton")]),_c('p',[_vm._v("MdcButton is a simple button wrapper for the material.io button")]),_c('template',{slot:"usage"},[_c('demo-code',{attrs:{"lang":"markup","code":"\n<mdc-button>...text</mdc-button>"}})],1),_c('template',{slot:"props"},[_c('tr',[_c('td',[_vm._v("icon")]),_c('td',[_vm._v("String")]),_c('td',[_vm._v("\"\"")]),_c('td',[_vm._v("Add an icon according to the material-icons icon id")])]),_c('tr',[_c('td',[_vm._v("link")]),_c('td',[_vm._v("String")]),_c('td',[_vm._v("\"\"")]),_c('td',[_vm._v("Creates a link button using an anchor tag")])]),_c('tr',[_c('td',[_vm._v("raised")]),_c('td',[_vm._v("Boolean")]),_c('td',[_vm._v("false")]),_c('td',[_vm._v("Setting the button to be elevated upon the surface")])]),_c('tr',[_c('td',[_vm._v("unelevated")]),_c('td',[_vm._v("Boolean")]),_c('td',[_vm._v("false")]),_c('td',[_vm._v("Setting the button to be flush upon the surface")])]),_c('tr',[_c('td',[_vm._v("stroked")]),_c('td',[_vm._v("Boolean")]),_c('td',[_vm._v("false")]),_c('td',[_vm._v("Setting the button to be flush upon the surface and has a visible border")])]),_c('tr',[_c('td',[_vm._v("dense")]),_c('td',[_vm._v("Boolean")]),_c('td',[_vm._v("false")]),_c('td',[_vm._v("Compressing the buttons text to be slightly smaller")])]),_c('tr',[_c('td',[_vm._v("compact")]),_c('td',[_vm._v("Boolean")]),_c('td',[_vm._v("false")]),_c('td',[_vm._v("Reduces the horizontal padding on the button")])])])],2)},staticRenderFns: [],
+var Button$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('demo-template',[_c('mdc-button',{attrs:{"slot":"hero"},slot:"hero"},[_vm._v("Flat")]),_c('mdc-button',{attrs:{"slot":"hero","raised":""},slot:"hero"},[_vm._v("Raised")]),_c('mdc-button',{attrs:{"slot":"hero","icon":"favorite"},slot:"hero"},[_vm._v("Icon")]),_c('template',{slot:"usage"},[_c('demo-code',{attrs:{"lang":"markup","code":"\n<mdc-button>...text</mdc-button>"}})],1),_c('template',{slot:"events"},[_c('tr',[_c('td',[_vm._v("click")]),_c('td'),_c('td',[_vm._v("Triggers when button is clicked")])])]),_c('template',{slot:"props"},[_c('tr',[_c('td',[_vm._v("icon")]),_c('td',[_vm._v("String")]),_c('td',[_vm._v("\"\"")]),_c('td',[_vm._v("Add an icon according to the material-icons icon id")])]),_c('tr',[_c('td',[_vm._v("link")]),_c('td',[_vm._v("String")]),_c('td',[_vm._v("\"\"")]),_c('td',[_vm._v("Creates a link button using an anchor tag")])]),_c('tr',[_c('td',[_vm._v("raised")]),_c('td',[_vm._v("Boolean")]),_c('td',[_vm._v("false")]),_c('td',[_vm._v("Setting the button to be elevated upon the surface")])]),_c('tr',[_c('td',[_vm._v("unelevated")]),_c('td',[_vm._v("Boolean")]),_c('td',[_vm._v("false")]),_c('td',[_vm._v("Setting the button to be flush upon the surface")])]),_c('tr',[_c('td',[_vm._v("stroked")]),_c('td',[_vm._v("Boolean")]),_c('td',[_vm._v("false")]),_c('td',[_vm._v("Setting the button to be flush upon the surface and has a visible border")])]),_c('tr',[_c('td',[_vm._v("dense")]),_c('td',[_vm._v("Boolean")]),_c('td',[_vm._v("false")]),_c('td',[_vm._v("Compressing the buttons text to be slightly smaller")])]),_c('tr',[_c('td',[_vm._v("compact")]),_c('td',[_vm._v("Boolean")]),_c('td',[_vm._v("false")]),_c('td',[_vm._v("Reduces the horizontal padding on the button")])])])],2)},staticRenderFns: [],
   name: "DemoButton",
   components: { DemoTemplate }
 };
 
-var Card$2 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('main',[_c('h2',[_vm._v("Card not finished so no docs")]),_c('mdc-card',[_c('mdc-card-media',{attrs:{"image":"kek.png"}}),_c('mdc-card-actions',{attrs:{"full-bleed":""}},[_c('mdc-button',[_vm._v("Kek")]),_c('mdc-button',[_vm._v("link")])],1)],1)],1)},staticRenderFns: [],
+var Card$2 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('demo-template',[_c('mdc-card',{attrs:{"slot":"hero"},slot:"hero"},[_c('mdc-card-media',{attrs:{"image":"/images/16-9.jpg"}}),_c('mdc-card-actions',[_c('mdc-button',{attrs:{"slot":"button"},slot:"button"},[_vm._v("Click me")]),_c('mdc-button',{attrs:{"slot":"button"},slot:"button"},[_vm._v("Or me")]),_c('mdc-icon-toggle',{attrs:{"slot":"icon","on":{content: 'favorite', label: 'Add to favorites'},"off":{content: 'favorite_border', label: 'Remove from favorites'}},slot:"icon"}),_c('mdc-icon',{attrs:{"slot":"icon","icon":"share","label":"Share","ripple":"","action":""},slot:"icon"}),_c('mdc-icon',{attrs:{"slot":"icon","icon":"more_vert","label":"More Options","ripple":"","action":""},slot:"icon"})],1)],1),_c('template',{slot:"usage"},[_c('demo-code',{attrs:{"lang":"markup","code":"\n<mdc-card>\n  <mdc-card-media image=\"<image source>\"/>\n  <mdc-card-actions>\n    <mdc-button slot=\"button\">Click me</mdc-button>\n    <mdc-button slot=\"button\">Or me</mdc-button>\n\n    <mdc-icon-toggle slot=\"icon\" :on=\"{content: 'favorite', label: 'Add to favorites'}\" :off=\"{content: 'favorite_border', label: 'Remove from favorites'}\"/>\n  </mdc-card-actions>\n</mdc-form-field>"}})],1)],2)},staticRenderFns: [],
   name: "DemoCard",
+  components: { DemoTemplate, MdcIcon: MdcIcon$1 }
+};
+
+var Checkbox$2 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('demo-template',[_c('mdc-form-field',{attrs:{"slot":"hero","label":"Checkbox"},slot:"hero"},[_c('mdc-checkbox')],1),_c('mdc-form-field',{attrs:{"slot":"hero","label":"Indeterminate"},slot:"hero"},[_c('mdc-checkbox',{attrs:{"indeterminate":""}})],1),_c('template',{slot:"usage"},[_c('demo-code',{attrs:{"lang":"markup","code":"\n<mdc-checkbox/>"}}),_c('p',[_vm._v("The MDC Checkbox can also be used together with a MDC Form Field to add a label to it.")]),_c('p',[_vm._v("The checkbox can also use a v-model directive to reactivly bind the value.")]),_c('demo-code',{attrs:{"lang":"markup","code":"\n<mdc-form-field label=\"My Checkbox\">\n  <mdc-checkbox v-model=\"checked\"/>\n</mdc-form-field>"}}),_c('p',[_vm._v("You also need to define the v-model value in your data on your parent component")]),_c('demo-code',{attrs:{"lang":"javascript","code":"\nexport default {\n  data() {\n    return { checked: false };\n  };\n}"}})],1),_c('template',{slot:"props"},[_c('tr',[_c('td',[_vm._v("checked")]),_c('td',[_vm._v("Boolean")]),_c('td',[_vm._v("false")]),_c('td',[_vm._v("Used to change the checked state of the checkbox")])]),_c('tr',[_c('td',[_vm._v("disabled")]),_c('td',[_vm._v("Boolean")]),_c('td',[_vm._v("false")]),_c('td',[_vm._v("Disables the checkbox from any input")])]),_c('tr',[_c('td',[_vm._v("indeterminate")]),_c('td',[_vm._v("Boolean")]),_c('td',[_vm._v("false")]),_c('td',[_vm._v("Changes the indetermined state of the checkbox")])])])],2)},staticRenderFns: [],
+  name: "DemoCheckbox",
+  components: { DemoTemplate }
+};
+
+var Chips$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('demo-template',[_c('mdc-chip-set',{attrs:{"slot":"hero"},slot:"hero"},[_c('mdc-chip',{attrs:{"text":"Chip"}}),_c('mdc-chip',{attrs:{"entry":"","text":"Entry Chip"}}),_c('mdc-chip',{attrs:{"filter":"","text":"Filter Chip"}}),_c('mdc-chip',{attrs:{"action":"bookmark","text":"Action Chip"}})],1),_c('template',{slot:"usage"},[_c('demo-code',{attrs:{"lang":"markup","code":"\n<mdc-chip text=\"My Chip\"/>"}}),_c('p',[_vm._v("It is also possible to use a mdc-chip-set in order to view multiple chips in order like this")]),_c('demo-code',{attrs:{"lang":"markup","code":"\n<mdc-chip-set>\n  <mdc-chip text=\"Chip 1\"/>\n  <mdc-chip text=\"Chip 2\"/>\n  <mdc-chip text=\"Chip 3\"/>\n</mdc-chip-set>"}})],1),_c('template',{slot:"events"},[_c('tr',[_c('td',[_vm._v("click")]),_c('td'),_c('td',[_vm._v("Emits a click event when chip is clicked")])])]),_c('template',{slot:"props"},[_c('tr',[_c('td',[_vm._v("checked")]),_c('td',[_vm._v("Boolean")]),_c('td',[_vm._v("false")]),_c('td',[_vm._v("Used to change the checked state of the checkbox")])]),_c('tr',[_c('td',[_vm._v("disabled")]),_c('td',[_vm._v("Boolean")]),_c('td',[_vm._v("false")]),_c('td',[_vm._v("Disables the checkbox from any input")])]),_c('tr',[_c('td',[_vm._v("indeterminate")]),_c('td',[_vm._v("Boolean")]),_c('td',[_vm._v("false")]),_c('td',[_vm._v("Changes the indetermined state of the checkbox")])])])],2)},staticRenderFns: [],
+  name: "DemoChips",
+  components: { DemoTemplate }
+};
+
+var Dialog$2 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('demo-template',[_c('mdc-button',{attrs:{"slot":"hero","raised":""},on:{"click":function($event){_vm.$refs.dialog.open();}},slot:"hero"},[_vm._v("Open dialog")]),_c('mdc-button',{attrs:{"slot":"hero","raised":""},on:{"click":function($event){_vm.$refs.scrollDialog.open();}},slot:"hero"},[_vm._v("Open scrolling dialog")]),_c('mdc-button',{attrs:{"slot":"hero","raised":""},on:{"click":_vm.openValidDialog},slot:"hero"},[_vm._v("Open validation dialog")]),_c('mdc-dialog',{ref:"dialog",attrs:{"slot":"hero","header":"This is a dialog"},slot:"hero"},[_vm._v("This is a demo dialog which you can accept or decline")]),_c('mdc-dialog',{ref:"scrollDialog",attrs:{"slot":"hero","scroll":"","header":"This is a scrolling dialog"},slot:"hero"},[_c('mdc-list',[_c('mdc-list-item',{attrs:{"text":"Green Eggs"}}),_c('mdc-list-item',{attrs:{"text":"Ham"}}),_c('mdc-list-item',{attrs:{"text":"Biscuits"}}),_c('mdc-list-item',{attrs:{"text":"Milk"}}),_c('mdc-list-item',{attrs:{"text":"Jam"}}),_c('mdc-list-item',{attrs:{"text":"Peanut Butter"}}),_c('mdc-list-item',{attrs:{"text":"Juice"}})],1)],1),_c('mdc-dialog',{ref:"validDialog",attrs:{"slot":"hero","header":"Select a fruit (not Kiwi)","valid":_vm.dialogValid},slot:"hero"},[_c('mdc-form-field',{attrs:{"label":"Banana"}},[_c('mdc-radio',{attrs:{"value":"Banana"},model:{value:(_vm.selectedItem),callback:function ($$v) {_vm.selectedItem=$$v;},expression:"selectedItem"}})],1),_c('mdc-form-field',{attrs:{"label":"Apple"}},[_c('mdc-radio',{attrs:{"value":"Apple"},model:{value:(_vm.selectedItem),callback:function ($$v) {_vm.selectedItem=$$v;},expression:"selectedItem"}})],1),_c('mdc-form-field',{attrs:{"label":"Peach"}},[_c('mdc-radio',{attrs:{"value":"Peach"},model:{value:(_vm.selectedItem),callback:function ($$v) {_vm.selectedItem=$$v;},expression:"selectedItem"}})],1),_c('mdc-form-field',{attrs:{"label":"Kiwi (yuck)"}},[_c('mdc-radio',{attrs:{"value":"Kiwi"},model:{value:(_vm.selectedItem),callback:function ($$v) {_vm.selectedItem=$$v;},expression:"selectedItem"}})],1)],1),_c('template',{slot:"usage"},[_c('demo-code',{attrs:{"lang":"markup","code":"\n<mdc-dialog ref=\"dialog\"/>\n"}}),_c('p',[_vm._v("You can then open the dialog using any interaction through javascript. Like in this example a mdc-button")]),_c('demo-code',{attrs:{"lang":"markup","code":"\n<mdc-dialog ref=\"dialog\"/>\n<mdc-button @click=\"$refs.dialog.open()\"/>\n"}})],1),_c('template',{slot:"props"},[_c('tr',[_c('td',[_vm._v("header")]),_c('td',[_vm._v("String")]),_c('td',[_vm._v("\"\"")]),_c('td',[_vm._v("Sets the text of the dialog header")])]),_c('tr',[_c('td',[_vm._v("scroll")]),_c('td',[_vm._v("Boolean")]),_c('td',[_vm._v("false")]),_c('td',[_vm._v("Sets the dialog to a set height and makes it scrollable")])]),_c('tr',[_c('td',[_vm._v("valid")]),_c('td',[_vm._v("Boolean")]),_c('td',[_vm._v("true")]),_c('td',[_vm._v("When false the accept button is disabled. Preventing accept button from being pressed.")])]),_c('tr',[_c('td',[_vm._v("acceptText")]),_c('td',[_vm._v("String")]),_c('td',[_vm._v("\"Ok\"")]),_c('td',[_vm._v("Sets the text of the accept button")])]),_c('tr',[_c('td',[_vm._v("cancelText")]),_c('td',[_vm._v("String")]),_c('td',[_vm._v("\"Cancel\"")]),_c('td',[_vm._v("Sets the text of the cancel button")])])]),_c('template',{slot:"events"},[_c('tr',[_c('td',[_vm._v("accept")]),_c('td'),_c('td',[_vm._v("Emitted when dialog accept button was pressed")])]),_c('tr',[_c('td',[_vm._v("cancel")]),_c('td'),_c('td',[_vm._v("Emitted when dialog canceled byt pressing the button, the backdrop or keys such as esc etc. ")])]),_c('tr',[_c('td',[_vm._v("action")]),_c('td',[_vm._v("action")]),_c('td',[_vm._v("Emitted before either \"cancel\" or \"accept\" is emitted. The parameter \"action\" is either \"cancel\" or \"accept\".")])])])],2)},staticRenderFns: [],
+  name: "DemoDialog",
+  components: { DemoTemplate },
+  computed: {
+    dialogValid() {
+      return !!this.selectedItem && this.selectedItem !== "Kiwi";
+    }
+  },
+  data() {
+    return { selectedItem: "" };
+  },
+  methods: {
+    openValidDialog() {
+      this.selectedItem = "";
+      this.$refs.validDialog.open();
+    }
+  }
+};
+
+var Drawer$2 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('demo-template',[_c('mdc',{attrs:{"slot":"hero"},slot:"hero"}),_c('template',{slot:"usage"},[_c('demo-code',{attrs:{"lang":"markup","code":"\n<mdc/>\n"}})],1),_c('template',{slot:"props"},[_c('tr',[_c('td',[_vm._v("name")]),_c('td',[_vm._v("type")]),_c('td',[_vm._v("default")]),_c('td',[_vm._v("desc")])])])],2)},staticRenderFns: [],
+  name: "DemoDrawer",
+  components: { DemoTemplate }
+};
+
+var Fab$2 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('demo-template',[_c('mdc',{attrs:{"slot":"hero"},slot:"hero"}),_c('template',{slot:"usage"},[_c('demo-code',{attrs:{"lang":"markup","code":"\n<mdc/>\n"}})],1),_c('template',{slot:"props"},[_c('tr',[_c('td',[_vm._v("name")]),_c('td',[_vm._v("type")]),_c('td',[_vm._v("default")]),_c('td',[_vm._v("desc")])])])],2)},staticRenderFns: [],
+  name: "DemoFab",
+  components: { DemoTemplate }
+};
+
+var FormField$2 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('demo-template',[_c('mdc',{attrs:{"slot":"hero"},slot:"hero"}),_c('template',{slot:"usage"},[_c('demo-code',{attrs:{"lang":"markup","code":"\n<mdc/>\n"}})],1),_c('template',{slot:"props"},[_c('tr',[_c('td',[_vm._v("name")]),_c('td',[_vm._v("type")]),_c('td',[_vm._v("default")]),_c('td',[_vm._v("desc")])])])],2)},staticRenderFns: [],
+  name: "DemoFormField",
+  components: { DemoTemplate }
+};
+
+var GridList$2 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('demo-template',[_c('mdc',{attrs:{"slot":"hero"},slot:"hero"}),_c('template',{slot:"usage"},[_c('demo-code',{attrs:{"lang":"markup","code":"\n<mdc/>\n"}})],1),_c('template',{slot:"props"},[_c('tr',[_c('td',[_vm._v("name")]),_c('td',[_vm._v("type")]),_c('td',[_vm._v("default")]),_c('td',[_vm._v("desc")])])])],2)},staticRenderFns: [],
+  name: "DemoGridList",
+  components: { DemoTemplate }
+};
+
+var IconToggle$2 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('demo-template',[_c('mdc',{attrs:{"slot":"hero"},slot:"hero"}),_c('template',{slot:"usage"},[_c('demo-code',{attrs:{"lang":"markup","code":"\n<mdc/>\n"}})],1),_c('template',{slot:"props"},[_c('tr',[_c('td',[_vm._v("name")]),_c('td',[_vm._v("type")]),_c('td',[_vm._v("default")]),_c('td',[_vm._v("desc")])])])],2)},staticRenderFns: [],
+  name: "DemoIconToggle",
+  components: { DemoTemplate }
+};
+
+var LayoutGrid$2 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('demo-template',[_c('mdc',{attrs:{"slot":"hero"},slot:"hero"}),_c('template',{slot:"usage"},[_c('demo-code',{attrs:{"lang":"markup","code":"\n<mdc/>\n"}})],1),_c('template',{slot:"props"},[_c('tr',[_c('td',[_vm._v("name")]),_c('td',[_vm._v("type")]),_c('td',[_vm._v("default")]),_c('td',[_vm._v("desc")])])])],2)},staticRenderFns: [],
+  name: "DemoLayoutGrid",
+  components: { DemoTemplate }
+};
+
+var LinearProgress$2 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('demo-template',[_c('mdc',{attrs:{"slot":"hero"},slot:"hero"}),_c('template',{slot:"usage"},[_c('demo-code',{attrs:{"lang":"markup","code":"\n<mdc/>\n"}})],1),_c('template',{slot:"props"},[_c('tr',[_c('td',[_vm._v("name")]),_c('td',[_vm._v("type")]),_c('td',[_vm._v("default")]),_c('td',[_vm._v("desc")])])])],2)},staticRenderFns: [],
+  name: "DemoLinearProgress",
+  components: { DemoTemplate }
+};
+
+var List$2 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('demo-template',[_c('mdc',{attrs:{"slot":"hero"},slot:"hero"}),_c('template',{slot:"usage"},[_c('demo-code',{attrs:{"lang":"markup","code":"\n<mdc/>\n"}})],1),_c('template',{slot:"props"},[_c('tr',[_c('td',[_vm._v("name")]),_c('td',[_vm._v("type")]),_c('td',[_vm._v("default")]),_c('td',[_vm._v("desc")])])])],2)},staticRenderFns: [],
+  name: "DemoList",
+  components: { DemoTemplate }
+};
+
+var Menu$2 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('demo-template',[_c('mdc',{attrs:{"slot":"hero"},slot:"hero"}),_c('template',{slot:"usage"},[_c('demo-code',{attrs:{"lang":"markup","code":"\n<mdc/>\n"}})],1),_c('template',{slot:"props"},[_c('tr',[_c('td',[_vm._v("name")]),_c('td',[_vm._v("type")]),_c('td',[_vm._v("default")]),_c('td',[_vm._v("desc")])])])],2)},staticRenderFns: [],
+  name: "DemoMenu",
+  components: { DemoTemplate }
+};
+
+var Radio$2 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('demo-template',[_c('mdc',{attrs:{"slot":"hero"},slot:"hero"}),_c('template',{slot:"usage"},[_c('demo-code',{attrs:{"lang":"markup","code":"\n<mdc/>\n"}})],1),_c('template',{slot:"props"},[_c('tr',[_c('td',[_vm._v("name")]),_c('td',[_vm._v("type")]),_c('td',[_vm._v("default")]),_c('td',[_vm._v("desc")])])])],2)},staticRenderFns: [],
+  name: "DemoRadio",
+  components: { DemoTemplate }
+};
+
+var Select$2 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('demo-template',[_c('mdc',{attrs:{"slot":"hero"},slot:"hero"}),_c('template',{slot:"usage"},[_c('demo-code',{attrs:{"lang":"markup","code":"\n<mdc/>\n"}})],1),_c('template',{slot:"props"},[_c('tr',[_c('td',[_vm._v("name")]),_c('td',[_vm._v("type")]),_c('td',[_vm._v("default")]),_c('td',[_vm._v("desc")])])])],2)},staticRenderFns: [],
+  name: "DemoSelect",
+  components: { DemoTemplate }
+};
+
+var Slider = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('demo-template',[_c('mdc',{attrs:{"slot":"hero"},slot:"hero"}),_c('template',{slot:"usage"},[_c('demo-code',{attrs:{"lang":"markup","code":"\n<mdc/>\n"}})],1),_c('template',{slot:"props"},[_c('tr',[_c('td',[_vm._v("name")]),_c('td',[_vm._v("type")]),_c('td',[_vm._v("default")]),_c('td',[_vm._v("desc")])])])],2)},staticRenderFns: [],
+  name: "DemoSlider",
+  components: { DemoTemplate }
+};
+
+var Snackbar$2 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('demo-template',[_c('mdc',{attrs:{"slot":"hero"},slot:"hero"}),_c('template',{slot:"usage"},[_c('demo-code',{attrs:{"lang":"markup","code":"\n<mdc/>\n"}})],1),_c('template',{slot:"props"},[_c('tr',[_c('td',[_vm._v("name")]),_c('td',[_vm._v("type")]),_c('td',[_vm._v("default")]),_c('td',[_vm._v("desc")])])])],2)},staticRenderFns: [],
+  name: "DemoSnackbar",
+  components: { DemoTemplate }
+};
+
+var Switch$2 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('demo-template',[_c('mdc',{attrs:{"slot":"hero"},slot:"hero"}),_c('template',{slot:"usage"},[_c('demo-code',{attrs:{"lang":"markup","code":"\n<mdc/>\n"}})],1),_c('template',{slot:"props"},[_c('tr',[_c('td',[_vm._v("name")]),_c('td',[_vm._v("type")]),_c('td',[_vm._v("default")]),_c('td',[_vm._v("desc")])])])],2)},staticRenderFns: [],
+  name: "DemoSwitch",
+  components: { DemoTemplate }
+};
+
+var Tabs$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('demo-template',[_c('mdc',{attrs:{"slot":"hero"},slot:"hero"}),_c('template',{slot:"usage"},[_c('demo-code',{attrs:{"lang":"markup","code":"\n<mdc/>\n"}})],1),_c('template',{slot:"props"},[_c('tr',[_c('td',[_vm._v("name")]),_c('td',[_vm._v("type")]),_c('td',[_vm._v("default")]),_c('td',[_vm._v("desc")])])])],2)},staticRenderFns: [],
+  name: "DemoTabs",
+  components: { DemoTemplate }
+};
+
+var Textfield$3 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('demo-template',[_c('mdc',{attrs:{"slot":"hero"},slot:"hero"}),_c('template',{slot:"usage"},[_c('demo-code',{attrs:{"lang":"markup","code":"\n<mdc/>\n"}})],1),_c('template',{slot:"props"},[_c('tr',[_c('td',[_vm._v("name")]),_c('td',[_vm._v("type")]),_c('td',[_vm._v("default")]),_c('td',[_vm._v("desc")])])])],2)},staticRenderFns: [],
+  name: "DemoTextfield",
+  components: { DemoTemplate }
+};
+
+var Toolbar$2 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('demo-template',[_c('mdc',{attrs:{"slot":"hero"},slot:"hero"}),_c('template',{slot:"usage"},[_c('demo-code',{attrs:{"lang":"markup","code":"\n<mdc/>\n"}})],1),_c('template',{slot:"props"},[_c('tr',[_c('td',[_vm._v("name")]),_c('td',[_vm._v("type")]),_c('td',[_vm._v("default")]),_c('td',[_vm._v("desc")])])])],2)},staticRenderFns: [],
+  name: "DemoToolbar",
   components: { DemoTemplate }
 };
 
 var Packages = {
   install(Vue) {
     Vue.component(App$2.name, App$2);
-    Vue.component(Button$2.name, Button$2);
+    Vue.component(Button$1.name, Button$1);
     Vue.component(Card$2.name, Card$2);
-    //Vue.component(Checkbox.name, Checkbox);
-    //Vue.component(Dialog.name, Dialog);
-    //Vue.component(Drawer.name, Drawer);
-    //Vue.component(Fab.name, Fab);
-    //Vue.component(FormField.name, FormField);
-    //Vue.component(GridList.name, GridList);
-    //Vue.component(IconToggle.name, IconToggle);
-    //Vue.component(LayoutGrid.name, LayoutGrid);
-    //Vue.component(LinearProgress.name, LinearProgress);
-    //Vue.component(List.name, List);
-    //Vue.component(Menu.name, Menu);
-    //Vue.component(Radio.name, Radio);
-    //Vue.component(Select.name, Select);
-    //Vue.component(Slider.name, Slider);
-    //Vue.component(Snackbar.name, Snackbar);
-    //Vue.component(Switch.name, Switch);
-    //Vue.component(Tabs.name, Tabs);
-    //Vue.component(Textfield.name, Textfield);
-    //Vue.component(Toolbar.name, Toolbar);
+    Vue.component(Checkbox$2.name, Checkbox$2);
+    Vue.component(Chips$1.name, Chips$1);
+    Vue.component(Dialog$2.name, Dialog$2);
+    Vue.component(Drawer$2.name, Drawer$2);
+    Vue.component(Fab$2.name, Fab$2);
+    Vue.component(FormField$2.name, FormField$2);
+    Vue.component(GridList$2.name, GridList$2);
+    Vue.component(IconToggle$2.name, IconToggle$2);
+    Vue.component(LayoutGrid$2.name, LayoutGrid$2);
+    Vue.component(LinearProgress$2.name, LinearProgress$2);
+    Vue.component(List$2.name, List$2);
+    Vue.component(Menu$2.name, Menu$2);
+    Vue.component(Radio$2.name, Radio$2);
+    Vue.component(Select$2.name, Select$2);
+    Vue.component(Slider.name, Slider);
+    Vue.component(Snackbar$2.name, Snackbar$2);
+    Vue.component(Switch$2.name, Switch$2);
+    Vue.component(Tabs$1.name, Tabs$1);
+    Vue.component(Textfield$3.name, Textfield$3);
+    Vue.component(Toolbar$2.name, Toolbar$2);
   }
 };
 
@@ -20636,26 +21509,41 @@ const Router = new VueRouter({
   routes
 });
 
-  // Title plugin
-Router.afterEach((to, from) => {
+// TODO: Move plugins to seperate file?
+// Define event bus as $state. No need for vuex
+const AppState = new Vue$3$1();
+Object.defineProperty(Vue$3$1.prototype, "$state", {
+  value: AppState,
+  wiritable: false
+});
+
+// Title plugin
+function titlePlugin(to, from) {
   const prefix = "MDC Vue | ";
   const match = to.matched.find(record => record.meta.title);
   let title = match && match.meta && match.meta.title;
-
+  
   if(title) {
-    let docTitle = typeof title === "function" ? title(to, from) : title;
-    if(prefix) {
-      docTitle = prefix + docTitle;
-    }
-    document.title = docTitle;
+    title = typeof title === "function" ? title(to, from) : title;
+    AppState.$emit("demoRouted", title);
+
+    title = prefix + title;
+  } else {
+    title = "Vue MDC Web";
+    AppState.$emit("demoRouted", title);
   }
-});
+  document.title = title;
+}
+Router.afterEach(titlePlugin);
 
 const vm = new Vue$3$1({
   el: "#app",
   router: Router,
   render: h => h(Layout)
 });
+
+// Force run to change title on page load
+titlePlugin(Router.currentRoute);
 
 }());
 //# sourceMappingURL=bundle.js.map

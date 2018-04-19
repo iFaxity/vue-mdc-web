@@ -13,7 +13,7 @@ import RouterLink from "../app/routerLink";
 import MdcIcon from "../icon";
 
 export default {
-  name: "MdcTab",
+  name: "MDCTab",
   mixins: [ Ripple(), RouterLink("mdc-tab--active") ],
   components: { MdcIcon },
   props: {

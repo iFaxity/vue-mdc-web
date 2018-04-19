@@ -72,12 +72,32 @@ function createRipple(vm, adapter, { unbounded }) {
 
 // Exports the directive and the matches property
 export { matches };
-export function Ripple(adapter = null, opts = {}, assert) {
+export function Ripple(adapter = null, opts = {}) {
   return {
     data() { return { _ripple: null } },
+    beforeMount() {
+      if(opts.surface) {
+        if(this.$vnode.data.staticClass) {
+          this.$vnode.data.staticClass += " mdc-ripple-surface";
+        } else {
+          this.$vnode.data.staticClass = "mdc-ripple-surface";
+        }
+        
+        if(opts.unbounded) {
+          if(this.$vnode.data.attrs) {
+            this.$vnode.data.attrs = {};
+          }
+          debugger;
+          this.$vnode.data.attrs["data-mdc-ripple-is-unbounded"] = true;
+        }
+      }
+    },
     mounted() {
       this._ripple = createRipple(this, adapter, opts);
       this._ripple.init();
+    },
+    updated() {
+      this._ripple.layout();
     },
     beforeDestroy($el, binding, vnode) {
       this._ripple.destroy();

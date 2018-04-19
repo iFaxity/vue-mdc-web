@@ -1,6 +1,6 @@
 <template lang="pug">
 //a.mdc-list-item(:href="link")
-mdc-link.mdc-list-item(v-bind="$_link", tag="a", :link="link")
+mdc-link.mdc-list-item(tag="a", :link="link", v-bind="$_link", v-on="$listeners")
   slot(name="graphic")
   | {{ text }}
 </template>
@@ -10,7 +10,7 @@ import { Ripple } from "../ripple";
 import RouterLink from "../app/routerLink";
 
 export default {
-  name: "MdcDrawerItem",
+  name: "MDCDrawerItem",
   mixins: [ Ripple(), RouterLink("mdc-list-item--activated") ],
   props: {
     link: String,

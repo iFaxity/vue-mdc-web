@@ -6,7 +6,7 @@
 
 <script>
 export default {
-  name: "MdcFormField",
+  name: "MDCFormField",
   props: {
     label: {
       type: String,

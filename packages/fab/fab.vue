@@ -7,7 +7,7 @@ button.mdc-fab.material-icons(:aria-label="label", :class="cssClasses")
 import { Ripple } from "../ripple";
 
 export default {
-  name: "MdcFab",
+  name: "MDCFab",
   mixins: [ Ripple() ],
   props: {
     mini: Boolean,

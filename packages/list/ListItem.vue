@@ -11,7 +11,7 @@ import { Ripple } from "../ripple";
 //TODO: support router links?
 
 export default {
-  name: "MdcListItem",
+  name: "MDCListItem",
   mixins: [ Ripple() ],
   props: {
     text: {

@@ -4,7 +4,7 @@ component.material-icons.mdc-toolbar__menu-icon(:is="tag", :href="link", v-on="$
 
 <script>
 export default {
-  name: "MdcToolbarMenuIcon",
+  name: "MDCToolbarMenuIcon",
   props: {
     link: String
   },

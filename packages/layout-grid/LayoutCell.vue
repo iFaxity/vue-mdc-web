@@ -8,7 +8,7 @@ const ALIGNMENTS = [ "top", "bottom", "middle" ];
 const spanValidator = value => value >= 1 && value <= 12;
 
 export default {
-  name: "MdcLayoutCell",
+  name: "MDCLayoutCell",
   props: {
     span: {
       type: [Number, String],

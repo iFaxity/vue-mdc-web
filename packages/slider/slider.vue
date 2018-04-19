@@ -26,7 +26,7 @@ function assertValue(value, fn) {
 }
 
 export default {
-  name: "MdcSlider",
+  name: "MDCSlider",
   props: {
     label: String,
     disabled: Boolean,
@@ -51,6 +51,9 @@ export default {
     }
   },
   watch: {
+    value(value) {
+      assertValue(value, value => this.foundation.setValue(value));
+    },
     min(value) {
       assertValue(value, value => this.foundation.setMin(value));
     },
@@ -124,6 +127,7 @@ export default {
     });
 
     this.foundation.init();
+    assertValue(this.value, value => this.foundation.setValue(value));
     assertValue(this.min, value => this.foundation.setMin(value));
     assertValue(this.max, value => this.foundation.setMax(value));
     assertValue(this.step, value => this.foundation.setStep(value));

@@ -1,6 +1,6 @@
 <template lang="pug">
 .mdc-checkbox
-  input.mdc-checkbox__native-control(ref="input", v-bind="$attrs", v-model="model", type="checkbox")
+  input.mdc-checkbox__native-control(ref="input", type="checkbox", v-bind="$attrs", :value="value", @change="onChange")
   .mdc-checkbox__background
     svg.mdc-checkbox__checkmark(viewBox="0 0 24 24")
       path.mdc-checkbox__checkmark-path(fill="none", stroke="white", d="M1.73,12.91 8.1,19.28 22.79,4.59")
@@ -8,12 +8,16 @@
 </template>
 
 <script>
+//, v-model="model"
 import Foundation from "@material/checkbox/foundation";
 import { getCorrectEventName } from "@material/animation";
-import { Ripple } from "../ripple";
+import { Ripple, matches } from "../ripple";
 
 const animationEnd = getCorrectEventName(window, "animationend");
 const rippleAdapter = {
+  isSurfaceActive() {
+    return this.$refs.input[matches](":active");
+  },
   registerInteractionHandler(typeName, handler) {
     this.$refs.input.addEventListener(typeName, handler);
   },
@@ -23,7 +27,7 @@ const rippleAdapter = {
 };
 
 export default {
-  name: "MdcCheckbox",
+  name: "MDCCheckbox",
   mixins: [ Ripple(rippleAdapter, { unbounded: true }) ],
   inheritAttrs: false,
   model: {
@@ -31,11 +35,18 @@ export default {
     event: "change"
   },
   props: {
+    checked: [Boolean, Array],
     disabled: Boolean,
-    checked: Boolean,
     indeterminate: Boolean,
+    value: [String, Number, Boolean]
   },
   watch: {
+    checked(value) {
+      if(Array.isArray(value)) {
+        value = value.includes(this.value);
+      }
+      this.foundation.setChecked(value);
+    },
     disabled(value) {
       this.foundation.setDisabled(value);
     },
@@ -43,17 +54,6 @@ export default {
       this.foundation.setIndeterminate(value);
     }
   },
-  computed: {
-    model: {
-      get() {
-        return this.checked;
-      },
-      set(value) {
-        this.$emit("change", value);
-      }
-    }
-  },
-
   mounted() {
     const { $el } = this;
     const { input } = this.$refs;
@@ -71,12 +71,39 @@ export default {
       isAttachedToDOM: () => !!$el.parentNode
     });
     this.foundation.init();
-    this.foundation.setChecked(this.checked);
     this.foundation.setDisabled(this.disabled);
     this.foundation.setIndeterminate(this.indeterminate);
+
+    if(Array.isArray(this.checked)) {
+      this.foundation.setChecked(this.checked.includes(this.value));
+    } else {
+      this.foundation.setChecked(this.checked);
+    }
   },
   beforeDestroy() {
     this.foundation.destroy();
+  },
+  methods: {
+    onChange(e) {
+      let value = e.target.checked;
+      this.$emit("update:indeterminate", this.foundation.isIndeterminate());
+
+      if(Array.isArray(this.checked)) {
+        const arr = this.checked;
+        if(value) {
+          arr.push(this.value);
+        } else {
+          const index = arr.indexOf(this.value);
+          arr.splice(index, 1);
+        }
+        
+        value = arr;
+      } else if(this.value) {
+        value = this.value;
+      }
+
+      this.$emit("change", value);
+    }
   }
 };
 </script>

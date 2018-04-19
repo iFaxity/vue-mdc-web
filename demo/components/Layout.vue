@@ -1,10 +1,10 @@
 <template lang="pug">
-mdc-app(flip)
+mdc-app(flip, align-start)
   mdc-toolbar(slot="toolbar")
     mdc-toolbar-row
       mdc-toolbar-section(align-start)
         mdc-toolbar-menu-icon(@click="toggleDrawer")
-        mdc-toolbar-title MDC Vue Demo
+        mdc-toolbar-title {{ title }}
 
   mdc-drawer(ref="drawer", slot="drawer", :type="drawer", :open="drawerOpen", header="Components")
     mdc-drawer-item(to="/", exact, text="Home")
@@ -16,10 +16,12 @@ mdc-app(flip)
 </template>
 
 <script>
+
 export default {
   name: "AppRoot",
   data() {
     return {
+      title: "MDC Vue Demo",
       drawer: "persistent",
       drawerOpen: false,
       routes: [
@@ -27,6 +29,7 @@ export default {
         "Button",
         "Card",
         "Checkbox",
+        "Chips",
         "Dialog",
         "Drawer",
         "Elevation",
@@ -63,6 +66,12 @@ export default {
       this.drawer = mobile ? "temporary" : "persistent";
       this.drawerOpen = !mobile;
     });
+    this.$state.$on("demoRouted", title => {
+      this.title = `MDC ${title}`;
+    })
+  },
+  beforeDestroy() {
+    this.$state.$off("demoRouted");
   },
 
   methods: {
@@ -78,6 +87,7 @@ export default {
       this.$refs.drawer.toggle();
 
       // Trigger resize on toggle
+      // Simple hack for toggling resize on elements when drawer is toggled
       let event;
       try {
         event = new Event("resize");

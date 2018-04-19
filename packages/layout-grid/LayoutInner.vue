@@ -5,6 +5,6 @@
 
 <script>
 export default {
-  name: "MdcLayoutInner"
+  name: "MDCLayoutInner"
 };
 </script>

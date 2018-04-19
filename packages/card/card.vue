@@ -5,7 +5,7 @@
 
 <script>
 export default {
-  name: "MdcCard",
+  name: "MDCCard",
   props: {
     stroked: Boolean
   },

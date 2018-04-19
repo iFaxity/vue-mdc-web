@@ -15,7 +15,7 @@ li.mdc-grid-tile
 import MdcIcon from "../icon";
 
 export default {
-  name: "MdcGridTile",
+  name: "MDCGridTile",
   components: { MdcIcon },
   props: {
     cover: Boolean,

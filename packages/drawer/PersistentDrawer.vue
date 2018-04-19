@@ -13,7 +13,7 @@ import Foundation from "@material/drawer/persistent/foundation";
 import * as util from "@material/drawer/util";
 
 export default {
-  name: "MdcPersistentDrawer",
+  name: "MDCPersistentDrawer",
   props: {
     open: Boolean,
     spacer: Boolean,

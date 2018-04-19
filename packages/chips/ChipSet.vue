@@ -5,6 +5,6 @@
 
 <script>
 export default {
-  name: "MdcChipSet",
+  name: "MDCChipSet",
 };
 </script>

@@ -1,7 +1,9 @@
-var App$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-app mdc-typography",class:_vm.cssClasses},[_vm._t(_vm.headerSlot),_c('div',{staticClass:"mdc-app__content"},[_vm._t(_vm.contentSlot),_vm._t("default")],2)],2)},staticRenderFns: [],
+var App = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-app mdc-typography",class:_vm.cssClasses},[_vm._t(_vm.headerSlot),_c('div',{staticClass:"mdc-app__content",class:_vm.contentCssClasses},[_vm._t(_vm.contentSlot),_vm._t("default")],2)],2)},staticRenderFns: [],
   name: "MdcApp",
   props: {
-    flip: Boolean // flips the drawer & toolbar slot
+    flip: Boolean, // flips the drawer & toolbar slot
+    drawerHideMobile: Boolean,
+    alignStart: Boolean
   },
   computed: {
     headerSlot() {
@@ -12,20 +14,25 @@ var App$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_v
     },
     cssClasses() {
       return {
-        "mdc-app--flipped": this.flip
+        "mdc-app--flipped": this.flip,
+        "mdc-app--align-start": this.alignStart,
+        "mdc-app--drawer-hide-mobile": this.drawerHideMobile
       };
+    },
+    contentCssClasses() {
+      return this.alignStart && "mdc-app__content--align-start";
     }
   },
   methods: {}
 };
 
 function install(Vue) {
-  Vue.component(App$1.name, App$1);
+  Vue.component(App.name, App);
 }
 
-var App = Object.freeze({
-	App: App$1,
-	install: install
+var App$1 = /*#__PURE__*/Object.freeze({
+  App: App,
+  install: install
 });
 
 /**
@@ -112,30 +119,6 @@ class MDCFoundation {
  * limitations under the License.
  */
 
-/* eslint no-unused-vars: [2, {"args": "none"}] */
-
-/**
- * Adapter for MDC Ripple. Provides an interface for managing
- * - classes
- * - dom
- * - CSS variables
- * - position
- * - dimensions
- * - scroll position
- * - event handlers
- * - unbounded, active and disabled states
- *
- * Additionally, provides type information for the adapter to the Closure
- * compiler.
- *
- * Implement this adapter for your framework of choice to delegate updates to
- * the component in your framework of choice. See architecture documentation
- * for more details.
- * https://github.com/material-components/material-components-web/blob/master/docs/code/architecture.md
- *
- * @record
- */
-
 /**
  * @license
  * Copyright 2016 Google Inc. All Rights Reserved.
@@ -178,6 +161,7 @@ const numbers = {
   INITIAL_ORIGIN_SCALE: 0.6,
   DEACTIVATION_TIMEOUT_MS: 225, // Corresponds to $mdc-ripple-translate-duration (i.e. activation animation duration)
   FG_DEACTIVATION_MS: 150, // Corresponds to $mdc-ripple-fade-out-duration (i.e. deactivation animation duration)
+  TAP_DELAY_MS: 300, // Delay between touch and simulated mouse events on touch devices
 };
 
 /**
@@ -343,6 +327,10 @@ const ACTIVATION_EVENT_TYPES = ['touchstart', 'pointerdown', 'mousedown', 'keydo
 // Deactivation events registered on documentElement when a pointer-related down event occurs
 const POINTER_DEACTIVATION_EVENT_TYPES = ['touchend', 'pointerup', 'mouseup'];
 
+// Tracks activations that have occurred on the current frame, to avoid simultaneous nested activations
+/** @type {!Array<!EventTarget>} */
+let activatedTargets = [];
+
 /**
  * @extends {MDCFoundation<!MDCRippleAdapter>}
  */
@@ -367,6 +355,7 @@ class MDCRippleFoundation extends MDCFoundation {
       isSurfaceDisabled: () => /* boolean */ {},
       addClass: (/* className: string */) => {},
       removeClass: (/* className: string */) => {},
+      containsEventTarget: (/* target: !EventTarget */) => {},
       registerInteractionHandler: (/* evtType: string, handler: EventListener */) => {},
       deregisterInteractionHandler: (/* evtType: string, handler: EventListener */) => {},
       registerDocumentInteractionHandler: (/* evtType: string, handler: EventListener */) => {},
@@ -390,9 +379,6 @@ class MDCRippleFoundation extends MDCFoundation {
 
     /** @private {!ActivationStateType} */
     this.activationState_ = this.defaultActivationState_();
-
-    /** @private {number} */
-    this.xfDuration_ = 0;
 
     /** @private {number} */
     this.initialSize_ = 0;
@@ -565,15 +551,14 @@ class MDCRippleFoundation extends MDCFoundation {
       return;
     }
 
-    const {activationState_: activationState} = this;
+    const activationState = this.activationState_;
     if (activationState.isActivated) {
       return;
     }
 
     // Avoid reacting to follow-on events fired by touch device after an already-processed user interaction
     const previousActivationEvent = this.previousActivationEvent_;
-    const isSameInteraction = previousActivationEvent && e && previousActivationEvent.type !== e.type &&
-      previousActivationEvent.clientX === e.clientX && previousActivationEvent.clientY === e.clientY;
+    const isSameInteraction = previousActivationEvent && e && previousActivationEvent.type !== e.type;
     if (isSameInteraction) {
       return;
     }
@@ -585,7 +570,16 @@ class MDCRippleFoundation extends MDCFoundation {
       e.type === 'mousedown' || e.type === 'touchstart' || e.type === 'pointerdown'
     );
 
+    const hasActivatedChild =
+      e && activatedTargets.length > 0 && activatedTargets.some((target) => this.adapter_.containsEventTarget(target));
+    if (hasActivatedChild) {
+      // Immediately reset activation state, while preserving logic that prevents touch follow-on events
+      this.resetActivationState_();
+      return;
+    }
+
     if (e) {
+      activatedTargets.push(/** @type {!EventTarget} */ (e.target));
       this.registerDeactivationHandlers_(e);
     }
 
@@ -602,6 +596,9 @@ class MDCRippleFoundation extends MDCFoundation {
         // Reset activation state immediately if element was not made active.
         this.activationState_ = this.defaultActivationState_();
       }
+
+      // Reset array on next frame after the current event has had a chance to bubble to prevent ancestor ripples
+      activatedTargets = [];
     });
   }
 
@@ -646,8 +643,7 @@ class MDCRippleFoundation extends MDCFoundation {
    * @return {{startPoint: PointType, endPoint: PointType}}
    */
   getFgTranslationCoordinates_() {
-    const {activationState_: activationState} = this;
-    const {activationEvent, wasActivatedByPointer} = activationState;
+    const {activationEvent, wasActivatedByPointer} = this.activationState_;
 
     let startPoint;
     if (wasActivatedByPointer) {
@@ -705,7 +701,7 @@ class MDCRippleFoundation extends MDCFoundation {
     this.activationState_ = this.defaultActivationState_();
     // Touch devices may fire additional events for the same interaction within a short time.
     // Store the previous event until it's safe to assume that subsequent events are for new interactions.
-    setTimeout(() => this.previousActivationEvent_ = null, 100);
+    setTimeout(() => this.previousActivationEvent_ = null, MDCRippleFoundation.numbers.TAP_DELAY_MS);
   }
 
   /**
@@ -766,17 +762,25 @@ class MDCRippleFoundation extends MDCFoundation {
   /** @private */
   layoutInternal_() {
     this.frame_ = this.adapter_.computeBoundingRect();
-
     const maxDim = Math.max(this.frame_.height, this.frame_.width);
-    const surfaceDiameter = Math.sqrt(Math.pow(this.frame_.width, 2) + Math.pow(this.frame_.height, 2));
 
-    // 60% of the largest dimension of the surface
+    // Surface diameter is treated differently for unbounded vs. bounded ripples.
+    // Unbounded ripple diameter is calculated smaller since the surface is expected to already be padded appropriately
+    // to extend the hitbox, and the ripple is expected to meet the edges of the padded hitbox (which is typically
+    // square). Bounded ripples, on the other hand, are fully expected to expand beyond the surface's longest diameter
+    // (calculated based on the diagonal plus a constant padding), and are clipped at the surface's border via
+    // `overflow: hidden`.
+    const getBoundedRadius = () => {
+      const hypotenuse = Math.sqrt(Math.pow(this.frame_.width, 2) + Math.pow(this.frame_.height, 2));
+      return hypotenuse + MDCRippleFoundation.numbers.PADDING;
+    };
+
+    this.maxRadius_ = this.adapter_.isUnbounded() ? maxDim : getBoundedRadius();
+
+    // Ripple is sized as a fraction of the largest dimension of the surface, then scales up using a CSS scale transform
     this.initialSize_ = maxDim * MDCRippleFoundation.numbers.INITIAL_ORIGIN_SCALE;
-
-    // Diameter of the surface + 10px
-    this.maxRadius_ = surfaceDiameter + MDCRippleFoundation.numbers.PADDING;
     this.fgScale_ = this.maxRadius_ / this.initialSize_;
-    this.xfDuration_ = 1000 * Math.sqrt(this.maxRadius_ / 1024);
+
     this.updateLayoutCssVars_();
   }
 
@@ -879,20 +883,32 @@ function createRipple(vm, adapter, { unbounded }) {
   });
   return new MDCRippleFoundation(rippleAdapter);
 }
-
-function Ripple(adapter = null, opts = {}, assert) {
+function Ripple(adapter = null, opts = {}) {
   return {
     data() { return { _ripple: null } },
-    mounted() {
-
-      if (supportsCssVariables) {
-        const ripple = createRipple(this, adapter, opts);
-        ripple.init();
-        this._ripple = ripple;
-      } else {
-        // no need to run if not supported
-        console.log("Ripple cant be used. Browser doesn't support CSS variables.");
+    beforeMount() {
+      if(opts.surface) {
+        if(this.$vnode.data.staticClass) {
+          this.$vnode.data.staticClass += " mdc-ripple-surface";
+        } else {
+          this.$vnode.data.staticClass = "mdc-ripple-surface";
+        }
+        
+        if(opts.unbounded) {
+          if(this.$vnode.data.attrs) {
+            this.$vnode.data.attrs = {};
+          }
+          debugger;
+          this.$vnode.data.attrs["data-mdc-ripple-is-unbounded"] = true;
+        }
       }
+    },
+    mounted() {
+      this._ripple = createRipple(this, adapter, opts);
+      this._ripple.init();
+    },
+    updated() {
+      this._ripple.layout();
     },
     beforeDestroy($el, binding, vnode) {
       this._ripple.destroy();
@@ -900,7 +916,7 @@ function Ripple(adapter = null, opts = {}, assert) {
   };
 }
 
-var Button$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c(_vm.link ? "a" : "button",_vm._g({tag:"component",class:_vm.cssClasses,attrs:{"href":_vm.link}},_vm.$listeners),[(_vm.icon)?_c('i',{staticClass:"material-icons mdc-button__icon"},[_vm._v(_vm._s(_vm.icon))]):_vm._e(),_vm._t("default")],2)},staticRenderFns: [],
+var MdcButton = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c(_vm.link ? "a" : "button",_vm._g({tag:"component",staticClass:"mdc-button",class:_vm.cssClasses,attrs:{"href":_vm.link,"disabled":_vm.disabled}},_vm.$listeners),[(_vm.icon)?_c('i',{staticClass:"material-icons mdc-button__icon"},[_vm._v(_vm._s(_vm.icon))]):_vm._e(),_vm._t("default")],2)},staticRenderFns: [],
   name: "MdcButton",
   mixins: [ Ripple() ],
   props: {
@@ -910,13 +926,13 @@ var Button$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c
     stroked: Boolean,
     dense: Boolean,
     compact: Boolean,
+    disabled: Boolean,
 
     link: String
   },
   computed: {
     cssClasses() {
       return {
-        "mdc-button": true,
         "mdc-button--raised": this.raised,
         "mdc-button--unelevated": this.unelevated,
         "mdc-button--stroked": this.stroked,
@@ -928,38 +944,85 @@ var Button$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c
 };
 
 function install$1(Vue) {
-  Vue.component(Button$1.name, Button$1);
+  Vue.component(MdcButton.name, MdcButton);
 }
 
-var Button = Object.freeze({
-	Button: Button$1,
-	install: install$1
+var Button = /*#__PURE__*/Object.freeze({
+  Button: MdcButton,
+  install: install$1
 });
 
-var Card$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-card",class:_vm.cssClasses},[_vm._t("default")],2)},staticRenderFns: [],
+var Card = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-card",class:_vm.cssClasses},[_vm._t("default")],2)},staticRenderFns: [],
   name: "MdcCard",
   props: {
-    dark: Boolean
+    stroked: Boolean
   },
   computed: {
     cssClasses() {
-      return {
-        // TODO: move theming to a mixin
-        "mdc-card--theme-dark": this.dark
-      };
+      return this.stroked && "mdc-card--stroked";
+    }
+  }
+};
+
+var CardActions = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-card__actions",class:_vm.cssClasses},[_vm._t("default"),(_vm.hasButtons)?_c('div',{staticClass:"mdc-card__action-buttons"},[_vm._t("button")],2):_vm._e(),(_vm.hasIcons)?_c('div',{staticClass:"mdc-card__action-icons"},[_vm._t("icon")],2):_vm._e()],2)},staticRenderFns: [],
+  name: "MdcCardActions",
+  props: {
+    fullBleed: Boolean
+  },
+  computed: {
+    cssClasses() {
+      return this.fullBleed && "mdc-card__actions--full-bleed";
+    },
+    hasButtons() {
+      return !!this.$slots.button;
+    },
+    hasIcons() {
+      return !!this.$slots.icon;
+    }
+  },
+  beforeMount() {
+    const addClass = ({ data }, className) => {
+      if(data.staticClass) {
+        data.staticClass += ` ${className}`;
+      } else {
+        data.staticClass = className;
+      }
+    };
+    this.$slots.button && this.$slots.button.forEach(button => addClass(button, "mdc-card__action mdc-card__action--button"));
+    this.$slots.icon && this.$slots.icon.forEach(icon => addClass(icon, "mdc-card__action mdc-card__action--icon"));
+  }
+};
+
+var CardMedia = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-card__media",class:_vm.cssClasses,style:(_vm.cssStyles)},[(_vm.hasContent)?_c('div',{staticClass:"mdc-card__media-content"},[_vm._t("default")],2):_vm._e()])},staticRenderFns: [],
+  name: "MdcCardMedia",
+  props: {
+    square: Boolean,
+    image: String
+  },
+  computed: {
+    cssStyles() {
+      return this.image && `background-image: url(${this.image});`;
+    },
+    cssClasses() {
+      return this.square ? "mdc-card__media--square" : "mdc-card__media--16-9";
+    },
+    hasContent() {
+      return !!this.$slots.default;
     }
   }
 };
 
 function install$2 (Vue) {
-  Vue.component(Card$1.name, Card$1);
+  Vue.component(Card.name, Card);
+  Vue.component(CardActions.name, CardActions);
+  Vue.component(CardMedia.name, CardMedia);
 }
 
-
-
-var Card = Object.freeze({
-	Card: Card$1,
-	install: install$2
+var Card$1 = /*#__PURE__*/Object.freeze({
+  Card: Card,
+  CardActions: CardActions,
+  CardMedia: CardMedia,
+  install: install$2
 });
 
 /**
@@ -997,6 +1060,28 @@ var Card = Object.freeze({
  */
 
 /**
+ * See Material Design spec for more details on when to use ripples.
+ * https://material.io/guidelines/motion/choreography.html#choreography-creation
+ * @record
+ */
+class RippleCapableSurface {}
+
+/** @protected {!Element} */
+RippleCapableSurface.prototype.root_;
+
+/**
+ * Whether or not the ripple bleeds out of the bounds of the element.
+ * @type {boolean|undefined}
+ */
+RippleCapableSurface.prototype.unbounded;
+
+/**
+ * Whether or not the ripple is attached to a disabled component.
+ * @type {boolean|undefined}
+ */
+RippleCapableSurface.prototype.disabled;
+
+/**
  * @license
  * Copyright 2017 Google Inc. All Rights Reserved.
  *
@@ -1012,8 +1097,6 @@ var Card = Object.freeze({
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-/* eslint-disable no-unused-vars */
 
 /**
  * @license
@@ -1031,8 +1114,6 @@ var Card = Object.freeze({
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-/* eslint-disable no-unused-vars */
 
 /**
  * @license
@@ -1079,7 +1160,7 @@ const strings$1 = {
 
 /** @enum {number} */
 const numbers$1 = {
-  ANIM_END_LATCH_MS: 100,
+  ANIM_END_LATCH_MS: 250,
 };
 
 /**
@@ -1099,8 +1180,6 @@ const numbers$1 = {
  * limitations under the License.
  */
 
-/* eslint-disable no-unused-vars */
-/* eslint-enable no-unused-vars */
 /** @const {!Array<string>} */
 const CB_PROTO_PROPS = ['checked', 'indeterminate'];
 
@@ -1150,16 +1229,11 @@ class MDCCheckboxFoundation extends MDCFoundation {
     /** @private {number} */
     this.animEndLatchTimer_ = 0;
 
-    this.animEndHandler_ = /** @private {!EventListener} */ (() => {
-      clearTimeout(this.animEndLatchTimer_);
-      this.animEndLatchTimer_ = setTimeout(() => {
-        this.adapter_.removeClass(this.currentAnimationClass_);
-        this.adapter_.deregisterAnimationEndHandler(this.animEndHandler_);
-      }, numbers$1.ANIM_END_LATCH_MS);
-    });
+    this.animEndHandler_ = /** @private {!EventListener} */ (
+      () => this.handleAnimationEnd());
 
     this.changeHandler_ = /** @private {!EventListener} */ (
-      () => this.transitionCheckState_());
+      () => this.handleChange());
   }
 
   init() {
@@ -1217,6 +1291,24 @@ class MDCCheckboxFoundation extends MDCFoundation {
   /** @param {?string} value */
   setValue(value) {
     this.getNativeControl_().value = value;
+  }
+
+  /**
+   * Handles the animationend event for the checkbox
+   */
+  handleAnimationEnd() {
+    clearTimeout(this.animEndLatchTimer_);
+    this.animEndLatchTimer_ = setTimeout(() => {
+      this.adapter_.removeClass(this.currentAnimationClass_);
+      this.adapter_.deregisterAnimationEndHandler(this.animEndHandler_);
+    }, numbers$1.ANIM_END_LATCH_MS);
+  }
+
+  /**
+   * Handles the change event for the checkbox
+   */
+  handleChange() {
+    this.transitionCheckState_();
   }
 
   /** @private */
@@ -1383,13 +1475,6 @@ function validDescriptor(inputPropDesc) {
  * limitations under the License.
  */
 
-/**
- * @typedef {{
- *   noPrefix: string,
- *   webkitPrefix: string,
- *   styleProperty: string
- * }}
- */
 /** @const {Object<string, !VendorPropertyMapType>} */
 const eventTypeMap = {
   'animationstart': {
@@ -1508,35 +1593,44 @@ function getCorrectPropertyName(windowObj, eventType) {
 
 const animationEnd = getCorrectEventName(window, "animationend");
 const rippleAdapter = {
+  isSurfaceActive() {
+    return this.$refs.input[matches](":active");
+  },
   registerInteractionHandler(typeName, handler) {
-    const { input } = this.$refs;
-    input.addEventListener(typeName, handler);
+    this.$refs.input.addEventListener(typeName, handler);
   },
   deregisterInteractionHandler(typeName, handler) {
-    const { input } = this.$refs;
-    input.removeEventListener(typeName, handler);
-  },
-  computeBoundingRect() {
-    const { left, top } = this.$el.getBoundingClientRect();
-    const DIM = 40;
-    return {
-      top, left,
-      right: left + DIM,
-      bottom: top + DIM,
-      width: DIM,
-      height: DIM,
-    };
+    this.$refs.input.removeEventListener(typeName, handler);
   }
 };
 
-var MDCCheckbox = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-checkbox"},[_c('input',_vm._b({directives:[{name:"model",rawName:"v-model",value:(_vm.model),expression:"model"}],ref:"input",staticClass:"mdc-checkbox__native-control",attrs:{"type":"checkbox"},domProps:{"checked":Array.isArray(_vm.model)?_vm._i(_vm.model,null)>-1:(_vm.model)},on:{"change":function($event){var $$a=_vm.model,$$el=$event.target,$$c=$$el.checked?(true):(false);if(Array.isArray($$a)){var $$v=null,$$i=_vm._i($$a,$$v);if($$el.checked){$$i<0&&(_vm.model=$$a.concat([$$v]));}else{$$i>-1&&(_vm.model=$$a.slice(0,$$i).concat($$a.slice($$i+1)));}}else{_vm.model=$$c;}}}},'input',_vm.$attrs,false)),_c('div',{staticClass:"mdc-checkbox__background"},[_c('svg',{staticClass:"mdc-checkbox__checkmark",attrs:{"viewBox":"0 0 24 24"}},[_c('path',{staticClass:"mdc-checkbox__checkmark__path",attrs:{"fill":"none","stroke":"white","d":"M1.73,12.91 8.1,19.28 22.79,4.59"}})]),_c('div',{staticClass:"mdc-checkbox__mixedmark"})])])},staticRenderFns: [],
+var Checkbox = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-checkbox"},[_c('input',_vm._b({ref:"input",staticClass:"mdc-checkbox__native-control",attrs:{"type":"checkbox"},domProps:{"value":_vm.value},on:{"change":_vm.onChange}},'input',_vm.$attrs,false)),_c('div',{staticClass:"mdc-checkbox__background"},[_c('svg',{staticClass:"mdc-checkbox__checkmark",attrs:{"viewBox":"0 0 24 24"}},[_c('path',{staticClass:"mdc-checkbox__checkmark-path",attrs:{"fill":"none","stroke":"white","d":"M1.73,12.91 8.1,19.28 22.79,4.59"}})]),_c('div',{staticClass:"mdc-checkbox__mixedmark"})])])},staticRenderFns: [],
   name: "MdcCheckbox",
-  inheritAttrs: false,
   mixins: [ Ripple(rippleAdapter, { unbounded: true }) ],
+  inheritAttrs: false,
+  model: {
+    prop: "checked",
+    event: "change"
+  },
   props: {
+    checked: [Boolean, Array],
     disabled: Boolean,
-    checked: Boolean,
     indeterminate: Boolean,
+    value: [String, Number, Boolean]
+  },
+  watch: {
+    checked(value) {
+      if(Array.isArray(value)) {
+        value = value.includes(this.value);
+      }
+      this.foundation.setChecked(value);
+    },
+    disabled(value) {
+      this.foundation.setDisabled(value);
+    },
+    indeterminate(value) {
+      this.foundation.setIndeterminate(value);
+    }
   },
   mounted() {
     const { $el } = this;
@@ -1555,45 +1649,319 @@ var MDCCheckbox = {render: function(){var _vm=this;var _h=_vm.$createElement;var
       isAttachedToDOM: () => !!$el.parentNode
     });
     this.foundation.init();
-    this.foundation.setChecked(this.checked);
     this.foundation.setDisabled(this.disabled);
     this.foundation.setIndeterminate(this.indeterminate);
+
+    if(Array.isArray(this.checked)) {
+      this.foundation.setChecked(this.checked.includes(this.value));
+    } else {
+      this.foundation.setChecked(this.checked);
+    }
   },
   beforeDestroy() {
     this.foundation.destroy();
   },
-  model: {
-    prop: "checked",
-    event: "change"
-  },
-  watch: {
-    disabled(value) {
-      this.foundation.setDisabled(value);
-    },
-    indeterminate(value) {
-      this.foundation.setIndeterminate(value);
-    }
-  },
-  computed: {
-    model: {
-      get() {
-        return this.checked;
-      },
-      set(value) {
-        this.$emit("change", value);
+  methods: {
+    onChange(e) {
+      let value = e.target.checked;
+      this.$emit("update:indeterminate", this.foundation.isIndeterminate());
+
+      if(Array.isArray(this.checked)) {
+        const arr = this.checked;
+        if(value) {
+          arr.push(this.value);
+        } else {
+          const index = arr.indexOf(this.value);
+          arr.splice(index, 1);
+        }
+        
+        value = arr;
+      } else if(this.value) {
+        value = this.value;
       }
+
+      this.$emit("change", value);
     }
   }
 };
 
 function install$3(Vue) {
-  Vue.component(MDCCheckbox.name, MDCCheckbox);
+  Vue.component(Checkbox.name, Checkbox);
 }
 
+var Checkbox$1 = /*#__PURE__*/Object.freeze({
+  Checkbox: Checkbox,
+  install: install$3
+});
 
-var Checkbox = Object.freeze({
-	MDCCheckbox: MDCCheckbox,
-	install: install$3
+/**
+ * @license
+ * Copyright 2017 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/**
+ * @license
+ * Copyright 2016 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/** @enum {string} */
+const strings$2 = {
+  INTERACTION_EVENT: 'MDCChip:interaction',
+  TRAILING_ICON_INTERACTION_EVENT: 'MDCChip:trailingIconInteraction',
+  TRAILING_ICON_SELECTOR: '.mdc-chip__icon--trailing',
+};
+
+/** @enum {string} */
+const cssClasses$2 = {
+  SELECTED: 'mdc-chip--selected',
+};
+
+/**
+ * @license
+ * Copyright 2016 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+
+/**
+ * @extends {MDCFoundation<!MDCChipAdapter>}
+ * @final
+ */
+class MDCChipFoundation extends MDCFoundation {
+  /** @return enum {string} */
+  static get strings() {
+    return strings$2;
+  }
+
+  /** @return enum {string} */
+  static get cssClasses() {
+    return cssClasses$2;
+  }
+
+  /**
+   * {@see MDCChipAdapter} for typing information on parameters and return
+   * types.
+   * @return {!MDCChipAdapter}
+   */
+  static get defaultAdapter() {
+    return /** @type {!MDCChipAdapter} */ ({
+      addClass: () => {},
+      removeClass: () => {},
+      hasClass: () => {},
+      registerInteractionHandler: () => {},
+      deregisterInteractionHandler: () => {},
+      registerTrailingIconInteractionHandler: () => {},
+      deregisterTrailingIconInteractionHandler: () => {},
+      notifyInteraction: () => {},
+      notifyTrailingIconInteraction: () => {},
+    });
+  }
+
+  /**
+   * @param {!MDCChipAdapter} adapter
+   */
+  constructor(adapter) {
+    super(Object.assign(MDCChipFoundation.defaultAdapter, adapter));
+
+    /** @private {function(!Event): undefined} */
+    this.interactionHandler_ = (evt) => this.handleInteraction_(evt);
+    /** @private {function(!Event): undefined} */
+    this.trailingIconInteractionHandler_ = (evt) => this.handleTrailingIconInteraction_(evt);
+  }
+
+  init() {
+    ['click', 'keydown'].forEach((evtType) => {
+      this.adapter_.registerInteractionHandler(evtType, this.interactionHandler_);
+      this.adapter_.registerTrailingIconInteractionHandler(evtType, this.trailingIconInteractionHandler_);
+    });
+    ['touchstart', 'pointerdown', 'mousedown'].forEach((evtType) => {
+      this.adapter_.registerTrailingIconInteractionHandler(evtType, this.trailingIconInteractionHandler_);
+    });
+  }
+
+  destroy() {
+    ['click', 'keydown'].forEach((evtType) => {
+      this.adapter_.deregisterInteractionHandler(evtType, this.interactionHandler_);
+      this.adapter_.deregisterTrailingIconInteractionHandler(evtType, this.trailingIconInteractionHandler_);
+    });
+    ['touchstart', 'pointerdown', 'mousedown'].forEach((evtType) => {
+      this.adapter_.deregisterTrailingIconInteractionHandler(evtType, this.trailingIconInteractionHandler_);
+    });
+  }
+
+  /**
+   * Toggles the selected class on the chip element.
+   */
+  toggleSelected() {
+    if (this.adapter_.hasClass(cssClasses$2.SELECTED)) {
+      this.adapter_.removeClass(cssClasses$2.SELECTED);
+    } else {
+      this.adapter_.addClass(cssClasses$2.SELECTED);
+    }
+  }
+
+  /**
+   * Handles an interaction event on the root element.
+   * @param {!Event} evt
+   */
+  handleInteraction_(evt) {
+    if (evt.type === 'click' || evt.key === 'Enter' || evt.keyCode === 13) {
+      this.adapter_.notifyInteraction();
+    }
+  }
+
+  /**
+   * Handles an interaction event on the trailing icon element. This is used to
+   * prevent the ripple from activating on interaction with the trailing icon.
+   * @param {!Event} evt
+   */
+  handleTrailingIconInteraction_(evt) {
+    evt.stopPropagation();
+    if (evt.type === 'click' || evt.key === 'Enter' || evt.keyCode === 13) {
+      this.adapter_.notifyTrailingIconInteraction();
+    }
+  }
+}
+
+var MdcIcon = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c(_vm.tag,{tag:"component",staticClass:"material-icons",class:_vm.cssClasses,attrs:{"tabindex":_vm.action && '0',"role":_vm.action && 'button',"aria-hidden":!_vm.action && 'true',"aria-label":_vm.label}},[_vm._v(_vm._s(_vm.icon))])},staticRenderFns: [],
+  name: "MdcIcon",
+  mixins: [ Ripple(null, { unbounded: true, surface: true }) ],
+  props: {
+    icon: {
+      type: String,
+      required: true
+    },
+    name: String,
+    label: String,
+    tag: {
+      type: String,
+      default: "i"
+    },
+    
+    ripple: Boolean,
+    action: Boolean
+  },
+  computed: {
+    cssClasses() {
+      return !!this.name && `mdc-${this.name}__icon`;
+    }
+  },
+  mounted() {
+    if(!this.ripple) {
+      this._ripple.destroy();
+    }
+  }
+};
+
+var Chip = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-chip"},[(_vm.leadingIcon)?_c('mdc-icon',_vm._b({staticClass:"mdc-chip__icon--leading"},'mdc-icon',_vm.leadingIcon,false)):_vm._e(),_c('div',{staticClass:"mdc-chip__text"},[_vm._v(_vm._s(_vm.text))]),(_vm.trailingIcon)?_c('mdc-icon',_vm._b({staticClass:"mdc-chip__icon--trailing"},'mdc-icon',_vm.trailingIcon,false)):_vm._e()],1)},staticRenderFns: [],
+  name: "MdcChip",
+  mixins: [ Ripple() ],
+  components: { MdcIcon },
+  props: {
+    text: {
+      type: String,
+      required: true
+    },
+    entry: Boolean,
+    filter: Boolean,
+    action: String,
+  },
+  computed: {
+    leadingIcon() {
+      if(this.entry) {
+        return {
+          name: "chip",
+          icon: "face"
+        };
+      } else if(this.filter) {
+        return null;
+      } else if(this.action) {
+        return {
+          name: "chip",
+          icon: this.action
+        };
+      }
+    },
+    trailingIcon() {
+      if(this.entry) {
+        return {
+          name: "chip",
+          icon: "more_vert",
+          label: "More options",
+          action: true
+        };
+      } else if(this.filter) {
+        return {
+          name: "chip",
+          icon: "cancel",
+          action: true
+        };
+      } else if(this.action) {
+        return null;
+      }
+    }
+  },
+  mounted() {
+    this.foundation = new MDCChipFoundation({
+      registerInteractionHandler: (type, handler) => this.$el.addEventListener(type, handler),
+      deregisterInteractionHandler: (type, handler) => this.$el.removeEventListener(type, handler),
+      notifyInteraction: () => this.$emit("click")
+    });
+    this.foundation.init();
+  },
+  beforeDestroy() {
+    this.foundation.destroy();
+  }
+};
+
+var ChipSet = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-chip-set"},[_vm._t("default")],2)},staticRenderFns: [],
+  name: "MdcChipSet",
+};
+
+function install$4 (Vue) {
+  Vue.component(Chip.name, Chip);
+  Vue.component(ChipSet.name, ChipSet);
+}
+
+var Chips = /*#__PURE__*/Object.freeze({
+  Chip: Chip,
+  ChipSet: ChipSet,
+  install: install$4
 });
 
 /**
@@ -1629,7 +1997,7 @@ var Checkbox = Object.freeze({
  * limitations under the License.
  */
 
-const cssClasses$2 = {
+const cssClasses$3 = {
   ROOT: 'mdc-dialog',
   OPEN: 'mdc-dialog--open',
   ANIMATING: 'mdc-dialog--animating',
@@ -1639,7 +2007,7 @@ const cssClasses$2 = {
   CANCEL_BTN: 'mdc-dialog__footer__button--cancel',
 };
 
-const strings$2 = {
+const strings$3 = {
   OPEN_DIALOG_SELECTOR: '.mdc-dialog--open',
   DIALOG_SURFACE_SELECTOR: '.mdc-dialog__surface',
   ACCEPT_SELECTOR: '.mdc-dialog__footer__button--accept',
@@ -1665,11 +2033,11 @@ const strings$2 = {
 
 class MDCDialogFoundation extends MDCFoundation {
   static get cssClasses() {
-    return cssClasses$2;
+    return cssClasses$3;
   }
 
   static get strings() {
-    return strings$2;
+    return strings$3;
   }
 
   static get defaultAdapter() {
@@ -1700,7 +2068,7 @@ class MDCDialogFoundation extends MDCFoundation {
     super(Object.assign(MDCDialogFoundation.defaultAdapter, adapter));
     this.isOpen_ = false;
     this.componentClickHandler_ = (evt) => {
-      if (this.adapter_.eventTargetHasClass(evt.target, cssClasses$2.BACKDROP)) {
+      if (this.adapter_.eventTargetHasClass(evt.target, cssClasses$3.BACKDROP)) {
         this.cancel(true);
       }
     };
@@ -1771,9 +2139,9 @@ class MDCDialogFoundation extends MDCFoundation {
 
   handleDialogClick_(evt) {
     const {target} = evt;
-    if (this.adapter_.eventTargetHasClass(target, cssClasses$2.ACCEPT_BTN)) {
+    if (this.adapter_.eventTargetHasClass(target, cssClasses$3.ACCEPT_BTN)) {
       this.accept(true);
-    } else if (this.adapter_.eventTargetHasClass(target, cssClasses$2.CANCEL_BTN)) {
+    } else if (this.adapter_.eventTargetHasClass(target, cssClasses$3.CANCEL_BTN)) {
       this.cancel(true);
     }
   }
@@ -1787,16 +2155,14 @@ class MDCDialogFoundation extends MDCFoundation {
         this.adapter_.layoutFooterRipples();
       } else {
         this.enableScroll_();
-      }
-    }
-  };
+      }    }  };
 
   disableScroll_() {
-    this.adapter_.addBodyClass(cssClasses$2.SCROLL_LOCK);
+    this.adapter_.addBodyClass(cssClasses$3.SCROLL_LOCK);
   }
 
   enableScroll_() {
-    this.adapter_.removeBodyClass(cssClasses$2.SCROLL_LOCK);
+    this.adapter_.removeBodyClass(cssClasses$3.SCROLL_LOCK);
   }
 }
 
@@ -2196,9 +2562,16 @@ function createFocusTrapInstance(surfaceEl, acceptButtonEl, focusTrapFactory = f
 
 const transitionEnd = getCorrectEventName(window, "transitionend");
 
-var Dialog$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('aside',{staticClass:"mdc-dialog",attrs:{"aria-labelledby":"","aria-describedby":""}},[_c('div',{ref:"surface",staticClass:"mdc-dialog__surface"},[(_vm.$slots.header)?_c('header',{staticClass:"mdc-dialog__header"},[_vm._t("header")],2):_vm._e(),(_vm.$slots.default)?_c('section',{staticClass:"mdc-dialog__body",class:{"mdc-dialog__body--scrollable": _vm.scrollable}},[_vm._t("default")],2):_vm._e(),_c('footer',{staticClass:"mdc-dialog__footer"},[_c('mdc-button',{ref:"cancel",staticClass:"mdc-dialog__footer__button mdc-dialog__footer__button--cancel"},[_vm._v("Cancel")]),_c('mdc-button',{ref:"accept",staticClass:"mdc-dialog__footer__button mdc-dialog__footer__button--accept"},[_vm._v("Ok")])],1)]),_c('div',{staticClass:"mdc-dialog__backdrop"})])},staticRenderFns: [],
+var Dialog = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('aside',{staticClass:"mdc-dialog",attrs:{"role":"alertdialog"}},[_c('div',{ref:"surface",staticClass:"mdc-dialog__surface"},[(_vm.header)?_c('header',{staticClass:"mdc-dialog__header"},[_c('h2',{staticClass:"mdc-dialog__header__title"},[_vm._v(_vm._s(_vm.header))])]):_vm._e(),(_vm.hasContent)?_c('section',{staticClass:"mdc-dialog__body",class:_vm.cssBodyClasses},[_vm._t("default")],2):_vm._e(),_c('footer',{staticClass:"mdc-dialog__footer"},[_c('mdc-button',{ref:"cancel",staticClass:"mdc-dialog__footer__button mdc-dialog__footer__button--cancel"},[_vm._v(_vm._s(_vm.cancelText))]),_c('mdc-button',{ref:"accept",staticClass:"mdc-dialog__footer__button mdc-dialog__footer__button--accept",attrs:{"disabled":!_vm.valid}},[_vm._v(_vm._s(_vm.acceptText))])],1)]),_c('div',{staticClass:"mdc-dialog__backdrop"})])},staticRenderFns: [],
   name: "MdcDialog",
+  components: { MdcButton },
   props: {
+    header: String,
+    scroll: Boolean,
+    valid: {
+      type: Boolean,
+      default: true
+    },
     acceptText: {
       type: String,
       default: "Ok"
@@ -2206,8 +2579,15 @@ var Dialog$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c
     cancelText: {
       type: String,
       default: "Cancel"
+    }
+  },
+  computed: {
+    cssBodyClasses() {
+      return this.scroll && "mdc-dialog__body--scrollable";
     },
-    scrollable: Boolean
+    hasContent() {
+      return !!this.$slots.default;
+    }
   },
   mounted() {
     const { $el } = this;
@@ -2253,40 +2633,58 @@ var Dialog$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c
   },
   methods: {
     open() {
-      if(this.foundation.isOpen()) return false;
-      this.foundation.open();
-      return true;
+      if(!this.foundation.isOpen()) {
+        this.foundation.open();
+        return true;
+      }
+      return false;
     },
     close() {
-      if(!this.foundation.isOpen()) return false;
-      
-      this.foundation.close();
-      return true;
+      if(this.foundation.isOpen()) {
+        this.foundation.close();
+        return true;
+      }
+      return false;
     }
   }
 };
 
-var DialogTitle = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c("h" + _vm.level,{tag:"component",staticClass:"mdc-dialog__header__title"},[_vm._t("default")],2)},staticRenderFns: [],
-  name: "MdcDialogTitle",
-  props: {
-    level: {
-      type: [Number, String],
-      default: 2,
-      validator: value => value >= 1 && value <= 6
-    }
-  }
-};
-
-function install$4(Vue) {
-  Vue.component(Dialog$1.name, Dialog$1);
-  Vue.component(DialogTitle.name, DialogTitle);
+function install$5(Vue) {
+  Vue.component(Dialog.name, Dialog);
 }
 
-var Dialog = Object.freeze({
-	Dialog: Dialog$1,
-	DialogTitle: DialogTitle,
-	install: install$4
+var Dialog$1 = /*#__PURE__*/Object.freeze({
+  Dialog: Dialog,
+  install: install$5
 });
+
+const TYPES = ["temporary", "permanent", "persistent"];
+
+var Drawer = {
+  name: "MdcDrawer",
+  functional: true,
+  inheritAttrs: true,
+
+  props: {
+    type: {
+      type: String,
+      validator: value => TYPES.includes(value)
+    },
+    temporary: Boolean,
+    permanent: Boolean,
+    persistent: Boolean
+  },
+
+  render(h, ctx) {
+    const { props } = ctx;
+    let type = props.type || TYPES.find(n => props[n] === true);
+
+    if(!TYPES.includes(type)) {
+      throw new Error("MDC Drawer: a valid type was not specified");
+    }
+    return h(`mdc-${type}-drawer`, ctx.data, ctx.children)
+  }
+}
 
 var PermanentDrawer = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('nav',{staticClass:"mdc-drawer mdc-drawer--permanent mdc-typography"},[(_vm.spacer)?_c('div',{staticClass:"mdc-drawer__toolbar-spacer"}):_vm._e(),_c('div',{staticClass:"mdc-drawer__content"},[_c('nav',{staticClass:"mdc-list"},[_vm._t("default")],2)])])},staticRenderFns: [],
   name: "MdcPermanentDrawer",
@@ -2586,13 +2984,13 @@ class MDCSlidableDrawerFoundation extends MDCFoundation {
  * limitations under the License.
  */
 
-const cssClasses$3 = {
+const cssClasses$4 = {
   ROOT: 'mdc-drawer--persistent',
   OPEN: 'mdc-drawer--open',
   ANIMATING: 'mdc-drawer--animating',
 };
 
-const strings$3 = {
+const strings$4 = {
   DRAWER_SELECTOR: '.mdc-drawer--persistent .mdc-drawer__drawer',
   FOCUSABLE_ELEMENTS,
   OPEN_EVENT: 'MDCPersistentDrawer:open',
@@ -2617,11 +3015,11 @@ const strings$3 = {
 
 class MDCPersistentDrawerFoundation extends MDCSlidableDrawerFoundation {
   static get cssClasses() {
-    return cssClasses$3;
+    return cssClasses$4;
   }
 
   static get strings() {
-    return strings$3;
+    return strings$4;
   }
 
   static get defaultAdapter() {
@@ -2740,17 +3138,16 @@ function restoreElementTabState(el) {
   }
 }
 
-var PersistentDrawer = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('aside',{staticClass:"mdc-drawer mdc-drawer--persistent"},[_c('nav',{ref:"drawer",staticClass:"mdc-drawer__drawer"},[(_vm.spacer)?_c('div',{staticClass:"mdc-drawer__toolbar-spacer"}):_vm._e(),(_vm.header)?_c('header',{staticClass:"mdc-drawer__header"},[_c('div',{staticClass:"md-drawer__header-content"},[_vm._v(_vm._s(_vm.header))])]):_vm._e(),_c('nav',{staticClass:"mdc-drawer__content mdc-list"},[_vm._t("default")],2)])])},staticRenderFns: [],
+var PersistentDrawer = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('aside',{staticClass:"mdc-drawer mdc-drawer--persistent"},[_c('nav',{ref:"drawer",staticClass:"mdc-drawer__drawer"},[(_vm.spacer)?_c('div',{staticClass:"mdc-drawer__toolbar-spacer"}):_vm._e(),(_vm.header)?_c('header',{staticClass:"mdc-drawer__header"},[_c('div',{staticClass:"mdc-drawer__header-content"},[_vm._v(_vm._s(_vm.header))])]):_vm._e(),_c('nav',{staticClass:"mdc-drawer__content mdc-list"},[_vm._t("default")],2)])])},staticRenderFns: [],
   name: "MdcPersistentDrawer",
   props: {
+    open: Boolean,
     spacer: Boolean,
     header: String
   },
   mounted() {
     const { $el } = this;
     const { drawer } = this.$refs;
-    
-    const { FOCUSABLE_ELEMENTS } = MDCPersistentDrawerFoundation.strings;
     const styles = getComputedStyle($el);
 
     this.foundation = new MDCPersistentDrawerFoundation({
@@ -2789,10 +3186,10 @@ var PersistentDrawer = {render: function(){var _vm=this;var _h=_vm.$createElemen
   },
   methods: {
     toggle() {
-      if (!this.foundation.isOpen()) {
-        this.foundation.open();
-      } else {
+      if (this.foundation.isOpen()) {
         this.foundation.close();
+      } else {
+        this.foundation.open();
       }
     }
   }
@@ -2814,14 +3211,14 @@ var PersistentDrawer = {render: function(){var _vm=this;var _h=_vm.$createElemen
  * limitations under the License.
  */
 
-const cssClasses$4 = {
+const cssClasses$5 = {
   ROOT: 'mdc-drawer--temporary',
   OPEN: 'mdc-drawer--open',
   ANIMATING: 'mdc-drawer--animating',
   SCROLL_LOCK: 'mdc-drawer-scroll-lock',
 };
 
-const strings$4 = {
+const strings$5 = {
   DRAWER_SELECTOR: '.mdc-drawer--temporary .mdc-drawer__drawer',
   OPACITY_VAR_NAME: '--mdc-temporary-drawer-opacity',
   FOCUSABLE_ELEMENTS,
@@ -2847,11 +3244,11 @@ const strings$4 = {
 
 class MDCTemporaryDrawerFoundation extends MDCSlidableDrawerFoundation {
   static get cssClasses() {
-    return cssClasses$4;
+    return cssClasses$5;
   }
 
   static get strings() {
-    return strings$4;
+    return strings$5;
   }
 
   static get defaultAdapter() {
@@ -2872,7 +3269,7 @@ class MDCTemporaryDrawerFoundation extends MDCSlidableDrawerFoundation {
       MDCTemporaryDrawerFoundation.cssClasses.OPEN);
 
     this.componentClickHandler_ = (evt) => {
-      if (this.adapter_.eventTargetHasClass(evt.target, cssClasses$4.ROOT)) {
+      if (this.adapter_.eventTargetHasClass(evt.target, cssClasses$5.ROOT)) {
         this.close(true);
       }
     };
@@ -2934,23 +3331,20 @@ class MDCTemporaryDrawerFoundation extends MDCSlidableDrawerFoundation {
   };
 
   disableScroll_() {
-    this.adapter_.addBodyClass(cssClasses$4.SCROLL_LOCK);
+    this.adapter_.addBodyClass(cssClasses$5.SCROLL_LOCK);
   }
 
   enableScroll_() {
-    this.adapter_.removeBodyClass(cssClasses$4.SCROLL_LOCK);
+    this.adapter_.removeBodyClass(cssClasses$5.SCROLL_LOCK);
   }
 }
 
-var TemporaryDrawer = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('aside',{staticClass:"mdc-drawer mdc-drawer--temporary"},[_c('nav',{ref:"drawer",staticClass:"mdc-drawer__drawer"},[(_vm.hasHeader)?_c('header',{staticClass:"mdc-drawer__header"},[_c('div',{staticClass:"mdc-drawer__header-content"},[_vm._t("header")],2)]):_vm._e(),_c('nav',{staticClass:"mdc-drawer__content mdc-list"},[_vm._t("default")],2)])])},staticRenderFns: [],
+var TemporaryDrawer = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('aside',{staticClass:"mdc-drawer mdc-drawer--temporary"},[_c('nav',{ref:"drawer",staticClass:"mdc-drawer__drawer"},[(_vm.header)?_c('header',{staticClass:"mdc-drawer__header"},[_c('div',{staticClass:"mdc-drawer__header-content"},[_vm._v(_vm._s(_vm.header))])]):_vm._e(),_c('nav',{staticClass:"mdc-drawer__content mdc-list"},[_vm._t("default")],2)])])},staticRenderFns: [],
   name: "MdcTemporaryDrawer",
   props: {
-    spacer: Boolean
-  },
-  computed: {
-    hasHeader() {
-      return !!this.$slots.header;
-    }
+    open: Boolean,
+    spacer: Boolean,
+    header: String
   },
   mounted() {
     const { $el } = this;
@@ -3004,9 +3398,9 @@ var TemporaryDrawer = {render: function(){var _vm=this;var _h=_vm.$createElement
   methods: {
     toggle() {
       if (this.foundation.isOpen()) {
-        this.foundation.open();        
-      } else {
         this.foundation.close();
+      } else {
+        this.foundation.open();
       }
     }
   }
@@ -3026,18 +3420,17 @@ const MdcLink = {
     exact: Boolean
   },
   render(h, ctx) {
-    const { data } = ctx;
-    let props, tag = data.props.tag;
+    const { data, props } = ctx;
+    let tag = props.tag;
 
-    if(data.props.to) {
+    if(props.to) {
       tag = "router-link";
-      data.props.link = undefined;
+      // remove the link
+      data.props = Object.assign({}, props, { link: undefined });
     } else {
       if(tag === "a") {
-        data.attrs = { href: data.props.link };
+        data.attrs.href = props.link;
       }
-
-      data.props = {};
     }
 
     return h(tag, data, ctx.children);
@@ -3046,7 +3439,7 @@ const MdcLink = {
 
 function install$6(activeClass, exactActiveClass) {
   return {
-    components: [ MdcLink ],
+    components: { MdcLink: MdcLink },
     props: {
       to: String,
       replace: Boolean,
@@ -3067,7 +3460,7 @@ function install$6(activeClass, exactActiveClass) {
   };
 }
 
-var DrawerItem = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('mdc-link',_vm._b({staticClass:"mdc-list-item",attrs:{"tag":"a","link":_vm.link}},'mdc-link',_vm.$_link,false),[_vm._t("graphic"),_vm._v(_vm._s(_vm.text))],2)},staticRenderFns: [],
+var DrawerItem = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('mdc-link',_vm._g(_vm._b({staticClass:"mdc-list-item",attrs:{"tag":"a","link":_vm.link}},'mdc-link',_vm.$_link,false),_vm.$listeners),[_vm._t("graphic"),_vm._v(_vm._s(_vm.text))],2)},staticRenderFns: [],
   name: "MdcDrawerItem",
   mixins: [ Ripple(), install$6("mdc-list-item--activated") ],
   props: {
@@ -3083,7 +3476,8 @@ var DrawerDivider = {render: function(){var _vm=this;var _h=_vm.$createElement;v
   name: "MdcDrawerDivider"
 };
 
-function install$5(Vue) {
+function install$7(Vue) {
+  Vue.component(Drawer.name, Drawer);
   Vue.component(PermanentDrawer.name, PermanentDrawer);
   Vue.component(PersistentDrawer.name, PersistentDrawer);
   Vue.component(TemporaryDrawer.name, TemporaryDrawer);
@@ -3091,16 +3485,16 @@ function install$5(Vue) {
   Vue.component(DrawerDivider.name, DrawerDivider);
 }
 
-var Drawer = Object.freeze({
-	PermanentDrawer: PermanentDrawer,
-	PersistentDrawer: PersistentDrawer,
-	TemporaryDrawer: TemporaryDrawer,
-	DrawerItem: DrawerItem,
-	DrawerDivider: DrawerDivider,
-	install: install$5
+var Drawer$1 = /*#__PURE__*/Object.freeze({
+  PermanentDrawer: PermanentDrawer,
+  PersistentDrawer: PersistentDrawer,
+  TemporaryDrawer: TemporaryDrawer,
+  DrawerItem: DrawerItem,
+  DrawerDivider: DrawerDivider,
+  install: install$7
 });
 
-var Fab$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('button',{staticClass:"mdc-fab material-icons",class:_vm.cssClasses,attrs:{"aria-label":_vm.label}},[_c('span',{staticClass:"mdc-fab__icon"},[_vm._v(_vm._s(_vm.icon))])])},staticRenderFns: [],
+var Fab = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('button',{staticClass:"mdc-fab material-icons",class:_vm.cssClasses,attrs:{"aria-label":_vm.label}},[_c('span',{staticClass:"mdc-fab__icon"},[_vm._v(_vm._s(_vm.icon))])])},staticRenderFns: [],
   name: "MdcFab",
   mixins: [ Ripple() ],
   props: {
@@ -3126,16 +3520,16 @@ var Fab$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_v
   }
 };
 
-function install$7(Vue) {
-  Vue.component(Fab$1.name, Fab$1);
+function install$8(Vue) {
+  Vue.component(Fab.name, Fab);
 }
 
-var Fab = Object.freeze({
-	Fab: Fab$1,
-	install: install$7
+var Fab$1 = /*#__PURE__*/Object.freeze({
+  Fab: Fab,
+  install: install$8
 });
 
-var FormField$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-form-field",class:_vm.cssClasses},[_vm._t("default"),_c('label',[_vm._v(_vm._s(_vm.label))])],2)},staticRenderFns: [],
+var FormField = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-form-field",class:_vm.cssClasses},[_vm._t("default"),_c('label',[_vm._v(_vm._s(_vm.label))])],2)},staticRenderFns: [],
   name: "MdcFormField",
   props: {
     label: {
@@ -3146,20 +3540,18 @@ var FormField$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var
   },
   computed: {
     cssClasses() {
-      return {
-        "mdc-form-field--align-end": this.alignEnd
-      }
+      return this.alignEnd && "mdc-form-field--align-end";
     }
   }
 };
 
-function install$8(Vue) {
-  Vue.component(FormField$1.name, FormField$1);
+function install$9(Vue) {
+  Vue.component(FormField.name, FormField);
 }
 
-var FormField = Object.freeze({
-	FormField: FormField$1,
-	install: install$8
+var FormField$1 = /*#__PURE__*/Object.freeze({
+  FormField: FormField,
+  install: install$9
 });
 
 /**
@@ -3177,7 +3569,7 @@ var FormField = Object.freeze({
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-const strings$5 = {
+const strings$6 = {
   TILES_SELECTOR: '.mdc-grid-list__tiles',
   TILE_SELECTOR: '.mdc-grid-tile',
 };
@@ -3200,7 +3592,7 @@ const strings$5 = {
 
 class MDCGridListFoundation extends MDCFoundation {
   static get strings() {
-    return strings$5;
+    return strings$6;
   }
 
   static get defaultAdapter() {
@@ -3245,22 +3637,19 @@ class MDCGridListFoundation extends MDCFoundation {
   }
 }
 
-const ASPECTS = ["1x1", "16x9", "2x3", "3x2", "4x3", "3x4"];
+const RATIOS = ["1x1", "16x9", "2x3", "3x2", "4x3", "3x4"];
 
-var GridList$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-grid-list"},[_c('ul',{ref:"tiles",staticClass:"mdc-grid-list__tiles"},[_vm._t("default")],2)])},staticRenderFns: [],
+var GridList = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-grid-list"},[_c('ul',{ref:"tiles",staticClass:"mdc-grid-list__tiles"},[_vm._t("default")],2)])},staticRenderFns: [],
   name: "MdcGridList",
   props: {
-    withHeader: Boolean,
-    withText: Boolean,
-    // Make this simpler
+    headerCaption: Boolean,
+    twoline: Boolean,
     iconAlignEnd: Boolean,
     iconAlignStart: Boolean,
-
     thinGutter: Boolean,
-
-    aspectRatio: {
+    ratio: {
       type: String,
-      validator: value => ASPECTS.includes(value)
+      validator: value => RATIOS.includes(value)
     }
   },
   mounted() {
@@ -3283,51 +3672,53 @@ var GridList$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var 
   computed: {
     cssClasses() {
       const classes = {
-        "mdc-grid-list--tile-gutter-1": this.tileGutter,
-        "mdc-grid-list--header-caption": this.withHeader,
-        "mdc-grid-list--twoline-caption": this.withText,
+        "mdc-grid-list--tile-gutter-1": this.thinGutter,
+        "mdc-grid-list--header-caption": this.captions,
+        "mdc-grid-list--twoline-caption": this.twoline,
         "mdc-grid-list--with-icon-align-start": this.iconAlignStart,
         "mdc-grid-list--with-icon-align-end": this.iconAlignEnd
       };
 
       if(this.aspect) {
-        classes[`mdc-grid-list--tile-aspect-${this.aspectRatio}`] = true;
+        classes[`mdc-grid-list--tile-aspect-${this.ratio}`] = true;
       }
-
       return classes;
     }
   }
 };
 
-var GridTile = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('li',{staticClass:"mdc-grid-tile"},[_c('div',{staticClass:"mdc-grid-tile__primary"},[(_vm.cover)?_c('div',{staticClass:"mdc-grid-tile__primary-content",style:(_vm.coverStyle)}):_c('img',{staticClass:"mdc-grid-tile__primary-content",attrs:{"src":_vm.src}})]),(_vm.text || _vm.title)?_c('span',{staticClass:"mdc-grid-tile__secondary"},[(_vm.icon)?_c('i',{staticClass:"mdc-grid-tile__icon material-icons"},[_vm._v(_vm._s(_vm.icon))]):_vm._e(),(_vm.title)?_c('span',{staticClass:"mdc-grid-tile__title"},[_vm._v(_vm._s(_vm.title))]):_vm._e(),(_vm.text)?_c('span',{staticClass:"mdc-grid-tile__support-text"},[_vm._v(_vm._s(_vm.text))]):_vm._e()]):_vm._e()])},staticRenderFns: [],
+var GridTile = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('li',{staticClass:"mdc-grid-tile"},[_c('div',{staticClass:"mdc-grid-tile__primary"},[(_vm.cover)?_c('div',{staticClass:"mdc-grid-tile__primary-content",style:(_vm.coverStyle)}):_c('img',{staticClass:"mdc-grid-tile__primary-content",attrs:{"src":_vm.src}})]),(_vm.hasSecondary)?_c('span',{staticClass:"mdc-grid-tile__secondary"},[(_vm.icon)?_c('mdc-icon',{attrs:{"name":"grid-tile","icon":_vm.icon}}):_vm._e(),(_vm.title)?_c('span',{staticClass:"mdc-grid-tile__title"},[_vm._v(_vm._s(_vm.title))]):_vm._e(),(_vm.text)?_c('span',{staticClass:"mdc-grid-tile__support-text"},[_vm._v(_vm._s(_vm.text))]):_vm._e()],1):_vm._e()])},staticRenderFns: [],
   name: "MdcGridTile",
+  components: { MdcIcon },
   props: {
     cover: Boolean,
-
+    title: String,
+    text: String,
+    icon: String,
     src: {
       type: String,
       required: true
-    },
-    title: String,
-    text: String,
-    icon: String
+    }
   },
   computed: {
     coverStyle() {
       return `background-image: url(${src})`;
+    },
+    hasSecondary() {
+      return this.text || this.title || this.icon;
     }
   }
 };
 
-function install$9(Vue) {
-  Vue.component(GridList$1.name, GridList$1);
+function install$10(Vue) {
+  Vue.component(GridList.name, GridList);
   Vue.component(GridTile.name, GridTile);
 }
 
-var GridList = Object.freeze({
-	GridList: GridList$1,
-	GridTile: GridTile,
-	install: install$9
+var GridList$1 = /*#__PURE__*/Object.freeze({
+  GridList: GridList,
+  GridTile: GridTile,
+  install: install$10
 });
 
 /**
@@ -3345,27 +3736,6 @@ var GridList = Object.freeze({
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */
-
-/* eslint no-unused-vars: [2, {"args": "none"}] */
-
-/**
- * Adapter for MDC Icon Toggle. Provides an interface for managing
- * - classes
- * - dom
- * - inner text
- * - event handlers
- * - event dispatch
- *
- * Additionally, provides type information for the adapter to the Closure
- * compiler.
- *
- * Implement this adapter for your framework of choice to delegate updates to
- * the component in your framework of choice. See architecture documentation
- * for more details.
- * https://github.com/material-components/material-components-web/blob/master/docs/code/architecture.md
- *
- * @record
  */
 
 /**
@@ -3386,13 +3756,13 @@ var GridList = Object.freeze({
  */
 
 /** @enum {string} */
-const cssClasses$5 = {
+const cssClasses$6 = {
   ROOT: 'mdc-icon-toggle',
   DISABLED: 'mdc-icon-toggle--disabled',
 };
 
 /** @enum {string} */
-const strings$6 = {
+const strings$7 = {
   DATA_TOGGLE_ON: 'data-toggle-on',
   DATA_TOGGLE_OFF: 'data-toggle-off',
   ARIA_PRESSED: 'aria-pressed',
@@ -3418,17 +3788,16 @@ const strings$6 = {
  * limitations under the License.
  */
 
-/* eslint-disable no-unused-vars */
 /**
  * @extends {MDCFoundation<!MDCIconToggleAdapter>}
  */
 class MDCIconToggleFoundation extends MDCFoundation {
   static get cssClasses() {
-    return cssClasses$5;
+    return cssClasses$6;
   }
 
   static get strings() {
-    return strings$6;
+    return strings$7;
   }
 
   static get defaultAdapter() {
@@ -3600,24 +3969,35 @@ function isSpace(keyboardKey) {
   return keyboardKey.key === 'Space' || keyboardKey.keyCode === 32;
 }
 
+
+/** @record */
+class IconToggleState {}
+
+/**
+ * The aria-label value of the icon toggle, or undefined if there is no aria-label.
+ * @export {string|undefined}
+ */
+IconToggleState.prototype.label;
+
+/**
+ * The text for the icon toggle, or undefined if there is no text.
+ * @export {string|undefined}
+ */
+IconToggleState.prototype.content;
+
+/**
+ * The CSS class to add to the icon toggle, or undefined if there is no CSS class.
+ * @export {string|undefined}
+ */
+IconToggleState.prototype.cssClass;
+
 const rippleAdapter$1 = {
   isSurfaceActive() {
     return this.foundation.isKeyboardActivated();
-  },
-  computeBoundingRect() {
-    const { left, top } = this.$el.getBoundingClientRect();
-    const DIM = 48;
-    return {
-      top, left,
-      right: left + DIM,
-      bottom: left + DIM,
-      width: DIM,
-      height: DIM
-    };
   }
 };
 
-var IconToggle$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('i',{staticClass:"mdc-icon-toggle material-icons",attrs:{"role":"button","tabindex":"0"}})},staticRenderFns: [],
+var IconToggle = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('i',{staticClass:"mdc-icon-toggle material-icons",attrs:{"role":"button","tabindex":"0"}})},staticRenderFns: [],
   name: "MdcIconToggle",
   mixins: [ Ripple(rippleAdapter$1, { unbounded: true }) ],
   props: {
@@ -3684,16 +4064,16 @@ var IconToggle$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;va
   }
 };
 
-function install$10(Vue) {
-  Vue.component(IconToggle$1.name, IconToggle$1);
+function install$11(Vue) {
+  Vue.component(IconToggle.name, IconToggle);
 }
 
-var IconToggle = Object.freeze({
-	IconToggle: IconToggle$1,
-	install: install$10
+var IconToggle$1 = /*#__PURE__*/Object.freeze({
+  IconToggle: IconToggle,
+  install: install$11
 });
 
-var LayoutGrid$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-layout-grid",class:_vm.cssClasses},[_c('div',{staticClass:"mdc-layout-grid__inner"},[_vm._t("default")],2)])},staticRenderFns: [],
+var LayoutGrid = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-layout-grid",class:_vm.cssClasses},[_c('div',{staticClass:"mdc-layout-grid__inner"},[_vm._t("default")],2)])},staticRenderFns: [],
   name: "MdcLayoutGrid",
   props: {
     fixedColumnWidth: Boolean,
@@ -3711,8 +4091,8 @@ var LayoutGrid$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;va
   }
 };
 
-const ALIGNMENTS = ["top", "bottom", "middle"];
-const spanValidator = value => value >= 1 && value <= 12; 
+const ALIGNMENTS = [ "top", "bottom", "middle" ];
+const spanValidator = value => value >= 1 && value <= 12;
 
 var LayoutCell = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-layout-grid__cell",class:_vm.cssClasses},[_vm._t("default")],2)},staticRenderFns: [],
   name: "MdcLayoutCell",
@@ -3760,17 +4140,17 @@ var LayoutInner = {render: function(){var _vm=this;var _h=_vm.$createElement;var
   name: "MdcLayoutInner"
 };
 
-function install$11(Vue) {
-  Vue.component(LayoutGrid$1.name, LayoutGrid$1);
+function install$12(Vue) {
+  Vue.component(LayoutGrid.name, LayoutGrid);
   Vue.component(LayoutCell.name, LayoutCell);
   Vue.component(LayoutInner.name, LayoutInner);
 }
 
-var LayoutGrid = Object.freeze({
-	LayoutGrid: LayoutGrid$1,
-	LayoutCell: LayoutCell,
-	LayoutInner: LayoutInner,
-	install: install$11
+var LayoutGrid$1 = /*#__PURE__*/Object.freeze({
+  LayoutGrid: LayoutGrid,
+  LayoutCell: LayoutCell,
+  LayoutInner: LayoutInner,
+  install: install$12
 });
 
 /**
@@ -3789,13 +4169,13 @@ var LayoutGrid = Object.freeze({
  * limitations under the License.
  */
 
-const cssClasses$6 = {
+const cssClasses$7 = {
   CLOSED_CLASS: 'mdc-linear-progress--closed',
   INDETERMINATE_CLASS: 'mdc-linear-progress--indeterminate',
   REVERSED_CLASS: 'mdc-linear-progress--reversed',
 };
 
-const strings$7 = {
+const strings$8 = {
   PRIMARY_BAR_SELECTOR: '.mdc-linear-progress__primary-bar',
   BUFFER_SELECTOR: '.mdc-linear-progress__buffer',
 };
@@ -3818,11 +4198,11 @@ const strings$7 = {
 
 class MDCLinearProgressFoundation extends MDCFoundation {
   static get cssClasses() {
-    return cssClasses$6;
+    return cssClasses$7;
   }
 
   static get strings() {
-    return strings$7;
+    return strings$8;
   }
 
   static get defaultAdapter() {
@@ -3841,18 +4221,18 @@ class MDCLinearProgressFoundation extends MDCFoundation {
   }
 
   init() {
-    this.determinate_ = !this.adapter_.hasClass(cssClasses$6.INDETERMINATE_CLASS);
-    this.reverse_ = this.adapter_.hasClass(cssClasses$6.REVERSED_CLASS);
+    this.determinate_ = !this.adapter_.hasClass(cssClasses$7.INDETERMINATE_CLASS);
+    this.reverse_ = this.adapter_.hasClass(cssClasses$7.REVERSED_CLASS);
     this.progress_ = 0;
   }
 
   setDeterminate(isDeterminate) {
     this.determinate_ = isDeterminate;
     if (this.determinate_) {
-      this.adapter_.removeClass(cssClasses$6.INDETERMINATE_CLASS);
+      this.adapter_.removeClass(cssClasses$7.INDETERMINATE_CLASS);
       this.setScale_(this.adapter_.getPrimaryBar(), this.progress_);
     } else {
-      this.adapter_.addClass(cssClasses$6.INDETERMINATE_CLASS);
+      this.adapter_.addClass(cssClasses$7.INDETERMINATE_CLASS);
       this.setScale_(this.adapter_.getPrimaryBar(), 1);
       this.setScale_(this.adapter_.getBuffer(), 1);
     }
@@ -3874,18 +4254,18 @@ class MDCLinearProgressFoundation extends MDCFoundation {
   setReverse(isReversed) {
     this.reverse_ = isReversed;
     if (this.reverse_) {
-      this.adapter_.addClass(cssClasses$6.REVERSED_CLASS);
+      this.adapter_.addClass(cssClasses$7.REVERSED_CLASS);
     } else {
-      this.adapter_.removeClass(cssClasses$6.REVERSED_CLASS);
+      this.adapter_.removeClass(cssClasses$7.REVERSED_CLASS);
     }
   }
 
   open() {
-    this.adapter_.removeClass(cssClasses$6.CLOSED_CLASS);
+    this.adapter_.removeClass(cssClasses$7.CLOSED_CLASS);
   }
 
   close() {
-    this.adapter_.addClass(cssClasses$6.CLOSED_CLASS);
+    this.adapter_.addClass(cssClasses$7.CLOSED_CLASS);
   }
 
   setScale_(el, scaleValue) {
@@ -3905,8 +4285,12 @@ function assertNumber(value, fn) {
   fn(value);
 }
 
-var LinearProgress$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-linear-progress",attrs:{"role":"progressbar"}},[_c('div',{staticClass:"mdc-linear-progress__buffering-dots"}),_c('div',{ref:"buffer",staticClass:"mdc-linear-progress__buffer"}),_c('div',{ref:"primary",staticClass:"mdc-linear-progress__bar mdc-linear-progress__primary-bar"},[_c('span',{staticClass:"mdc-linear-progress__bar-inner"})]),_vm._m(0,false,false)])},staticRenderFns: [function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-linear-progress__bar mdc-linear-progress__secondary-bar"},[_c('span',{staticClass:"mdc-linear-progress__bar-inner"})])}],
+var LinearProgress = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-linear-progress",attrs:{"role":"progressbar"}},[_c('div',{staticClass:"mdc-linear-progress__buffering-dots"}),_c('div',{ref:"buffer",staticClass:"mdc-linear-progress__buffer"}),_c('div',{ref:"primary",staticClass:"mdc-linear-progress__bar mdc-linear-progress__primary-bar"},[_c('span',{staticClass:"mdc-linear-progress__bar-inner"})]),_vm._m(0)])},staticRenderFns: [function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-linear-progress__bar mdc-linear-progress__secondary-bar"},[_c('span',{staticClass:"mdc-linear-progress__bar-inner"})])}],
   name: "MdcLinearProgress",
+  model: {
+    prop: "value",
+    event: "change"
+  },
   props: {
     indeterminate: Boolean,
     reversed: Boolean,
@@ -3914,10 +4298,6 @@ var LinearProgress$1 = {render: function(){var _vm=this;var _h=_vm.$createElemen
 
     value: [String, Number],
     buffer: [String, Number]
-  },
-  model: {
-    prop: "value",
-    event: "change"
   },
   watch: {
     indeterminate(value) {
@@ -3965,16 +4345,16 @@ var LinearProgress$1 = {render: function(){var _vm=this;var _h=_vm.$createElemen
   }
 };
 
-function install$12(Vue) {
-  Vue.component(LinearProgress$1.name, LinearProgress$1);
+function install$13(Vue) {
+  Vue.component(LinearProgress.name, LinearProgress);
 }
 
-var LinearProgress = Object.freeze({
-	LinearProgress: LinearProgress$1,
-	install: install$12
+var LinearProgress$1 = /*#__PURE__*/Object.freeze({
+  LinearProgress: LinearProgress,
+  install: install$13
 });
 
-var List$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('ul',{staticClass:"mdc-list",class:_vm.cssClasses},[_vm._t("default")],2)},staticRenderFns: [],
+var List = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('ul',{staticClass:"mdc-list",class:_vm.cssClasses},[_vm._t("default")],2)},staticRenderFns: [],
   name: "MdcList",
   props: {
     dense: Boolean,
@@ -4039,7 +4419,7 @@ var ListItemGraphic = {render: function(){var _vm=this;var _h=_vm.$createElement
   }
 };
 
-var ListItemMeta = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c(_vm.tag,{tag:"component",staticClass:"mdc-list-item__meta",class:_vm.cssClasses,attrs:{"aria-label":_vm.icon && _vm.label,"aria-hidden":_vm.icon && 'true',"href":_vm.link,"title":_vm.title}},[_vm._v(_vm._s(_vm.content))])},staticRenderFns: [],
+var ListItemMeta = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c(_vm.tag,{tag:"mdc-link",staticClass:"mdc-list-item__meta",class:_vm.cssClasses,attrs:{"aria-label":_vm.icon && _vm.label,"aria-hidden":_vm.icon && 'true',"href":_vm.link}},[_vm._v(_vm._s(_vm.content))])},staticRenderFns: [],
   name: "MdcListItemMeta",
   props: {
     icon: String,
@@ -4051,9 +4431,6 @@ var ListItemMeta = {render: function(){var _vm=this;var _h=_vm.$createElement;va
       return {
         "material-icons": this.icon
       };
-    },
-    title() {
-      return (this.icon || this.link) && this.label;
     },
     content() {
       return this.icon || this.label;
@@ -4085,13 +4462,18 @@ var ListGroupDivider = {render: function(){var _vm=this;var _h=_vm.$createElemen
   }
 };
 
-var ListGroupSubheader = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('h3',{staticClass:"mdc-list-group__subheader"},[_vm._t("default")],2)},staticRenderFns: [],
-  name: "MdcListGroupSubheader"
+var ListGroupSubheader = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('h3',{staticClass:"mdc-list-group__subheader"},[_vm._v(_vm._s(_vm.text))])},staticRenderFns: [],
+  name: "MdcListGroupSubheader",
+  props: {
+    text: {
+      type: String,
+      required: true
+    }
+  }
 };
 
-// List groups
-function install$13(Vue) {
-  Vue.component(List$1.name, List$1);
+function install$14(Vue) {
+  Vue.component(List.name, List);
   Vue.component(ListItem.name, ListItem);
   Vue.component(ListDivider.name, ListDivider);
   Vue.component(ListItemGraphic.name, ListItemGraphic);
@@ -4102,16 +4484,16 @@ function install$13(Vue) {
   Vue.component(ListGroupSubheader.name, ListGroupSubheader);
 }
 
-var List = Object.freeze({
-	List: List$1,
-	ListItem: ListItem,
-	ListDivider: ListDivider,
-	ListItemGraphic: ListItemGraphic,
-	ListItemMeta: ListItemMeta,
-	ListGroup: ListGroup,
-	ListGroupDivider: ListGroupDivider,
-	ListGroupSubheader: ListGroupSubheader,
-	install: install$13
+var List$1 = /*#__PURE__*/Object.freeze({
+  List: List,
+  ListItem: ListItem,
+  ListDivider: ListDivider,
+  ListItemGraphic: ListItemGraphic,
+  ListItemMeta: ListItemMeta,
+  ListGroup: ListGroup,
+  ListGroupDivider: ListGroupDivider,
+  ListGroupSubheader: ListGroupSubheader,
+  install: install$14
 });
 
 /**
@@ -4131,28 +4513,6 @@ var List = Object.freeze({
  * limitations under the License.
  */
 
-/* eslint no-unused-vars: [2, {"args": "none"}] */
-
-/**
- * Adapter for MDC Simple Menu. Provides an interface for managing
- * - classes
- * - dom
- * - focus
- * - position
- * - dimensions
- * - event handlers
- *
- * Additionally, provides type information for the adapter to the Closure
- * compiler.
- *
- * Implement this adapter for your framework of choice to delegate updates to
- * the component in your framework of choice. See architecture documentation
- * for more details.
- * https://github.com/material-components/material-components-web/blob/master/docs/code/architecture.md
- *
- * @record
- */
-
 /**
  * @license
  * Copyright 2016 Google Inc. All Rights Reserved.
@@ -4171,22 +4531,19 @@ var List = Object.freeze({
  */
 
 /** @enum {string} */
-const cssClasses$7 = {
-  ROOT: 'mdc-simple-menu',
-  OPEN: 'mdc-simple-menu--open',
-  ANIMATING_OPEN: 'mdc-simple-menu--animating-open',
-  ANIMATING_CLOSED: 'mdc-simple-menu--animating-closed',
-  TOP_RIGHT: 'mdc-simple-menu--open-from-top-right',
-  BOTTOM_LEFT: 'mdc-simple-menu--open-from-bottom-left',
-  BOTTOM_RIGHT: 'mdc-simple-menu--open-from-bottom-right',
-  LIST_ITEM: 'mdc-list-item',
+const cssClasses$8 = {
+  ROOT: 'mdc-menu',
+  OPEN: 'mdc-menu--open',
+  ANIMATING_OPEN: 'mdc-menu--animating-open',
+  ANIMATING_CLOSED: 'mdc-menu--animating-closed',
+  SELECTED_LIST_ITEM: 'mdc-list-item--selected',
 };
 
 /** @enum {string} */
-const strings$8 = {
-  ITEMS_SELECTOR: '.mdc-simple-menu__items',
-  SELECTED_EVENT: 'MDCSimpleMenu:selected',
-  CANCEL_EVENT: 'MDCSimpleMenu:cancel',
+const strings$9 = {
+  ITEMS_SELECTOR: '.mdc-menu__items',
+  SELECTED_EVENT: 'MDCMenu:selected',
+  CANCEL_EVENT: 'MDCMenu:cancel',
   ARIA_DISABLED_ATTR: 'aria-disabled',
 };
 
@@ -4257,27 +4614,17 @@ const Corner = {
  */
 
 /**
- * @typedef {{
- *   top: number,
- *   right: number,
- *   bottom: number,
- *   left: number
- * }}
+ * @extends {MDCFoundation<!MDCMenuAdapter>}
  */
-/* eslint-enable no-unused-vars */
-
-/**
- * @extends {MDCFoundation<!MDCSimpleMenuAdapter>}
- */
-class MDCSimpleMenuFoundation extends MDCFoundation {
+class MDCMenuFoundation extends MDCFoundation {
   /** @return enum{cssClasses} */
   static get cssClasses() {
-    return cssClasses$7;
+    return cssClasses$8;
   }
 
   /** @return enum{strings} */
   static get strings() {
-    return strings$8;
+    return strings$9;
   }
 
   /** @return enum{numbers} */
@@ -4291,18 +4638,17 @@ class MDCSimpleMenuFoundation extends MDCFoundation {
   }
 
   /**
-   * {@see MDCSimpleMenuAdapter} for typing information on parameters and return
+   * {@see MDCMenuAdapter} for typing information on parameters and return
    * types.
-   * @return {!MDCSimpleMenuAdapter}
+   * @return {!MDCMenuAdapter}
    */
   static get defaultAdapter() {
-    return /** @type {!MDCSimpleMenuAdapter} */ ({
+    return /** @type {!MDCMenuAdapter} */ ({
       addClass: () => {},
       removeClass: () => {},
       hasClass: () => false,
       hasNecessaryDom: () => false,
       getAttributeForEventTarget: () => {},
-      eventTargetHasClass: () => {},
       getInnerDimensions: () => ({}),
       hasAnchor: () => false,
       getAnchorDimensions: () => ({}),
@@ -4325,12 +4671,16 @@ class MDCSimpleMenuFoundation extends MDCFoundation {
       setTransformOrigin: () => {},
       setPosition: () => {},
       setMaxHeight: () => {},
+      setAttrForOptionAtIndex: () => {},
+      rmAttrForOptionAtIndex: () => {},
+      addClassForOptionAtIndex: () => {},
+      rmClassForOptionAtIndex: () => {},
     });
   }
 
-  /** @param {!MDCSimpleMenuAdapter} adapter */
+  /** @param {!MDCMenuAdapter} adapter */
   constructor(adapter) {
-    super(Object.assign(MDCSimpleMenuFoundation.defaultAdapter, adapter));
+    super(Object.assign(MDCMenuFoundation.defaultAdapter, adapter));
 
     /** @private {function(!Event)} */
     this.clickHandler_ = (evt) => this.handlePossibleSelected_(evt);
@@ -4360,10 +4710,22 @@ class MDCSimpleMenuFoundation extends MDCFoundation {
     this.anchorMargin_ = {top: 0, right: 0, bottom: 0, left: 0};
     /** @private {?AutoLayoutMeasurements} */
     this.measures_ = null;
+    /** @private {number} */
+    this.selectedIndex_ = -1;
+    /** @private {boolean} */
+    this.rememberSelection_ = false;
+    /** @private {boolean} */
+    this.quickOpen_ = false;
+
+    // A keyup event on the menu needs to have a corresponding keydown
+    // event on the menu. If the user opens the menu with a keydown event on a
+    // button, the menu will only get the key up event causing buggy behavior with selected elements.
+    /** @private {boolean} */
+    this.keyDownWithinMenu_ = false;
   }
 
   init() {
-    const {ROOT, OPEN} = MDCSimpleMenuFoundation.cssClasses;
+    const {ROOT, OPEN} = MDCMenuFoundation.cssClasses;
 
     if (!this.adapter_.hasClass(ROOT)) {
       throw new Error(`${ROOT} class required in root element.`);
@@ -4411,13 +4773,30 @@ class MDCSimpleMenuFoundation extends MDCFoundation {
     this.anchorMargin_.left = typeof margin.left === 'number' ? margin.left : 0;
   }
 
+  /** @param {boolean} rememberSelection */
+  setRememberSelection(rememberSelection) {
+    this.rememberSelection_ = rememberSelection;
+    this.setSelectedIndex(-1);
+  }
+
+  /** @param {boolean} quickOpen */
+  setQuickOpen(quickOpen) {
+    this.quickOpen_ = quickOpen;
+  }
+
   /**
    * @param {?number} focusIndex
    * @private
    */
   focusOnOpen_(focusIndex) {
     if (focusIndex === null) {
-      // First, try focusing the menu.
+      // If this instance of MDCMenu remembers selections, and the user has
+      // made a selection, then focus the last selected item
+      if (this.rememberSelection_ && this.selectedIndex_ >= 0) {
+        this.adapter_.focusItemAtIndex(this.selectedIndex_);
+        return;
+      }
+
       this.adapter_.focus();
       // If that doesn't work, focus first item instead.
       if (!this.adapter_.isFocused()) {
@@ -4429,7 +4808,7 @@ class MDCSimpleMenuFoundation extends MDCFoundation {
   }
 
   /**
-   * Handle clicks and cancel the menu if not a list item
+   * Handle clicks and cancel the menu if not a child list-item
    * @param {!Event} evt
    * @private
    */
@@ -4437,7 +4816,7 @@ class MDCSimpleMenuFoundation extends MDCFoundation {
     let el = evt.target;
 
     while (el && el !== document.documentElement) {
-      if (this.adapter_.eventTargetHasClass(el, cssClasses$7.LIST_ITEM)) {
+      if (this.adapter_.getIndexForEventTarget(el) !== -1) {
         return;
       }
       el = el.parentNode;
@@ -4464,6 +4843,9 @@ class MDCSimpleMenuFoundation extends MDCFoundation {
     const isArrowUp = key === 'ArrowUp' || keyCode === 38;
     const isArrowDown = key === 'ArrowDown' || keyCode === 40;
     const isSpace = key === 'Space' || keyCode === 32;
+    const isEnter = key === 'Enter' || keyCode === 13;
+    // The menu needs to know if the keydown event was triggered on the menu
+    this.keyDownWithinMenu_ = isEnter || isSpace;
 
     const focusedItemIndex = this.adapter_.getFocusedItemIndex();
     const lastItemIndex = this.adapter_.getNumberOfItems() - 1;
@@ -4520,7 +4902,12 @@ class MDCSimpleMenuFoundation extends MDCFoundation {
     const isEscape = key === 'Escape' || keyCode === 27;
 
     if (isEnter || isSpace) {
-      this.handlePossibleSelected_(evt);
+      // If the keydown event didn't occur on the menu, then it should
+      // disregard the possible selected event.
+      if (this.keyDownWithinMenu_) {
+        this.handlePossibleSelected_(evt);
+      }
+      this.keyDownWithinMenu_ = false;
     }
 
     if (isEscape) {
@@ -4536,7 +4923,7 @@ class MDCSimpleMenuFoundation extends MDCFoundation {
    * @private
    */
   handlePossibleSelected_(evt) {
-    if (this.adapter_.getAttributeForEventTarget(evt.target, strings$8.ARIA_DISABLED_ATTR) === 'true') {
+    if (this.adapter_.getAttributeForEventTarget(evt.target, strings$9.ARIA_DISABLED_ATTR) === 'true') {
       return;
     }
     const targetIndex = this.adapter_.getIndexForEventTarget(evt.target);
@@ -4550,6 +4937,9 @@ class MDCSimpleMenuFoundation extends MDCFoundation {
     this.selectedTriggerTimerId_ = setTimeout(() => {
       this.selectedTriggerTimerId_ = 0;
       this.close();
+      if (this.rememberSelection_) {
+        this.setSelectedIndex(targetIndex);
+      }
       this.adapter_.notifySelected({index: targetIndex});
     }, numbers$2.SELECTED_TRIGGER_DELAY);
   }
@@ -4648,7 +5038,7 @@ class MDCSimpleMenuFoundation extends MDCFoundation {
   getVerticalOriginOffset_(corner) {
     const {viewport, viewportDistance, anchorHeight, menuHeight} = this.measures_;
     const isBottomAligned = Boolean(corner & CornerBit.BOTTOM);
-    const {MARGIN_TO_EDGE} = MDCSimpleMenuFoundation.numbers;
+    const {MARGIN_TO_EDGE} = MDCMenuFoundation.numbers;
     const avoidVerticalOverlap = Boolean(this.anchorCorner_ & CornerBit.BOTTOM);
     const canOverlapVertically = !avoidVerticalOverlap;
     let y = 0;
@@ -4741,18 +5131,23 @@ class MDCSimpleMenuFoundation extends MDCFoundation {
    */
   open({focusIndex = null} = {}) {
     this.adapter_.saveFocus();
-    this.adapter_.addClass(MDCSimpleMenuFoundation.cssClasses.ANIMATING_OPEN);
+
+    if (!this.quickOpen_) {
+      this.adapter_.addClass(MDCMenuFoundation.cssClasses.ANIMATING_OPEN);
+    }
 
     this.animationRequestId_ = requestAnimationFrame(() => {
       this.dimensions_ = this.adapter_.getInnerDimensions();
       this.autoPosition_();
-      this.adapter_.addClass(MDCSimpleMenuFoundation.cssClasses.OPEN);
+      this.adapter_.addClass(MDCMenuFoundation.cssClasses.OPEN);
       this.focusOnOpen_(focusIndex);
       this.adapter_.registerBodyClickHandler(this.documentClickHandler_);
-      this.openAnimationEndTimerId_ = setTimeout(() => {
-        this.openAnimationEndTimerId_ = 0;
-        this.adapter_.removeClass(MDCSimpleMenuFoundation.cssClasses.ANIMATING_OPEN);
-      }, numbers$2.TRANSITION_OPEN_DURATION);
+      if (!this.quickOpen_) {
+        this.openAnimationEndTimerId_ = setTimeout(() => {
+          this.openAnimationEndTimerId_ = 0;
+          this.adapter_.removeClass(MDCMenuFoundation.cssClasses.ANIMATING_OPEN);
+        }, numbers$2.TRANSITION_OPEN_DURATION);
+      }
     });
     this.isOpen_ = true;
   }
@@ -4763,7 +5158,7 @@ class MDCSimpleMenuFoundation extends MDCFoundation {
    */
   close(evt = null) {
     const targetIsDisabled = evt ?
-      this.adapter_.getAttributeForEventTarget(evt.target, strings$8.ARIA_DISABLED_ATTR) === 'true' :
+      this.adapter_.getAttributeForEventTarget(evt.target, strings$9.ARIA_DISABLED_ATTR) === 'true' :
       false;
 
     if (targetIsDisabled) {
@@ -4771,13 +5166,19 @@ class MDCSimpleMenuFoundation extends MDCFoundation {
     }
 
     this.adapter_.deregisterBodyClickHandler(this.documentClickHandler_);
-    this.adapter_.addClass(MDCSimpleMenuFoundation.cssClasses.ANIMATING_CLOSED);
+
+    if (!this.quickOpen_) {
+      this.adapter_.addClass(MDCMenuFoundation.cssClasses.ANIMATING_CLOSED);
+    }
+
     requestAnimationFrame(() => {
-      this.adapter_.removeClass(MDCSimpleMenuFoundation.cssClasses.OPEN);
-      this.closeAnimationEndTimerId_ = setTimeout(() => {
-        this.closeAnimationEndTimerId_ = 0;
-        this.adapter_.removeClass(MDCSimpleMenuFoundation.cssClasses.ANIMATING_CLOSED);
-      }, numbers$2.TRANSITION_CLOSE_DURATION);
+      this.adapter_.removeClass(MDCMenuFoundation.cssClasses.OPEN);
+      if (!this.quickOpen_) {
+        this.closeAnimationEndTimerId_ = setTimeout(() => {
+          this.closeAnimationEndTimerId_ = 0;
+          this.adapter_.removeClass(MDCMenuFoundation.cssClasses.ANIMATING_CLOSED);
+        }, numbers$2.TRANSITION_CLOSE_DURATION);
+      }
     });
     this.isOpen_ = false;
     this.adapter_.restoreFocus();
@@ -4786,6 +5187,32 @@ class MDCSimpleMenuFoundation extends MDCFoundation {
   /** @return {boolean} */
   isOpen() {
     return this.isOpen_;
+  }
+
+  /** @return {number} */
+  getSelectedIndex() {
+    return this.selectedIndex_;
+  }
+
+  /**
+   * @param {number} index Index of the item to set as selected.
+   */
+  setSelectedIndex(index) {
+    if (index === this.selectedIndex_) {
+      return;
+    }
+
+    const prevSelectedIndex = this.selectedIndex_;
+    if (prevSelectedIndex >= 0) {
+      this.adapter_.rmAttrForOptionAtIndex(prevSelectedIndex, 'aria-selected');
+      this.adapter_.rmClassForOptionAtIndex(prevSelectedIndex, cssClasses$8.SELECTED_LIST_ITEM);
+    }
+
+    this.selectedIndex_ = index >= 0 && index < this.adapter_.getNumberOfItems() ? index : -1;
+    if (this.selectedIndex_ >= 0) {
+      this.adapter_.setAttrForOptionAtIndex(this.selectedIndex_, 'aria-selected', 'true');
+      this.adapter_.addClassForOptionAtIndex(this.selectedIndex_, cssClasses$8.SELECTED_LIST_ITEM);
+    }
   }
 }
 
@@ -4824,7 +5251,7 @@ function getTransformPropertyName$1(globalObj, forceRefresh = false) {
   return storedTransformPropertyName_$1;
 }
 
-var Menu$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-simple-menu",class:_vm.cssClasses,attrs:{"tabindex":"-1"}},[_c('div',{ref:"itemsContainer",staticClass:"mdc-list mdc-simple-menu__items",attrs:{"role":"menu"}},[_vm._t("default")],2)])},staticRenderFns: [],
+var Menu = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-menu",class:_vm.cssClasses,attrs:{"tabindex":"-1"}},[_c('div',{ref:"itemsContainer",staticClass:"mdc-list mdc-menu__items",attrs:{"role":"menu"}},[_vm._t("default")],2)])},staticRenderFns: [],
   name: "MdcMenu",
   props: {
     anchor: Boolean,
@@ -4858,17 +5285,15 @@ var Menu$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_
   mounted() {
     const { $el } = this;
     const { itemsContainer } = this.$refs;
-
-    const items = this.items = this.$_findItems();
     const $styles = getComputedStyle($el);
     let $anchor, prevFocus;
-
+    
     if(this.anchor) {
       $anchor = $el.parentElement;
       $anchor.classList.add("mdc-menu-anchor");
     }
 
-    this.foundation = new MDCSimpleMenuFoundation({
+    this.foundation = new MDCMenuFoundation({
       addClass: className => $el.classList.add(className),
       removeClass: className => $el.classList.remove(className),
       hasClass: className => $el.classList.contains(className),
@@ -4879,13 +5304,13 @@ var Menu$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_
       hasAnchor: () => !!$anchor,
       getAnchorDimensions: () => $el.parentElement.getBoundingClientRect(),
       getWindowDimensions: () => ({ width: window.innerWidth, height: window.innerHeight }),
-      getNumberOfItems: () => items.length,
+      getNumberOfItems: () => this.items.length,
       registerInteractionHandler: (type, handler) => $el.addEventListener(type, handler),
       deregisterInteractionHandler: (type, handler) => $el.removeEventListener(type, handler),
       registerBodyClickHandler: handler => document.body.addEventListener("click", handler),
       deregisterBodyClickHandler: handler => document.body.removeEventListener("click", handler),
-      getIndexForEventTarget: target => items.indexOf(target),
-      notifySelected: data => this.$emit("selected", data.index, items[data.index]),
+      getIndexForEventTarget: target => this.items.indexOf(target),
+      notifySelected: data => this.$emit("selected", data.index, this.items[data.index]),
       notifyCancel: () => this.$emit("cancel"),
       saveFocus: () => {
         prevFocus = document.activeElement;
@@ -4893,8 +5318,8 @@ var Menu$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_
       restoreFocus: () => prevFocus && prevFocus.focus(),
       isFocused: () => document.activeElement === $el,
       focus: () => $el.focus(),
-      getFocusedItemIndex: () => items.indexOf(document.activeElement),
-      focusItemAtIndex: index => items[index].focus(),
+      getFocusedItemIndex: () => this.items.indexOf(document.activeElement),
+      focusItemAtIndex: index => this.items[index].focus(),
       isRtl: () => $styles.direction === "rtl",
       setTransformOrigin: origin => {
         const prop = getTransformPropertyName$1(window);
@@ -4906,8 +5331,13 @@ var Menu$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_
         $el.style.top = "top" in pos ? pos.top : null;
         $el.style.bottom = "bottom" in pos ? pos.bottom : null;
       },
-      setMaxHeight: height => $el.style.maxHeight = height
+      setMaxHeight: height => $el.style.maxHeight = height,
+      setAttrForOptionAtIndex: (index, attr, value) => this.items[index].setAttribute(attr, value),
+      rmAttrForOptionAtIndex: (index, attr) => this.items[index].removeAttribute(attr),
+      addClassForOptionAtIndex: (index, className) => this.items[index].classList.add(className),
+      rmClassForOptionAtIndex: (index, className) => this.items[index].classList.remove(className),
     });
+    this.items = this.$_findItems();
     this.foundation.init();
 
     this.foundation.setAnchorCorner(this.corner.toUpperCase());
@@ -4944,15 +5374,15 @@ var MenuItem = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c
   }
 };
 
-function install$14(Vue) {
-  Vue.component(Menu$1.name, Menu$1);
+function install$15(Vue) {
+  Vue.component(Menu.name, Menu);
   Vue.component(MenuItem.name, MenuItem);
 }
 
-var Menu = Object.freeze({
-	Menu: Menu$1,
-	MenuItem: MenuItem,
-	install: install$14
+var Menu$1 = /*#__PURE__*/Object.freeze({
+  Menu: Menu,
+  MenuItem: MenuItem,
+  install: install$15
 });
 
 /**
@@ -4972,8 +5402,6 @@ var Menu = Object.freeze({
  * limitations under the License.
  */
 
-/* eslint-disable no-unused-vars */
-
 /**
  * @license
  * Copyright 2016 Google Inc. All Rights Reserved.
@@ -4992,12 +5420,12 @@ var Menu = Object.freeze({
  */
 
 /** @enum {string} */
-const strings$9 = {
+const strings$10 = {
   NATIVE_CONTROL_SELECTOR: '.mdc-radio__native-control',
 };
 
 /** @enum {string} */
-const cssClasses$8 = {
+const cssClasses$9 = {
   ROOT: 'mdc-radio',
   DISABLED: 'mdc-radio--disabled',
 };
@@ -5019,20 +5447,18 @@ const cssClasses$8 = {
  * limitations under the License.
  */
 
-/* eslint-disable no-unused-vars */
-/* eslint-enable no-unused-vars */
 /**
  * @extends {MDCFoundation<!MDCRadioAdapter>}
  */
 class MDCRadioFoundation extends MDCFoundation {
   /** @return enum {cssClasses} */
   static get cssClasses() {
-    return cssClasses$8;
+    return cssClasses$9;
   }
 
   /** @return enum {strings} */
   static get strings() {
-    return strings$9;
+    return strings$10;
   }
 
   /** @return {!MDCRadioAdapter} */
@@ -5094,30 +5520,26 @@ class MDCRadioFoundation extends MDCFoundation {
 }
 
 const rippleAdapter$2 = {
-  isSurfaceActive: () => false,
+  isSurfaceActive() {
+    return false;
+  },
   registerInteractionHandler(type, handler) {
     this.$refs.input.addEventListener(type, handler);
   },
   deregisterInteractionHandler(type, handler) {
     this.$refs.input.removeEventListener(type, handler);
-  },
-  computeBoundingRect() {
-    const { left, top } = this.$el.getBoundingClientRect();
-    const DIM = 40;
-    return {
-      top, left,
-      right: left + DIM,
-      bottom: top + DIM,
-      width: DIM,
-      height: DIM
-    };
   }
 };
 
-var Radio$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-radio",class:_vm.cssClasses},[_c('input',_vm._b({directives:[{name:"model",rawName:"v-model",value:(_vm.model),expression:"model"}],ref:"input",staticClass:"mdc-radio__native-control",attrs:{"type":"radio"},domProps:{"value":_vm.value,"checked":_vm._q(_vm.model,_vm.value)},on:{"change":function($event){_vm.model=_vm.value;}}},'input',_vm.$attrs,false)),_vm._m(0,false,false)])},staticRenderFns: [function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-radio__background"},[_c('div',{staticClass:"mdc-radio__outer-circle"}),_c('div',{staticClass:"mdc-radio__inner-circle"})])}],
+var Radio = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-radio",class:_vm.cssClasses},[_c('input',_vm._b({directives:[{name:"model",rawName:"v-model",value:(_vm.model),expression:"model"}],ref:"input",staticClass:"mdc-radio__native-control",attrs:{"type":"radio"},domProps:{"value":_vm.value,"checked":_vm._q(_vm.model,_vm.value)},on:{"change":function($event){_vm.model=_vm.value;}}},'input',_vm.$attrs,false)),_vm._m(0)])},staticRenderFns: [function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-radio__background"},[_c('div',{staticClass:"mdc-radio__outer-circle"}),_c('div',{staticClass:"mdc-radio__inner-circle"})])}],
   name: "MdcRadio",
-  inheritAttrs: false,
   mixins: [ Ripple(rippleAdapter$2, { unbounded: true }) ],
+  inheritAttrs: false,
+  model: {
+    prop: "checked",
+    event: "change",
+  },
+
   props: {
     disabled: Boolean,
     checked: [Boolean, String],
@@ -5126,9 +5548,15 @@ var Radio$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=
       required: true
     }
   },
-  model: {
-    prop: "checked",
-    event: "change",
+  computed: {
+    model: {
+      get() {
+        return this.checked;
+      },
+      set(value) {
+        this.$emit("change", value);
+      }
+    }
   },
   watch: {
     disabled(value) {
@@ -5153,26 +5581,16 @@ var Radio$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=
   },
   beforeDestroy() {
     this.foundation.destroy();
-  },
-  computed: {
-    model: {
-      get() {
-        return this.checked;
-      },
-      set(value) {
-        this.$emit("change", value);
-      }
-    }
   }
 };
 
-function install$15(Vue) {
-  Vue.component(Radio$1.name, Radio$1);
+function install$16(Vue) {
+  Vue.component(Radio.name, Radio);
 }
 
-var Radio = Object.freeze({
-	Radio: Radio$1,
-	install: install$15
+var Radio$1 = /*#__PURE__*/Object.freeze({
+  Radio: Radio,
+  install: install$16
 });
 
 /**
@@ -5190,18 +5608,15 @@ var Radio = Object.freeze({
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-const cssClasses$9 = {
-  BOTTOM_LINE: 'mdc-select__bottom-line',
-  BOTTOM_LINE_ACTIVE: 'mdc-select__bottom-line--active',
+const cssClasses$10 = {
   BOX: 'mdc-select--box',
   DISABLED: 'mdc-select--disabled',
-  LABEL_FLOAT_ABOVE: 'mdc-select__label--float-above',
   OPEN: 'mdc-select--open',
   ROOT: 'mdc-select',
   SCROLL_LOCK: 'mdc-select-scroll-lock',
 };
 
-const strings$10 = {
+const strings$11 = {
   CHANGE_EVENT: 'MDCSelect:change',
   BOTTOM_LINE_SELECTOR: '.mdc-select__bottom-line',
   LABEL_SELECTOR: '.mdc-select__label',
@@ -5209,23 +5624,6 @@ const strings$10 = {
   SURFACE_SELECTOR: '.mdc-select__surface',
   SELECTED_TEXT_SELECTOR: '.mdc-select__selected-text',
 };
-
-/**
- * @license
- * Copyright 2016 Google Inc. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 
 /**
  * @license
@@ -5268,22 +5666,20 @@ const OPENER_KEYS = [
 
 class MDCSelectFoundation extends MDCFoundation {
   static get cssClasses() {
-    return cssClasses$9;
+    return cssClasses$10;
   }
 
   static get strings() {
-    return strings$10;
+    return strings$11;
   }
 
   static get defaultAdapter() {
     return {
       addClass: (/* className: string */) => {},
       removeClass: (/* className: string */) => {},
-      addClassToLabel: (/* className: string */) => {},
-      removeClassFromLabel: (/* className: string */) => {},
-      addClassToBottomLine: (/* className: string */) => {},
-      removeClassFromBottomLine: (/* className: string */) => {},
-      setBottomLineAttr: (/* attr: string, value: string */) => {},
+      floatLabel: (/* value: boolean */) => {},
+      activateBottomLine: () => {},
+      deactivateBottomLine: () => {},
       addBodyClass: (/* className: string */) => {},
       removeBodyClass: (/* className: string */) => {},
       setAttr: (/* attr: string, value: string */) => {},
@@ -5330,7 +5726,6 @@ class MDCSelectFoundation extends MDCFoundation {
     /** @private {number} */
     this.animationRequestId_ = 0;
 
-    this.setPointerXOffset_ = (evt) => this.setBottomLineOrigin_(evt);
     this.displayHandler_ = (evt) => {
       evt.preventDefault();
       if (!this.adapter_.isMenuOpen()) {
@@ -5349,9 +5744,8 @@ class MDCSelectFoundation extends MDCFoundation {
     };
     this.cancelHandler_ = () => {
       this.close_();
-
       if (this.selectedIndex_ === -1) {
-        this.adapter_.removeClassFromLabel(cssClasses$9.LABEL_FLOAT_ABOVE);
+        this.adapter_.floatLabel(false);
       }
     };
   }
@@ -5362,12 +5756,9 @@ class MDCSelectFoundation extends MDCFoundation {
     this.adapter_.registerInteractionHandler('keydown', this.displayViaKeyboardHandler_);
     this.adapter_.registerInteractionHandler('keyup', this.displayViaKeyboardHandler_);
     this.adapter_.registerMenuInteractionHandler(
-      MDCSimpleMenuFoundation.strings.SELECTED_EVENT, this.selectionHandler_);
+      MDCMenuFoundation.strings.SELECTED_EVENT, this.selectionHandler_);
     this.adapter_.registerMenuInteractionHandler(
-      MDCSimpleMenuFoundation.strings.CANCEL_EVENT, this.cancelHandler_);
-    ['mousedown', 'touchstart'].forEach((evtType) => {
-      this.adapter_.registerInteractionHandler(evtType, this.setPointerXOffset_);
-    });
+      MDCMenuFoundation.strings.CANCEL_EVENT, this.cancelHandler_);
     this.resize();
   }
 
@@ -5379,12 +5770,9 @@ class MDCSelectFoundation extends MDCFoundation {
     this.adapter_.deregisterInteractionHandler('keydown', this.displayViaKeyboardHandler_);
     this.adapter_.deregisterInteractionHandler('keyup', this.displayViaKeyboardHandler_);
     this.adapter_.deregisterMenuInteractionHandler(
-      MDCSimpleMenuFoundation.strings.SELECTED_EVENT, this.selectionHandler_);
+      MDCMenuFoundation.strings.SELECTED_EVENT, this.selectionHandler_);
     this.adapter_.deregisterMenuInteractionHandler(
-      MDCSimpleMenuFoundation.strings.CANCEL_EVENT, this.cancelHandler_);
-    ['mousedown', 'touchstart'].forEach((evtType) => {
-      this.adapter_.deregisterInteractionHandler(evtType, this.setPointerXOffset_);
-    });
+      MDCMenuFoundation.strings.CANCEL_EVENT, this.cancelHandler_);
   }
 
   getValue() {
@@ -5406,6 +5794,11 @@ class MDCSelectFoundation extends MDCFoundation {
     if (this.selectedIndex_ >= 0) {
       selectedTextContent = this.adapter_.getTextForOptionAtIndex(this.selectedIndex_).trim();
       this.adapter_.setAttrForOptionAtIndex(this.selectedIndex_, 'aria-selected', 'true');
+      this.adapter_.floatLabel(true);
+    } else {
+      if (!this.adapter_.isMenuOpen()) {
+        this.adapter_.floatLabel(false);
+      }
     }
     this.adapter_.setSelectedTextContent(selectedTextContent);
   }
@@ -5463,23 +5856,13 @@ class MDCSelectFoundation extends MDCFoundation {
     const focusIndex = this.selectedIndex_ < 0 ? 0 : this.selectedIndex_;
 
     this.setMenuStylesForOpenAtIndex_(focusIndex);
-    this.adapter_.addClassToLabel(cssClasses$9.LABEL_FLOAT_ABOVE);
-    this.adapter_.addClassToBottomLine(cssClasses$9.BOTTOM_LINE_ACTIVE);
+    this.adapter_.floatLabel(true);
+    this.adapter_.activateBottomLine();
     this.adapter_.addClass(OPEN);
     this.animationRequestId_ = requestAnimationFrame(() => {
       this.adapter_.openMenu(focusIndex);
       this.isFocused_ = true;
     });
-  }
-
-  setBottomLineOrigin_(evt) {
-    const targetClientRect = evt.target.getBoundingClientRect();
-    const evtCoords = {x: evt.clientX, y: evt.clientY};
-    const normalizedX = evtCoords.x - targetClientRect.left;
-    const attributeString =
-      `transform-origin: ${normalizedX}px bottom`;
-
-    this.adapter_.setBottomLineAttr('style', attributeString);
   }
 
   setMenuStylesForOpenAtIndex_(index) {
@@ -5501,7 +5884,6 @@ class MDCSelectFoundation extends MDCFoundation {
     } else if (overflowsBottom) {
       adjustedTop = Math.max(0, innerHeight - menuHeight);
     }
-
     this.adapter_.setMenuElStyle('left', `${left}px`);
     this.adapter_.setMenuElStyle('top', `${adjustedTop}px`);
     this.adapter_.setMenuElStyle('transform-origin', `center ${itemOffsetTop}px`);
@@ -5510,7 +5892,7 @@ class MDCSelectFoundation extends MDCFoundation {
   close_() {
     const {OPEN} = MDCSelectFoundation.cssClasses;
     this.adapter_.removeClass(OPEN);
-    this.adapter_.removeClassFromBottomLine(cssClasses$9.BOTTOM_LINE_ACTIVE);
+    this.adapter_.deactivateBottomLine();
     this.adapter_.focus();
     this.enableScroll_();
   }
@@ -5539,30 +5921,214 @@ class MDCSelectFoundation extends MDCFoundation {
   }
 
   disableScroll_() {
-    this.adapter_.addBodyClass(cssClasses$9.SCROLL_LOCK);
+    this.adapter_.addBodyClass(cssClasses$10.SCROLL_LOCK);
   }
 
   enableScroll_() {
-    this.adapter_.removeBodyClass(cssClasses$9.SCROLL_LOCK);
+    this.adapter_.removeBodyClass(cssClasses$10.SCROLL_LOCK);
+  }
+}
+
+/**
+ * @license
+ * Copyright 2017 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+const cssClasses$11 = {
+  LABEL_FLOAT_ABOVE: 'mdc-select__label--float-above',
+};
+
+/**
+ * @license
+ * Copyright 2016 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/**
+ * @extends {MDCFoundation<!MDCSelectLabelAdapter>}
+ * @final
+ */
+class MDCSelectLabelFoundation extends MDCFoundation {
+  /** @return enum {string} */
+  static get cssClasses() {
+    return cssClasses$11;
+  }
+
+  /**
+   * {@see MDCSelectLabelAdapter} for typing information on parameters and return
+   * types.
+   * @return {!MDCSelectLabelAdapter}
+   */
+  static get defaultAdapter() {
+    return /** @type {!MDCSelectLabelAdapter} */ ({
+      addClass: () => {},
+      removeClass: () => {},
+      getWidth: () => {},
+    });
+  }
+
+  /**
+   * @param {!MDCSelectLabelAdapter} adapter
+   */
+  constructor(adapter) {
+    super(Object.assign(MDCSelectLabelFoundation.defaultAdapter, adapter));
+  }
+
+  /**
+   * Styles the label to float or defloat as necessary.
+   * @param {string} value The value of the input.
+   */
+  styleFloat(value) {
+    const {LABEL_FLOAT_ABOVE} = MDCSelectLabelFoundation.cssClasses;
+    if (!!value) {
+      this.adapter_.addClass(LABEL_FLOAT_ABOVE);
+    } else {
+      this.adapter_.removeClass(LABEL_FLOAT_ABOVE);
+    }
+  }
+}
+
+/**
+ * @license
+ * Copyright 2017 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/**
+ * Copyright 2016 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+const cssClasses$12 = {
+  BOTTOM_LINE_ACTIVE: 'mdc-select__bottom-line--active',
+};
+
+/**
+ * @license
+ * Copyright 2016 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/**
+ * @extends {MDCFoundation<!MDCSelectBottomLineAdapter>}
+ * @final
+ */
+class MDCSelectBottomLineFoundation extends MDCFoundation {
+  /** @return enum {string} */
+  static get cssClasses() {
+    return cssClasses$12;
+  }
+
+  /**
+   * {@see MDCSelectBottomLineAdapter} for typing information on parameters and return
+   * types.
+   * @return {!MDCSelectBottomLineAdapter}
+   */
+  static get defaultAdapter() {
+    return /** @type {!MDCSelectBottomLineAdapter} */ ({
+      addClass: () => {},
+      removeClass: () => {},
+    });
+  }
+
+  /**
+   * Adds the active class to bottom line
+   */
+  activate() {
+    this.adapter_.addClass(cssClasses$12.BOTTOM_LINE_ACTIVE);
+  }
+
+  /**
+   * Removes the active class from the bottom line
+   */
+  deactivate() {
+    this.adapter_.removeClass(cssClasses$12.BOTTOM_LINE_ACTIVE);
+  }
+
+  /**
+   * @param {!MDCSelectBottomLineAdapter} adapter
+   */
+  constructor(adapter) {
+    super(Object.assign(MDCSelectBottomLineFoundation.defaultAdapter, adapter));
   }
 }
 
 const getEventType = type => type.substr(type.indexOf(":") + 1);
 
 //TODO: complete after created mdc-list and mdc-menu
-var Select$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-select",attrs:{"role":"listbox"}},[_c('div',{ref:"surface",staticClass:"mdc-select__surface"},[_c('div',{ref:"label",staticClass:"mdc-select__label"},[_vm._v(_vm._s(_vm.label))]),_c('div',{staticClass:"mdc-select__selected-text"},[_vm._v(_vm._s(_vm.selectedText))]),_c('div',{ref:"bottomLine",staticClass:"mdc-select__bottom-line"})]),_c('mdc-menu',{ref:"menu",staticClass:"mdc-select__menu"},[_vm._t("default")],2)],1)},staticRenderFns: [],
+var Select = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-select",class:_vm.cssClasses,attrs:{"role":"listbox"}},[_c('div',{ref:"surface",staticClass:"mdc-select__surface"},[_c('div',{ref:"label",staticClass:"mdc-select__label"},[_vm._v(_vm._s(_vm.label))]),_c('div',{staticClass:"mdc-select__selected-text"},[_vm._v(_vm._s(_vm.selectedText))]),_c('div',{ref:"bottomLine",staticClass:"mdc-select__bottom-line"})]),_c('mdc-menu',{ref:"menu",staticClass:"mdc-select__menu"},[_vm._t("default")],2)],1)},staticRenderFns: [],
   name: "MdcSelect",
   mixins: [ Ripple() ],
+  model: {
+    prop: "value",
+    event: "change"
+  },
   props: {
     disabled: Boolean,
     value: String,
     label: {
       type: String,
       required: true
-    }
-
-    //TODO: multiple: Boolean
+    },
+    box: Boolean
   },
+
   watch: {
     value(value) {
       this.$_setIndexFromValue(value);
@@ -5571,28 +6137,34 @@ var Select$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c
       this.foundation.setDisabled(value);
     }
   },
-  model: {
-    prop: "value",
-    event: "change"
+  computed: {
+    cssClasses() {
+      return this.box && "mdc-select--box";
+    }
   },
   data() {
     return { selectedText: "" };
   },
+
   mounted() {
     const { $el } = this;
-    const { surface, label, bottomLine, menu } = this.$refs;
+    const { surface, menu } = this.$refs;
+
+    const bottomLine = new MDCSelectBottomLineFoundation({
+      addClass: className => this.$refs.bottomLine.classList.add(className),
+      removeClass: className => this.$refs.bottomLine.classList.remove(className)
+    });
+    const label = new MDCSelectLabelFoundation({
+      addClass: className => this.$refs.label.classList.add(className),
+      removeClass: className => this.$refs.label.classList.remove(className)
+    });
 
     this.foundation = new MDCSelectFoundation({
       addClass: className => $el.classList.add(className),
       removeClass: className => $el.classList.remove(className),
-      addClassToLabel: className => label.classList.add(className),
-      removeClassFromLabel: className => label.classList.remove(className),
-      addClassToBottomLine: className => bottomLine.classList.add(className),
-      removeClassFromBottomLine: className => bottomLine.classList.remove(className),
-      addBodyClass: className => document.body.classList.add(className),
-      removeBodyClass: className => document.body.classList.remove(className),
-
-      setBottomLineAttr: (attr, value) => bottomLine.setAttribute(attr, value),
+      floatLabel: value => label && label.styleFloat(value),
+      activateBottomLine: () => bottomLine.activate(),
+      deactivateBottomLine: () => bottomLine.deactivate(),
       setAttr: (attr, value) => $el.setAttribute(attr, value),
       rmAttr: (attr, value) => $el.removeAttribute(attr, value),
       computeBoundingRect: () => surface.getBoundingClientRect(),
@@ -5612,6 +6184,7 @@ var Select$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c
       setMenuElAttr: (attr, value) => menu.$el.setAttribute(attr, value),
       rmMenuElAttr: attr => menu.$el.removeAttribute(attr),
       getMenuElOffsetHeight: () => menu.$el.offsetHeight,
+
       openMenu: index => menu.show(index),
       isMenuOpen: () => menu.open,
       setSelectedTextContent: text => {
@@ -5626,7 +6199,9 @@ var Select$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c
       registerMenuInteractionHandler: (type, handler) => menu.$on(getEventType(type), handler), //menu.$el.addEventListener(type, handler),
       deregisterMenuInteractionHandler: (type, handler) => menu.$off(getEventType(type), handler), //menu.$el.removeEventListener(type, handler),
       notifyChange: () => this.$emit("change", this.foundation.getValue()),
-      getWindowInnerHeight: () => window.innerHeight
+      getWindowInnerHeight: () => window.innerHeight,
+      addBodyClass: className => document.body.classList.add(className),
+      removeBodyClass: className => document.body.classList.remove(className)
     });
     // Fix the selection handler before initializing
     const selectionHandler = this.foundation.selectionHandler_;
@@ -5669,767 +6244,15 @@ var SelectItem = {render: function(){var _vm=this;var _h=_vm.$createElement;var 
   }
 };
 
-function install$16(Vue) {
-  Vue.component(Select$1.name, Select$1);
+function install$17(Vue) {
+  Vue.component(Select.name, Select);
   Vue.component(SelectItem.name, SelectItem);
 }
 
-var Select = Object.freeze({
-	Select: Select$1,
-	SelectItem: SelectItem,
-	install: install$16
-});
-
-/**
- * Copyright 2017 Google Inc. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-/** @enum {string} */
-const cssClasses$10 = {
-  ACTIVE: 'mdc-slider--active',
-  DISABLED: 'mdc-slider--disabled',
-  DISCRETE: 'mdc-slider--discrete',
-  FOCUS: 'mdc-slider--focus',
-  IN_TRANSIT: 'mdc-slider--in-transit',
-  IS_DISCRETE: 'mdc-slider--discrete',
-  HAS_TRACK_MARKER: 'mdc-slider--display-markers',
-};
-
-/** @enum {string} */
-const strings$11 = {
-  TRACK_SELECTOR: '.mdc-slider__track',
-  TRACK_MARKER_CONTAINER_SELECTOR: '.mdc-slider__track-marker-container',
-  LAST_TRACK_MARKER_SELECTOR: '.mdc-slider__track-marker:last-child',
-  THUMB_CONTAINER_SELECTOR: '.mdc-slider__thumb-container',
-  PIN_VALUE_MARKER_SELECTOR: '.mdc-slider__pin-value-marker',
-  ARIA_VALUEMIN: 'aria-valuemin',
-  ARIA_VALUEMAX: 'aria-valuemax',
-  ARIA_VALUENOW: 'aria-valuenow',
-  ARIA_DISABLED: 'aria-disabled',
-  STEP_DATA_ATTR: 'data-step',
-  CHANGE_EVENT: 'MDCSlider:change',
-  INPUT_EVENT: 'MDCSlider:input',
-};
-
-/** @enum {number} */
-const numbers$3 = {
-  PAGE_FACTOR: 4,
-};
-
-/**
- * @license
- * Copyright 2017 Google Inc. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-/* eslint-disable no-unused-vars */
-
-/**
- * Adapter for MDC Slider.
- *
- * Defines the shape of the adapter expected by the foundation. Implement this
- * adapter to integrate the Slider into your framework. See
- * https://github.com/material-components/material-components-web/blob/master/docs/authoring-components.md
- * for more information.
- *
- * @record
- */
-
-/**
- * Copyright 2017 Google Inc. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- *you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- * http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-/** @enum {string} */
-const KEY_IDS = {
-  ARROW_LEFT: 'ArrowLeft',
-  ARROW_RIGHT: 'ArrowRight',
-  ARROW_UP: 'ArrowUp',
-  ARROW_DOWN: 'ArrowDown',
-  HOME: 'Home',
-  END: 'End',
-  PAGE_UP: 'PageUp',
-  PAGE_DOWN: 'PageDown',
-};
-
-// Events that can constitute the user releasing drag on a slider
-const UP_EVENTS = ['mouseup', 'pointerup', 'touchend'];
-
-/**
- * @extends {MDCFoundation<!MDCSliderAdapter>}
- */
-class MDCSliderFoundation extends MDCFoundation {
-  /** @return enum {cssClasses} */
-  static get cssClasses() {
-    return cssClasses$10;
-  }
-
-  /** @return enum {strings} */
-  static get strings() {
-    return strings$11;
-  }
-
-  /** @return enum {numbers} */
-  static get numbers() {
-    return numbers$3;
-  }
-
-  /** @return {!MDCSliderAdapter} */
-  static get defaultAdapter() {
-    return /** @type {!MDCSliderAdapter} */ ({
-      hasClass: (/* className: string */) => /* boolean */ false,
-      addClass: (/* className: string */) => {},
-      removeClass: (/* className: string */) => {},
-      getAttribute: (/* name: string */) => /* string|null */ null,
-      setAttribute: (/* name: string, value: string */) => {},
-      removeAttribute: (/* name: string */) => {},
-      computeBoundingRect: () => /* ClientRect */ ({
-        top: 0, right: 0, bottom: 0, left: 0, width: 0, height: 0,
-      }),
-      getTabIndex: () => /* number */ 0,
-      registerInteractionHandler: (/* type: string, handler: EventListener */) => {},
-      deregisterInteractionHandler: (/* type: string, handler: EventListener */) => {},
-      registerThumbContainerInteractionHandler: (/* type: string, handler: EventListener */) => {},
-      deregisterThumbContainerInteractionHandler: (/* type: string, handler: EventListener */) => {},
-      registerBodyInteractionHandler: (/* type: string, handler: EventListener */) => {},
-      deregisterBodyInteractionHandler: (/* type: string, handler: EventListener */) => {},
-      registerResizeHandler: (/* handler: EventListener */) => {},
-      deregisterResizeHandler: (/* handler: EventListener */) => {},
-      notifyInput: () => {},
-      notifyChange: () => {},
-      setThumbContainerStyleProperty: (/* propertyName: string, value: string */) => {},
-      setTrackStyleProperty: (/* propertyName: string, value: string */) => {},
-      setMarkerValue: (/* value: number */) => {},
-      appendTrackMarkers: (/* numMarkers: number */) => {},
-      removeTrackMarkers: () => {},
-      setLastTrackMarkersStyleProperty: (/* propertyName: string, value: string */) => {},
-      isRTL: () => /* boolean */ false,
-    });
-  }
-
-  /**
-   * Creates a new instance of MDCSliderFoundation
-   * @param {?MDCSliderAdapter} adapter
-   */
-  constructor(adapter) {
-    super(Object.assign(MDCSliderFoundation.defaultAdapter, adapter));
-    /** @private {?ClientRect} */
-    this.rect_ = null;
-    // We set this to NaN since we want it to be a number, but we can't use '0' or '-1'
-    // because those could be valid tabindices set by the client code.
-    this.savedTabIndex_ = NaN;
-    this.active_ = false;
-    this.inTransit_ = false;
-    this.isDiscrete_ = false;
-    this.hasTrackMarker_ = false;
-    this.handlingThumbTargetEvt_ = false;
-    this.min_ = 0;
-    this.max_ = 100;
-    this.step_ = 0;
-    this.value_ = 0;
-    this.disabled_ = false;
-    this.preventFocusState_ = false;
-    this.updateUIFrame_ = 0;
-    this.thumbContainerPointerHandler_ = () => {
-      this.handlingThumbTargetEvt_ = true;
-    };
-    this.mousedownHandler_ = this.createDownHandler_('mousemove');
-    this.pointerdownHandler_ = this.createDownHandler_('pointermove');
-    this.touchstartHandler_ = this.createDownHandler_(
-      'touchmove', ({targetTouches}) => targetTouches[0].pageX);
-    this.keydownHandler_ = (evt) => this.handleKeydown_(evt);
-    this.focusHandler_ = () => this.handleFocus_();
-    this.blurHandler_ = () => this.handleBlur_();
-    this.resizeHandler_ = () => this.layout();
-  }
-
-  init() {
-    this.isDiscrete_ = this.adapter_.hasClass(cssClasses$10.IS_DISCRETE);
-    this.hasTrackMarker_ = this.adapter_.hasClass(cssClasses$10.HAS_TRACK_MARKER);
-    this.adapter_.registerInteractionHandler('mousedown', this.mousedownHandler_);
-    this.adapter_.registerInteractionHandler('pointerdown', this.pointerdownHandler_);
-    this.adapter_.registerInteractionHandler('touchstart', this.touchstartHandler_);
-    this.adapter_.registerInteractionHandler('keydown', this.keydownHandler_);
-    this.adapter_.registerInteractionHandler('focus', this.focusHandler_);
-    this.adapter_.registerInteractionHandler('blur', this.blurHandler_);
-    ['mousedown', 'pointerdown', 'touchstart'].forEach((evtName) => {
-      this.adapter_.registerThumbContainerInteractionHandler(evtName, this.thumbContainerPointerHandler_);
-    });
-    this.adapter_.registerResizeHandler(this.resizeHandler_);
-    this.layout();
-    // At last step, provide a reasonable default value to discrete slider
-    if (this.isDiscrete_ && this.getStep() == 0) {
-      this.step_ = 1;
-    }
-  }
-
-  destroy() {
-    this.adapter_.deregisterInteractionHandler('mousedown', this.mousedownHandler_);
-    this.adapter_.deregisterInteractionHandler('pointerdown', this.pointerdownHandler_);
-    this.adapter_.deregisterInteractionHandler('touchstart', this.touchstartHandler_);
-    this.adapter_.deregisterInteractionHandler('keydown', this.keydownHandler_);
-    this.adapter_.deregisterInteractionHandler('focus', this.focusHandler_);
-    this.adapter_.deregisterInteractionHandler('blur', this.blurHandler_);
-    ['mousedown', 'pointerdown', 'touchstart'].forEach((evtName) => {
-      this.adapter_.deregisterThumbContainerInteractionHandler(evtName, this.thumbContainerPointerHandler_);
-    });
-    this.adapter_.deregisterResizeHandler(this.resizeHandler_);
-  }
-
-  setupTrackMarker() {
-    if (this.isDiscrete_ && this.hasTrackMarker_&& this.getStep() != 0) {
-      const min = this.getMin();
-      const max = this.getMax();
-      const step = this.getStep();
-      let numMarkers = (max - min) / step;
-
-      // In case distance between max & min is indivisible to step,
-      // we place the secondary to last marker proportionally at where thumb
-      // could reach and place the last marker at max value
-      const indivisible = Math.ceil(numMarkers) !== numMarkers;
-      if (indivisible) {
-        numMarkers = Math.ceil(numMarkers);
-      }
-
-      this.adapter_.removeTrackMarkers();
-      this.adapter_.appendTrackMarkers(numMarkers);
-
-      if (indivisible) {
-        const lastStepRatio = (max - numMarkers * step) / step + 1;
-        const flex = getCorrectPropertyName(window, 'flex');
-        this.adapter_.setLastTrackMarkersStyleProperty(flex, String(lastStepRatio));
-      }
-    }
-  }
-
-  layout() {
-    this.rect_ = this.adapter_.computeBoundingRect();
-    this.updateUIForCurrentValue_();
-  }
-
-  /** @return {number} */
-  getValue() {
-    return this.value_;
-  }
-
-  /** @param {number} value */
-  setValue(value) {
-    this.setValue_(value, false);
-  }
-
-  /** @return {number} */
-  getMax() {
-    return this.max_;
-  }
-
-  /** @param {number} max */
-  setMax(max) {
-    if (max < this.min_) {
-      throw new Error('Cannot set max to be less than the slider\'s minimum value');
-    }
-    this.max_ = max;
-    this.setValue_(this.value_, false, true);
-    this.adapter_.setAttribute(strings$11.ARIA_VALUEMAX, String(this.max_));
-    this.setupTrackMarker();
-  }
-
-  /** @return {number} */
-  getMin() {
-    return this.min_;
-  }
-
-  /** @param {number} min */
-  setMin(min) {
-    if (min > this.max_) {
-      throw new Error('Cannot set min to be greater than the slider\'s maximum value');
-    }
-    this.min_ = min;
-    this.setValue_(this.value_, false, true);
-    this.adapter_.setAttribute(strings$11.ARIA_VALUEMIN, String(this.min_));
-    this.setupTrackMarker();
-  }
-
-  /** @return {number} */
-  getStep() {
-    return this.step_;
-  }
-
-  /** @param {number} step */
-  setStep(step) {
-    if (step < 0) {
-      throw new Error('Step cannot be set to a negative number');
-    }
-    if (this.isDiscrete_ && (typeof(step) !== 'number' || step < 1)) {
-      step = 1;
-    }
-    this.step_ = step;
-    this.setValue_(this.value_, false, true);
-    this.setupTrackMarker();
-  }
-
-  /** @return {boolean} */
-  isDisabled() {
-    return this.disabled_;
-  }
-
-  /** @param {boolean} disabled */
-  setDisabled(disabled) {
-    this.disabled_ = disabled;
-    this.toggleClass_(cssClasses$10.DISABLED, this.disabled_);
-    if (this.disabled_) {
-      this.savedTabIndex_ = this.adapter_.getTabIndex();
-      this.adapter_.setAttribute(strings$11.ARIA_DISABLED, 'true');
-      this.adapter_.removeAttribute('tabindex');
-    } else {
-      this.adapter_.removeAttribute(strings$11.ARIA_DISABLED);
-      if (!isNaN(this.savedTabIndex_)) {
-        this.adapter_.setAttribute('tabindex', String(this.savedTabIndex_));
-      }
-    }
-  }
-
-  /**
-   * Creates a handler for mouse/touch/pointer down events
-   * @param {string} moveEvt
-   * @param {(function(!Event): number)=} getPageX
-   * @return {function(!Event): undefined}
-   */
-  createDownHandler_(moveEvt, getPageX = ({pageX}) => pageX) {
-    const moveHandler = (evt) => {
-      evt.preventDefault();
-      this.setValueFromEvt_(evt, /** @type {function(!Event): number} */ (getPageX));
-    };
-
-    // Note: upHandler is [de]registered on ALL potential pointer-related release event types, since some browsers
-    // do not always fire these consistently in pairs.
-    // (See https://github.com/material-components/material-components-web/issues/1192)
-    const upHandler = () => {
-      this.setActive_(false);
-      this.adapter_.deregisterBodyInteractionHandler(moveEvt, moveHandler);
-      UP_EVENTS.forEach((type) => this.adapter_.deregisterBodyInteractionHandler(type, upHandler));
-      this.adapter_.notifyChange();
-    };
-
-    const downHandler = (evt) => {
-      if (this.disabled_) {
-        return;
-      }
-
-      this.preventFocusState_ = true;
-      this.setInTransit_(!this.handlingThumbTargetEvt_);
-      this.handlingThumbTargetEvt_ = false;
-
-      this.setActive_(true);
-
-      this.adapter_.registerBodyInteractionHandler(moveEvt, moveHandler);
-      UP_EVENTS.forEach((type) => this.adapter_.registerBodyInteractionHandler(type, upHandler));
-      this.setValueFromEvt_(evt, /** @type {function(!Event): number} */ (getPageX));
-    };
-
-    return downHandler;
-  }
-
-  /**
-   * Sets the slider value from an event
-   * @param {!Event} evt
-   * @param {function(!Event): number} getPageX
-   */
-  setValueFromEvt_(evt, getPageX) {
-    const pageX = getPageX(evt);
-    const value = this.computeValueFromPageX_(pageX);
-    this.setValue_(value, true);
-  }
-
-  /**
-   * Computes the new value from the pageX position
-   * @param {number} pageX
-   * @return {number}
-   */
-  computeValueFromPageX_(pageX) {
-    const {max_: max, min_: min} = this;
-    const xPos = pageX - this.rect_.left;
-    let pctComplete = xPos / this.rect_.width;
-    if (this.adapter_.isRTL()) {
-      pctComplete = 1 - pctComplete;
-    }
-    // Fit the percentage complete between the range [min,max]
-    // by remapping from [0, 1] to [min, min+(max-min)].
-    return min + pctComplete * (max - min);
-  }
-
-  /**
-   * Handles keydown events
-   * @param {!Event} evt
-   */
-  handleKeydown_(evt) {
-    const keyId = this.getKeyId_(evt);
-    const value = this.getValueForKeyId_(keyId);
-    if (isNaN(value)) {
-      return;
-    }
-
-    // Prevent page from scrolling due to key presses that would normally scroll the page
-    evt.preventDefault();
-    this.adapter_.addClass(cssClasses$10.FOCUS);
-    this.setValue_(value, true);
-    this.adapter_.notifyChange();
-  }
-
-  /**
-   * Returns the computed name of the event
-   * @param {!Event} kbdEvt
-   * @return {string}
-   */
-  getKeyId_(kbdEvt) {
-    if (kbdEvt.key === KEY_IDS.ARROW_LEFT || kbdEvt.keyCode === 37) {
-      return KEY_IDS.ARROW_LEFT;
-    }
-    if (kbdEvt.key === KEY_IDS.ARROW_RIGHT || kbdEvt.keyCode === 39) {
-      return KEY_IDS.ARROW_RIGHT;
-    }
-    if (kbdEvt.key === KEY_IDS.ARROW_UP || kbdEvt.keyCode === 38) {
-      return KEY_IDS.ARROW_UP;
-    }
-    if (kbdEvt.key === KEY_IDS.ARROW_DOWN || kbdEvt.keyCode === 40) {
-      return KEY_IDS.ARROW_DOWN;
-    }
-    if (kbdEvt.key === KEY_IDS.HOME || kbdEvt.keyCode === 36) {
-      return KEY_IDS.HOME;
-    }
-    if (kbdEvt.key === KEY_IDS.END || kbdEvt.keyCode === 35) {
-      return KEY_IDS.END;
-    }
-    if (kbdEvt.key === KEY_IDS.PAGE_UP || kbdEvt.keyCode === 33) {
-      return KEY_IDS.PAGE_UP;
-    }
-    if (kbdEvt.key === KEY_IDS.PAGE_DOWN || kbdEvt.keyCode === 34) {
-      return KEY_IDS.PAGE_DOWN;
-    }
-
-    return '';
-  }
-
-  /**
-   * Computes the value given a keyboard key ID
-   * @param {string} keyId
-   * @return {number}
-   */
-  getValueForKeyId_(keyId) {
-    const {max_: max, min_: min, step_: step} = this;
-    let delta = step || (max - min) / 100;
-    const valueNeedsToBeFlipped = this.adapter_.isRTL() && (
-      keyId === KEY_IDS.ARROW_LEFT || keyId === KEY_IDS.ARROW_RIGHT
-    );
-    if (valueNeedsToBeFlipped) {
-      delta = -delta;
-    }
-
-    switch (keyId) {
-    case KEY_IDS.ARROW_LEFT:
-    case KEY_IDS.ARROW_DOWN:
-      return this.value_ - delta;
-    case KEY_IDS.ARROW_RIGHT:
-    case KEY_IDS.ARROW_UP:
-      return this.value_ + delta;
-    case KEY_IDS.HOME:
-      return this.min_;
-    case KEY_IDS.END:
-      return this.max_;
-    case KEY_IDS.PAGE_UP:
-      return this.value_ + delta * numbers$3.PAGE_FACTOR;
-    case KEY_IDS.PAGE_DOWN:
-      return this.value_ - delta * numbers$3.PAGE_FACTOR;
-    default:
-      return NaN;
-    }
-  }
-
-  handleFocus_() {
-    if (this.preventFocusState_) {
-      return;
-    }
-    this.adapter_.addClass(cssClasses$10.FOCUS);
-  }
-
-  handleBlur_() {
-    this.preventFocusState_ = false;
-    this.adapter_.removeClass(cssClasses$10.FOCUS);
-  }
-
-  /**
-   * Sets the value of the slider
-   * @param {number} value
-   * @param {boolean} shouldFireInput
-   * @param {boolean=} force
-   */
-  setValue_(value, shouldFireInput, force = false) {
-    if (value === this.value_ && !force) {
-      return;
-    }
-
-    const {min_: min, max_: max} = this;
-    const valueSetToBoundary = value === min || value === max;
-    if (this.step_ && !valueSetToBoundary) {
-      value = this.quantize_(value);
-    }
-    if (value < min) {
-      value = min;
-    } else if (value > max) {
-      value = max;
-    }
-    this.value_ = value;
-    this.adapter_.setAttribute(strings$11.ARIA_VALUENOW, String(this.value_));
-    this.updateUIForCurrentValue_();
-
-    if (shouldFireInput) {
-      this.adapter_.notifyInput();
-      if (this.isDiscrete_) {
-        this.adapter_.setMarkerValue(value);
-      }
-    }
-  }
-
-  /**
-   * Calculates the quantized value
-   * @param {number} value
-   * @return {number}
-   */
-  quantize_(value) {
-    const numSteps = Math.round(value / this.step_);
-    const quantizedVal = numSteps * this.step_;
-    return quantizedVal;
-  }
-
-  updateUIForCurrentValue_() {
-    const {max_: max, min_: min, value_: value} = this;
-    const pctComplete = (value - min) / (max - min);
-    let translatePx = pctComplete * this.rect_.width;
-    if (this.adapter_.isRTL()) {
-      translatePx = this.rect_.width - translatePx;
-    }
-
-    const transformProp = getCorrectPropertyName(window, 'transform');
-    const transitionendEvtName = getCorrectEventName(window, 'transitionend');
-
-    if (this.inTransit_) {
-      const onTransitionEnd = () => {
-        this.setInTransit_(false);
-        this.adapter_.deregisterThumbContainerInteractionHandler(transitionendEvtName, onTransitionEnd);
-      };
-      this.adapter_.registerThumbContainerInteractionHandler(transitionendEvtName, onTransitionEnd);
-    }
-
-    this.updateUIFrame_ = requestAnimationFrame(() => {
-      // NOTE(traviskaufman): It would be nice to use calc() here,
-      // but IE cannot handle calcs in transforms correctly.
-      // See: https://goo.gl/NC2itk
-      // Also note that the -50% offset is used to center the slider thumb.
-      this.adapter_.setThumbContainerStyleProperty(transformProp, `translateX(${translatePx}px) translateX(-50%)`);
-      this.adapter_.setTrackStyleProperty(transformProp, `scaleX(${pctComplete})`);
-    });
-  }
-
-  /**
-   * Toggles the active state of the slider
-   * @param {boolean} active
-   */
-  setActive_(active) {
-    this.active_ = active;
-    this.toggleClass_(cssClasses$10.ACTIVE, this.active_);
-  }
-
-  /**
-   * Toggles the inTransit state of the slider
-   * @param {boolean} inTransit
-   */
-  setInTransit_(inTransit) {
-    this.inTransit_ = inTransit;
-    this.toggleClass_(cssClasses$10.IN_TRANSIT, this.inTransit_);
-  }
-
-  /**
-   * Conditionally adds or removes a class based on shouldBePresent
-   * @param {string} className
-   * @param {boolean} shouldBePresent
-   */
-  toggleClass_(className, shouldBePresent) {
-    if (shouldBePresent) {
-      this.adapter_.addClass(className);
-    } else {
-      this.adapter_.removeClass(className);
-    }
-  }
-}
-
-const LAST_MARKER_SELECTOR = ".mdc-slider__track-marker:last-child";
-function assertValue(value, fn) {
-  if(typeof value === "string") {
-    value = parseFloat(value);
-
-    if(isNaN(value)) return;
-  }
-
-  fn(value);
-}
-
-var Slider$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-slider",class:_vm.cssClasses,attrs:{"role":"slider","aria-label":_vm.label,"tabindex":0}},[_c('div',{staticClass:"mdc-slider__track-container"},[_c('div',{ref:"track",staticClass:"mdc-slider__track"}),(_vm.displayMarkers)?_c('div',{staticClass:"mdc-slider__track-marker-container"},_vm._l((_vm.markers),function(n){return _c('div',{key:n,staticClass:"mdc-slider__track-marker"})})):_vm._e()]),_c('div',{ref:"thumbContainer",staticClass:"mdc-slider__thumb-container"},[(_vm.discrete)?_c('div',{staticClass:"mdc-slider__pin"},[_c('span',{staticClass:"mdc-slider__pin-value-marker"},[_vm._v(_vm._s(_vm.markerValue))])]):_vm._e(),_c('svg',{staticClass:"mdc-slider__thumb",attrs:{"width":"21","height":"21"}},[_c('circle',{attrs:{"cx":"10.5","cy":"10.5","r":"7.875"}})]),_c('div',{staticClass:"mdc-slider__focus-ring"})])])},staticRenderFns: [],
-  name: "MdcSlider",
-  props: {
-    label: String,
-    disabled: Boolean,
-    displayMarkers: Boolean,
-
-    step: {
-      type: [String, Number],
-      default: 0,
-      validator: value => value >= 0
-    },
-    value: {
-      type: [String, Number],
-      default: 0
-    },
-    min: {
-      type: [String, Number],
-      default: 0
-    },
-    max: {
-      type: [String, Number],
-      default: 100
-    }
-  },
-  watch: {
-    value(value) {
-      assertValue(value, value => this.foundation.setValue(value));
-    },
-    min(value) {
-      assertValue(value, value => this.foundation.setMin(value));
-    },
-    max(value) {
-      assertValue(value, value => this.foundation.setMax(value));
-    },
-    step(value) {
-      assertValue(value, value => this.foundation.setStep(value));
-    },
-    disabled(value) {
-      this.foundation.setDisabled(value);
-    }
-  },
-  data() {
-    return { markerValue: 0, markers: 0 };
-  },
-  model: {
-    prop: "value",
-    event: "change"
-  },
-  mounted() {
-    const { $el } = this;
-    const { track, thumbContainer } = this.$refs;
-    const styles = getComputedStyle($el);
-
-    this.foundation = new MDCSliderFoundation({
-      hasClass: className => $el.classList.contains(className),
-      addClass: className => $el.classList.add(className),
-      removeClass: className => $el.classList.remove(className),
-      getAttribute: name => $el.getAttribute(name),
-      setAttribute: (name, value) => $el.setAttribute(name, value),
-      removeAttribute: name => $el.removeAttribute(name),
-      computeBoundingRect: () => $el.getBoundingClientRect(),
-      getTabIndex: () => $el.tabIndex,
-      registerInteractionHandler: (type, handler) => $el.addEventListener(type, handler),
-      deregisterInteractionHandler: (type, handler) => $el.removeEventListener(type, handler),
-      registerThumbContainerInteractionHandler: (type, handler) => {
-        thumbContainer.addEventListener(type, handler);
-      },
-      deregisterThumbContainerInteractionHandler: (type, handler) => {
-        thumbContainer.removeEventListener(type, handler);
-      },
-      registerBodyInteractionHandler: (type, handler) => {
-        document.body.addEventListener(type, handler);
-      },
-      deregisterBodyInteractionHandler: (type, handler) => {
-        document.body.removeEventListener(type, handler);
-      },
-      registerResizeHandler: handler => window.addEventListener("resize", handler),
-      deregisterResizeHandler: handler => window.removeEventListener("resize", handler),
-      notifyInput: () => this.$emit("input", this.foundation.getValue()),
-      notifyChange: () => this.$emit("change", this.foundation.getValue()),
-      setThumbContainerStyleProperty: (prop, value) => thumbContainer.style.setProperty(prop, value),
-      setTrackStyleProperty: (prop, value) => track.style.setProperty(prop, value),
-      setMarkerValue: value => this.markerValue = value,
-      appendTrackMarkers: numMarkers => this.markers = numMarkers,
-      removeTrackMarkers: () => this.markers = 0,
-      setLastTrackMarkersStyleProperty: (propertyName, value) => {
-        // We remove and append new nodes, thus, the last track marker must be dynamically found.
-        const $marker = $el.querySelector(LAST_MARKER_SELECTOR);
-        $marker.style.setProperty(propertyName, value);
-      },
-      isRTL: () => styles.direction === "rtl",
-    });
-
-    this.foundation.init();
-    assertValue(this.value, value => this.foundation.setValue(value));
-    assertValue(this.min, value => this.foundation.setMin(value));
-    assertValue(this.max, value => this.foundation.setMax(value));
-    assertValue(this.step, value => this.foundation.setStep(value));
-    this.foundation.setDisabled(this.disabled);
-  },
-  beforeDestroy() {
-    this.foundation.destroy();
-  },
-  computed: {
-    cssClasses() {
-      return {
-        "mdc-slider--discrete": this.discrete,
-        "mdc-slider--display-markers": this.displayMarkers
-      };
-    },
-    discrete() {
-      return !!this.step;
-    }
-  }
-};
-
-function install$17(Vue) {
-  Vue.component(Slider$1.name, Slider$1);
-}
-
-var Slider = Object.freeze({
-	Slider: Slider$1,
-	install: install$17
+var Select$1 = /*#__PURE__*/Object.freeze({
+  Select: Select,
+  SelectItem: SelectItem,
+  install: install$17
 });
 
 /**
@@ -6447,7 +6270,7 @@ var Slider = Object.freeze({
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-const cssClasses$11 = {
+const cssClasses$13 = {
   ROOT: 'mdc-snackbar',
   TEXT: 'mdc-snackbar__text',
   ACTION_WRAPPER: 'mdc-snackbar__action-wrapper',
@@ -6465,7 +6288,7 @@ const strings$12 = {
   HIDE_EVENT: 'MDCSnackbar:hide',
 };
 
-const numbers$4 = {
+const numbers$3 = {
   MESSAGE_TIMEOUT: 2750,
 };
 
@@ -6487,7 +6310,7 @@ const numbers$4 = {
 
 class MDCSnackbarFoundation extends MDCFoundation {
   static get cssClasses() {
-    return cssClasses$11;
+    return cssClasses$13;
   }
 
   static get strings() {
@@ -6545,7 +6368,7 @@ class MDCSnackbarFoundation extends MDCFoundation {
       this.snackbarHasFocus_ = true;
 
       if (!this.adapter_.visibilityIsHidden()) {
-        setTimeout(this.cleanup_.bind(this), this.snackbarData_.timeout || numbers$4.MESSAGE_TIMEOUT);
+        setTimeout(this.cleanup_.bind(this), this.snackbarData_.timeout || numbers$3.MESSAGE_TIMEOUT);
       }
     };
     this.interactionHandler_ = (evt) => {
@@ -6561,7 +6384,7 @@ class MDCSnackbarFoundation extends MDCFoundation {
     this.blurHandler_ = () => {
       clearTimeout(this.timeoutId_);
       this.snackbarHasFocus_ = false;
-      this.timeoutId_ = setTimeout(this.cleanup_.bind(this), this.snackbarData_.timeout || numbers$4.MESSAGE_TIMEOUT);
+      this.timeoutId_ = setTimeout(this.cleanup_.bind(this), this.snackbarData_.timeout || numbers$3.MESSAGE_TIMEOUT);
     };
   }
 
@@ -6612,7 +6435,7 @@ class MDCSnackbarFoundation extends MDCFoundation {
       this.adapter_.registerCapturedInteractionHandler(evtType, this.interactionHandler_);
     });
 
-    const {ACTIVE, MULTILINE, ACTION_ON_BOTTOM} = cssClasses$11;
+    const {ACTIVE, MULTILINE, ACTION_ON_BOTTOM} = cssClasses$13;
 
     this.adapter_.setMessageText(this.snackbarData_.message);
 
@@ -6638,7 +6461,7 @@ class MDCSnackbarFoundation extends MDCFoundation {
     this.adapter_.unsetAriaHidden();
     this.adapter_.notifyShow();
 
-    this.timeoutId_ = setTimeout(this.cleanup_.bind(this), this.snackbarData_.timeout || numbers$4.MESSAGE_TIMEOUT);
+    this.timeoutId_ = setTimeout(this.cleanup_.bind(this), this.snackbarData_.timeout || numbers$3.MESSAGE_TIMEOUT);
   }
 
   handlePossibleTabKeyboardFocus_() {
@@ -6676,7 +6499,7 @@ class MDCSnackbarFoundation extends MDCFoundation {
     const allowDismissal = !this.snackbarHasFocus_ || this.actionWasClicked_;
 
     if (allowDismissal) {
-      const {ACTIVE, MULTILINE, ACTION_ON_BOTTOM} = cssClasses$11;
+      const {ACTIVE, MULTILINE, ACTION_ON_BOTTOM} = cssClasses$13;
 
       this.adapter_.removeClass(ACTIVE);
 
@@ -6714,7 +6537,7 @@ class MDCSnackbarFoundation extends MDCFoundation {
 }
 
 const transitionend = getCorrectEventName(window, "transitionend");
-var Snackbar$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-snackbar",class:_vm.cssClasses,attrs:{"aria-live":"assertive","aria-atomic":"true","aria-hidden":_vm.hidden && 'true'}},[_c('div',{staticClass:"mdc-snackbar__text"},[_vm._v(_vm._s(_vm.messageText))]),_c('div',{staticClass:"mdc-snackbar__action__wrapper"},[_c('button',{ref:"actionButton",staticClass:"mdc-snackbar__action-button",attrs:{"type":"button","aria-hidden":_vm.actionHidden && 'true'}},[_vm._v(_vm._s(_vm.actionText))])])])},staticRenderFns: [],
+var Snackbar = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-snackbar",class:_vm.cssClasses,attrs:{"aria-live":"assertive","aria-atomic":"true","aria-hidden":_vm.hidden && 'true'}},[_c('div',{staticClass:"mdc-snackbar__text"},[_vm._v(_vm._s(_vm.messageText))]),_c('div',{staticClass:"mdc-snackbar__action__wrapper"},[_c('button',{ref:"actionButton",staticClass:"mdc-snackbar__action-button",attrs:{"type":"button","aria-hidden":_vm.actionHidden && 'true'}},[_vm._v(_vm._s(_vm.actionText))])])])},staticRenderFns: [],
   name: "MdcSnackbar",
   props: {
     alignStart: Boolean,
@@ -6736,12 +6559,8 @@ var Snackbar$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var 
     const { actionButton } = this.$refs;
 
     this.foundation = new MDCSnackbarFoundation({
-      addClass: className => {
-        $el.classList.add(className);
-      },
-      removeClass: className => {
-        $el.classList.remove(className);
-      },
+      addClass: className => $el.classList.add(className),
+      removeClass: className => $el.classList.remove(className),
       setAriaHidden: () => {
         this.hidden = true;
       },
@@ -6799,24 +6618,25 @@ var Snackbar$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var 
 };
 
 function install$18(Vue) {
-  Vue.component(Snackbar$1.name, Snackbar$1);
+  Vue.component(Snackbar.name, Snackbar);
 }
 
-var Snackbar = Object.freeze({
-	Snackbar: Snackbar$1,
-	install: install$18
+var Snackbar$1 = /*#__PURE__*/Object.freeze({
+  Snackbar: Snackbar,
+  install: install$18
 });
 
-var Switch$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-switch",class:_vm.cssClasses},[_c('input',_vm._b({directives:[{name:"model",rawName:"v-model",value:(_vm.model),expression:"model"}],staticClass:"mdc-switch__native-control",attrs:{"type":"checkbox","disabled":_vm.disabled},domProps:{"checked":Array.isArray(_vm.model)?_vm._i(_vm.model,null)>-1:(_vm.model)},on:{"change":function($event){var $$a=_vm.model,$$el=$event.target,$$c=$$el.checked?(true):(false);if(Array.isArray($$a)){var $$v=null,$$i=_vm._i($$a,$$v);if($$el.checked){$$i<0&&(_vm.model=$$a.concat([$$v]));}else{$$i>-1&&(_vm.model=$$a.slice(0,$$i).concat($$a.slice($$i+1)));}}else{_vm.model=$$c;}}}},'input',_vm.$attrs,false)),_vm._m(0,false,false)])},staticRenderFns: [function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-switch__background"},[_c('div',{staticClass:"mdc-switch__knob"})])}],
+var Switch = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-switch",class:_vm.cssClasses},[_c('input',_vm._b({directives:[{name:"model",rawName:"v-model",value:(_vm.model),expression:"model"}],staticClass:"mdc-switch__native-control",attrs:{"type":"checkbox","disabled":_vm.disabled},domProps:{"checked":Array.isArray(_vm.model)?_vm._i(_vm.model,null)>-1:(_vm.model)},on:{"change":function($event){var $$a=_vm.model,$$el=$event.target,$$c=$$el.checked?(true):(false);if(Array.isArray($$a)){var $$v=null,$$i=_vm._i($$a,$$v);if($$el.checked){$$i<0&&(_vm.model=$$a.concat([$$v]));}else{$$i>-1&&(_vm.model=$$a.slice(0,$$i).concat($$a.slice($$i+1)));}}else{_vm.model=$$c;}}}},'input',_vm.$attrs,false)),_vm._m(0)])},staticRenderFns: [function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-switch__background"},[_c('div',{staticClass:"mdc-switch__knob"})])}],
   name: "MdcSwitch",
   inheritAttrs: false,
-  props: {
-    disabled: Boolean,
-    checked: [Boolean, Array]
-  },
   model: {
     prop: "checked",
     event: "change"
+  },
+  
+  props: {
+    disabled: Boolean,
+    checked: [Boolean, Array]
   },
   computed: {
     model: {
@@ -6836,12 +6656,813 @@ var Switch$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c
 };
 
 function install$19(Vue) {
-  Vue.component(Switch$1.name, Switch$1);
+  Vue.component(Switch.name, Switch);
 }
 
-var Switch = Object.freeze({
-	Switch: Switch$1,
-	install: install$19
+var Switch$1 = /*#__PURE__*/Object.freeze({
+  Switch: Switch,
+  install: install$19
+});
+
+/**
+ * Copyright 2017 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+const cssClasses$14 = {
+  ACTIVE: 'mdc-tab--active',
+};
+
+const strings$13 = {
+  SELECTED_EVENT: 'MDCTab:selected',
+};
+
+/**
+ * Copyright 2017 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+class MDCTabFoundation extends MDCFoundation {
+  static get cssClasses() {
+    return cssClasses$14;
+  }
+
+  static get strings() {
+    return strings$13;
+  }
+
+  static get defaultAdapter() {
+    return {
+      addClass: (/* className: string */) => {},
+      removeClass: (/* className: string */) => {},
+      registerInteractionHandler: (/* type: string, handler: EventListener */) => {},
+      deregisterInteractionHandler: (/* type: string, handler: EventListener */) => {},
+      getOffsetWidth: () => /* number */ 0,
+      getOffsetLeft: () => /* number */ 0,
+      notifySelected: () => {},
+    };
+  }
+
+  constructor(adapter = {}) {
+    super(Object.assign(MDCTabFoundation.defaultAdapter, adapter));
+
+    this.computedWidth_ = 0;
+    this.computedLeft_ = 0;
+    this.isActive_ = false;
+    this.preventDefaultOnClick_ = false;
+
+    this.clickHandler_ = (evt) => {
+      if (this.preventDefaultOnClick_) {
+        evt.preventDefault();
+      }
+      this.adapter_.notifySelected();
+    };
+
+    this.keydownHandler_ = (evt) => {
+      if (evt.key && evt.key === 'Enter' || evt.keyCode === 13) {
+        this.adapter_.notifySelected();
+      }
+    };
+  }
+
+  init() {
+    this.adapter_.registerInteractionHandler('click', this.clickHandler_);
+    this.adapter_.registerInteractionHandler('keydown', this.keydownHandler_);
+  }
+
+  destroy() {
+    this.adapter_.deregisterInteractionHandler('click', this.clickHandler_);
+    this.adapter_.deregisterInteractionHandler('keydown', this.keydownHandler_);
+  }
+
+  getComputedWidth() {
+    return this.computedWidth_;
+  }
+
+  getComputedLeft() {
+    return this.computedLeft_;
+  }
+
+  isActive() {
+    return this.isActive_;
+  }
+
+  setActive(isActive) {
+    this.isActive_ = isActive;
+    if (this.isActive_) {
+      this.adapter_.addClass(cssClasses$14.ACTIVE);
+    } else {
+      this.adapter_.removeClass(cssClasses$14.ACTIVE);
+    }
+  }
+
+  preventsDefaultOnClick() {
+    return this.preventDefaultOnClick_;
+  }
+
+  setPreventDefaultOnClick(preventDefaultOnClick) {
+    this.preventDefaultOnClick_ = preventDefaultOnClick;
+  }
+
+  measureSelf() {
+    this.computedWidth_ = this.adapter_.getOffsetWidth();
+    this.computedLeft_ = this.adapter_.getOffsetLeft();
+  }
+}
+
+var Tab = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('mdc-link',_vm._b({staticClass:"mdc-tab",attrs:{"role":"tab","link":_vm.link}},'mdc-link',_vm.$_link,false),[(_vm.icon)?[_c('mdc-icon',{attrs:{"name":"tab","icon":_vm.icon}}),(_vm.text)?_c('span',{staticClass:"mdc-tab__icon-text"},[_vm._v(_vm._s(_vm.text))]):_vm._e()]:[_vm._v(_vm._s(_vm.text))]],2)},staticRenderFns: [],
+  name: "MdcTab",
+  mixins: [ Ripple(), install$6("mdc-tab--active") ],
+  components: { MdcIcon },
+  props: {
+    link: String,
+    icon: String,
+    text: String
+  },
+
+  mounted() {
+    const { $el } = this;
+
+    this.foundation = new MDCTabFoundation({
+      addClass: className => $el.classList.add(className),
+      removeClass: className => $el.classList.remove(className),
+      registerInteractionHandler: (type, handler) => $el.addEventListener(type, handler),
+      deregisterInteractionHandler: (type, handler) => $el.removeEventListener(type, handler),
+      getOffsetWidth: () => $el.offsetWidth,
+      getOffsetLeft: () => $el.offsetLeft,
+      notifySelected: () => this.$parent.$emit("selected", this),
+    });
+    this.foundation.init();
+  },
+  beforeDestroy() {
+    this.foundation.destroy();
+  },
+  methods: {
+    computedWidth() {
+      return this.foundation.getComputedWidth();
+    },
+    computedLeft() {
+      return this.foundation.getComputedLeft();
+    },
+    setActive(value) {
+      this.foundation.setActive(value);
+    },
+    isActive() {
+      return this.foundation.isActive();
+    },
+    preventsDefaultOnClick() {
+      return this.foundation.preventsDefaultOnClick();
+    },
+    preventDefaultOnClick(preventDefaultOnClick) {
+      this.foundation.setPreventDefaultOnClick(preventDefaultOnClick);
+    },
+    measureSelf() {
+      this.foundation.measureSelf();
+    }
+  }
+};
+
+/**
+ * Copyright 2017 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+const cssClasses$15 = {
+  UPGRADED: 'mdc-tab-bar-upgraded',
+};
+
+const strings$14 = {
+  TAB_SELECTOR: '.mdc-tab',
+  INDICATOR_SELECTOR: '.mdc-tab-bar__indicator',
+  CHANGE_EVENT: 'MDCTabBar:change',
+};
+
+/**
+ * Copyright 2017 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+class MDCTabBarFoundation extends MDCFoundation {
+  static get cssClasses() {
+    return cssClasses$15;
+  }
+
+  static get strings() {
+    return strings$14;
+  }
+
+  static get defaultAdapter() {
+    return {
+      addClass: (/* className: string */) => {},
+      removeClass: (/* className: string */) => {},
+      bindOnMDCTabSelectedEvent: () => {},
+      unbindOnMDCTabSelectedEvent: () => {},
+      registerResizeHandler: (/* handler: EventListener */) => {},
+      deregisterResizeHandler: (/* handler: EventListener */) => {},
+      getOffsetWidth: () => /* number */ 0,
+      setStyleForIndicator: (/* propertyName: string, value: string */) => {},
+      getOffsetWidthForIndicator: () => /* number */ 0,
+      notifyChange: (/* evtData: {activeTabIndex: number} */) => {},
+      getNumberOfTabs: () => /* number */ 0,
+      isTabActiveAtIndex: (/* index: number */) => /* boolean */ false,
+      setTabActiveAtIndex: (/* index: number, isActive: true */) => {},
+      isDefaultPreventedOnClickForTabAtIndex: (/* index: number */) => /* boolean */ false,
+      setPreventDefaultOnClickForTabAtIndex: (/* index: number, preventDefaultOnClick: boolean */) => {},
+      measureTabAtIndex: (/* index: number */) => {},
+      getComputedWidthForTabAtIndex: (/* index: number */) => /* number */ 0,
+      getComputedLeftForTabAtIndex: (/* index: number */) => /* number */ 0,
+    };
+  }
+
+  constructor(adapter) {
+    super(Object.assign(MDCTabBarFoundation.defaultAdapter, adapter));
+
+    this.isIndicatorShown_ = false;
+    this.computedWidth_ = 0;
+    this.computedLeft_ = 0;
+    this.activeTabIndex_ = 0;
+    this.layoutFrame_ = 0;
+    this.resizeHandler_ = () => this.layout();
+  }
+
+  init() {
+    this.adapter_.addClass(cssClasses$15.UPGRADED);
+    this.adapter_.bindOnMDCTabSelectedEvent();
+    this.adapter_.registerResizeHandler(this.resizeHandler_);
+    const activeTabIndex = this.findActiveTabIndex_();
+    if (activeTabIndex >= 0) {
+      this.activeTabIndex_ = activeTabIndex;
+    }
+    this.layout();
+  }
+
+  destroy() {
+    this.adapter_.removeClass(cssClasses$15.UPGRADED);
+    this.adapter_.unbindOnMDCTabSelectedEvent();
+    this.adapter_.deregisterResizeHandler(this.resizeHandler_);
+  }
+
+  layoutInternal_() {
+    this.forEachTabIndex_((index) => this.adapter_.measureTabAtIndex(index));
+    this.computedWidth_ = this.adapter_.getOffsetWidth();
+    this.layoutIndicator_();
+  }
+
+  layoutIndicator_() {
+    const isIndicatorFirstRender = !this.isIndicatorShown_;
+
+    // Ensure that indicator appears in the right position immediately for correct first render.
+    if (isIndicatorFirstRender) {
+      this.adapter_.setStyleForIndicator('transition', 'none');
+    }
+
+    const translateAmtForActiveTabLeft = this.adapter_.getComputedLeftForTabAtIndex(this.activeTabIndex_);
+    const scaleAmtForActiveTabWidth =
+      this.adapter_.getComputedWidthForTabAtIndex(this.activeTabIndex_) / this.adapter_.getOffsetWidth();
+
+    const transformValue = `translateX(${translateAmtForActiveTabLeft}px) scale(${scaleAmtForActiveTabWidth}, 1)`;
+    this.adapter_.setStyleForIndicator(getCorrectPropertyName(window, 'transform'), transformValue);
+
+    if (isIndicatorFirstRender) {
+      // Force layout so that transform styles to take effect.
+      this.adapter_.getOffsetWidthForIndicator();
+      this.adapter_.setStyleForIndicator('transition', '');
+      this.adapter_.setStyleForIndicator('visibility', 'visible');
+      this.isIndicatorShown_ = true;
+    }
+  }
+
+  findActiveTabIndex_() {
+    let activeTabIndex = -1;
+    this.forEachTabIndex_((index) => {
+      if (this.adapter_.isTabActiveAtIndex(index)) {
+        activeTabIndex = index;
+        return true;
+      }
+    });
+    return activeTabIndex;
+  }
+
+  forEachTabIndex_(iterator) {
+    const numTabs = this.adapter_.getNumberOfTabs();
+    for (let index = 0; index < numTabs; index++) {
+      const shouldBreak = iterator(index);
+      if (shouldBreak) {
+        break;
+      }
+    }
+  }
+
+  layout() {
+    if (this.layoutFrame_) {
+      cancelAnimationFrame(this.layoutFrame_);
+    }
+
+    this.layoutFrame_ = requestAnimationFrame(() => {
+      this.layoutInternal_();
+      this.layoutFrame_ = 0;
+    });
+  }
+
+  switchToTabAtIndex(index, shouldNotify) {
+    if (index === this.activeTabIndex_) {
+      return;
+    }
+
+    if (index < 0 || index >= this.adapter_.getNumberOfTabs()) {
+      throw new Error(`Out of bounds index specified for tab: ${index}`);
+    }
+
+    const prevActiveTabIndex = this.activeTabIndex_;
+    this.activeTabIndex_ = index;
+    requestAnimationFrame(() => {
+      if (prevActiveTabIndex >= 0) {
+        this.adapter_.setTabActiveAtIndex(prevActiveTabIndex, false);
+      }
+      this.adapter_.setTabActiveAtIndex(this.activeTabIndex_, true);
+      this.layoutIndicator_();
+      if (shouldNotify) {
+        this.adapter_.notifyChange({activeTabIndex: this.activeTabIndex_});
+      }
+    });
+  }
+
+  getActiveTabIndex() {
+    return this.findActiveTabIndex_();
+  }
+}
+
+var MdcTabBar = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('nav',{staticClass:"mdc-tab-bar",class:_vm.cssClasses},[_vm._t("default"),_c('span',{ref:"indicator",staticClass:"mdc-tab-bar__indicator",style:(_vm.getIndicatorStyle)})],2)},staticRenderFns: [],
+  name: "MdcTabBar",
+  props: {
+    icons: Boolean,
+    iconsWithText: Boolean,
+    primary: Boolean,
+    secondary: Boolean
+  },
+  data() {
+    return { index: -1, tabs: [] };
+  },
+  computed: {
+    cssClasses() {
+      return {
+        "mdc-tab-bar--upgraded": true,
+        "mdc-tab-bar--icon-tab-bar": this.icons,
+        "mdc-tab-bar--icons-with-text": this.iconsWithText
+      };
+    }
+  },
+  mounted() {
+    const { $el } = this;
+    const { indicator } = this.$refs;
+
+    this.tabs = this.$children;
+
+    this.foundation = new MDCTabBarFoundation({
+      addClass: className => $el.classList.add(className),
+      removeClass: className => $el.classList.remove(className),
+      bindOnMDCTabSelectedEvent: () => this.$on("selected", this.onSelected),
+      unbindOnMDCTabSelectedEvent: () => this.$off("selected", this.onSelected),
+      registerResizeHandler: handler => window.addEventListener("resize", handler),
+      deregisterResizeHandler: handler => window.removeEventListener("resize", handler),
+      getOffsetWidth: () => $el.offsetWidth,
+      setStyleForIndicator: (prop, value) => {
+        indicator.style[prop] = value;
+      },
+      getOffsetWidthForIndicator: () => indicator.offsetWidth,
+      notifyChange: data => this.$emit("change", data),
+      getNumberOfTabs: () => this.tabs.length,
+      isTabActiveAtIndex: index => this.tabs[index].isActive(),
+      setTabActiveAtIndex: (index, active) => this.tabs[index].setActive(active),
+      isDefaultPreventedOnClickForTabAtIndex: index => this.tabs[index].preventsDefaultOnClick(),
+      setPreventDefaultOnClickForTabAtIndex: (index, value) => this.tabs[index].preventDefaultOnClick(value),
+      measureTabAtIndex: index => this.tabs[index].measureSelf(),
+      getComputedWidthForTabAtIndex: index => this.tabs[index].computedWidth(),
+      getComputedLeftForTabAtIndex: index => this.tabs[index].computedLeft(),
+    });
+    this.foundation.init();
+  },
+  beforeDestroy() {
+    this.foundation.destroy();
+  },
+  methods: {
+    onSelected(tab) {
+      const index = this.tabs.indexOf(tab);
+
+      if(index < 0) {
+        throw new Error("Invalid tab?");
+      }
+      this.foundation.switchToTabAtIndex(index, true);
+    }
+  }
+};
+
+/**
+ * Copyright 2017 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+const cssClasses$16 = {
+  INDICATOR_FORWARD: 'mdc-tab-bar-scroller__indicator--forward',
+  INDICATOR_BACK: 'mdc-tab-bar-scroller__indicator--back',
+  INDICATOR_ENABLED: 'mdc-tab-bar-scroller__indicator--enabled',
+  TAB: 'mdc-tab',
+};
+
+const strings$15 = {
+  FRAME_SELECTOR: '.mdc-tab-bar-scroller__scroll-frame',
+  TABS_SELECTOR: '.mdc-tab-bar-scroller__scroll-frame__tabs',
+  TAB_SELECTOR: '.mdc-tab',
+  INDICATOR_FORWARD_SELECTOR: '.mdc-tab-bar-scroller__indicator--forward',
+  INDICATOR_BACK_SELECTOR: '.mdc-tab-bar-scroller__indicator--back',
+};
+
+/**
+ * Copyright 2017 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+class MDCTabBarScrollerFoundation extends MDCFoundation {
+  static get cssClasses() {
+    return cssClasses$16;
+  }
+
+  static get strings() {
+    return strings$15;
+  }
+
+  static get defaultAdapter() {
+    return {
+      addClass: (/* className: string */) => {},
+      removeClass: (/* className: string */) => {},
+      eventTargetHasClass: (/* target: EventTarget, className: string */) => /* boolean */ false,
+      addClassToForwardIndicator: (/* className: string */) => {},
+      removeClassFromForwardIndicator: (/* className: string */) => {},
+      addClassToBackIndicator: (/* className: string */) => {},
+      removeClassFromBackIndicator: (/* className: string */) => {},
+      isRTL: () => /* boolean */ false,
+      registerBackIndicatorClickHandler: (/* handler: EventListener */) => {},
+      deregisterBackIndicatorClickHandler: (/* handler: EventListener */) => {},
+      registerForwardIndicatorClickHandler: (/* handler: EventListener */) => {},
+      deregisterForwardIndicatorClickHandler: (/* handler: EventListener */) => {},
+      registerCapturedInteractionHandler: (/* evt: string, handler: EventListener */) => {},
+      deregisterCapturedInteractionHandler: (/* evt: string, handler: EventListener */) => {},
+      registerWindowResizeHandler: (/* handler: EventListener */) => {},
+      deregisterWindowResizeHandler: (/* handler: EventListener */) => {},
+      getNumberOfTabs: () => /* number */ 0,
+      getComputedWidthForTabAtIndex: () => /* number */ 0,
+      getComputedLeftForTabAtIndex: () => /* number */ 0,
+      getOffsetWidthForScrollFrame: () => /* number */ 0,
+      getScrollLeftForScrollFrame: () => /* number */ 0,
+      setScrollLeftForScrollFrame: (/* scrollLeftAmount: number */) => {},
+      getOffsetWidthForTabBar: () => /* number */ 0,
+      setTransformStyleForTabBar: (/* value: string */) => {},
+      getOffsetLeftForEventTarget: (/* target: EventTarget */) => /* number */ 0,
+      getOffsetWidthForEventTarget: (/* target: EventTarget */) => /* number */ 0,
+    };
+  }
+
+  constructor(adapter) {
+    super(Object.assign(MDCTabBarScrollerFoundation.defaultAdapter, adapter));
+
+    this.pointerDownRecognized_ = false;
+    this.currentTranslateOffset_ = 0;
+    this.focusedTarget_ = null;
+    this.layoutFrame_ = 0;
+    this.scrollFrameScrollLeft_ = 0;
+    this.forwardIndicatorClickHandler_ = (evt) => this.scrollForward(evt);
+    this.backIndicatorClickHandler_ = (evt) => this.scrollBack(evt);
+    this.resizeHandler_ = () => this.layout();
+    this.interactionHandler_ = (evt) => {
+      if (evt.type == 'touchstart' || evt.type == 'mousedown') {
+        this.pointerDownRecognized_ = true;
+      }
+      this.handlePossibleTabKeyboardFocus_(evt);
+
+      if (evt.type == 'focus') {
+        this.pointerDownRecognized_ = false;
+      }
+    };
+  }
+
+  init() {
+    this.adapter_.registerBackIndicatorClickHandler(this.backIndicatorClickHandler_);
+    this.adapter_.registerForwardIndicatorClickHandler(this.forwardIndicatorClickHandler_);
+    this.adapter_.registerWindowResizeHandler(this.resizeHandler_);
+    ['touchstart', 'mousedown', 'focus'].forEach((evtType) => {
+      this.adapter_.registerCapturedInteractionHandler(evtType, this.interactionHandler_);
+    });
+    this.layout();
+  }
+
+  destroy() {
+    this.adapter_.deregisterBackIndicatorClickHandler(this.backIndicatorClickHandler_);
+    this.adapter_.deregisterForwardIndicatorClickHandler(this.forwardIndicatorClickHandler_);
+    this.adapter_.deregisterWindowResizeHandler(this.resizeHandler_);
+    ['touchstart', 'mousedown', 'focus'].forEach((evtType) => {
+      this.adapter_.deregisterCapturedInteractionHandler(evtType, this.interactionHandler_);
+    });
+  }
+
+  scrollBack(evt = null) {
+    if (evt) {
+      evt.preventDefault();
+    }
+
+    let tabWidthAccumulator = 0;
+    let scrollTargetIndex = 0;
+
+    for (let i = this.adapter_.getNumberOfTabs() - 1; i > 0; i--) {
+      const tabOffsetLeft = this.adapter_.getComputedLeftForTabAtIndex(i);
+      const tabBarWidthLessTabOffsetLeft = this.adapter_.getOffsetWidthForTabBar() - tabOffsetLeft;
+
+      let tabIsNotOccluded = tabOffsetLeft > this.currentTranslateOffset_;
+      if (this.isRTL_()) {
+        tabIsNotOccluded = tabBarWidthLessTabOffsetLeft > this.currentTranslateOffset_;
+      }
+
+      if (tabIsNotOccluded) {
+        continue;
+      }
+
+      tabWidthAccumulator += this.adapter_.getComputedWidthForTabAtIndex(i);
+
+      const scrollTargetDetermined = tabWidthAccumulator > this.adapter_.getOffsetWidthForScrollFrame();
+      if (scrollTargetDetermined) {
+        scrollTargetIndex = this.isRTL_() ? i + 1 : i;
+        break;
+      }
+    }
+
+    this.scrollToTabAtIndex(scrollTargetIndex);
+  }
+
+  scrollForward(evt = null) {
+    if (evt) {
+      evt.preventDefault();
+    }
+
+    const scrollFrameOffsetWidth = this.adapter_.getOffsetWidthForScrollFrame() + this.currentTranslateOffset_;
+    let scrollTargetIndex = 0;
+
+    for (let i = 0; i < this.adapter_.getNumberOfTabs(); i++) {
+      const tabOffsetLeftAndWidth =
+        this.adapter_.getComputedLeftForTabAtIndex(i) + this.adapter_.getComputedWidthForTabAtIndex(i);
+      let scrollTargetDetermined = tabOffsetLeftAndWidth > scrollFrameOffsetWidth;
+
+      if (this.isRTL_()) {
+        const frameOffsetAndTabWidth =
+          scrollFrameOffsetWidth - this.adapter_.getComputedWidthForTabAtIndex(i);
+        const tabOffsetLeftAndWidth =
+          this.adapter_.getComputedLeftForTabAtIndex(i) + this.adapter_.getComputedWidthForTabAtIndex(i);
+        const tabRightOffset =
+          this.adapter_.getOffsetWidthForTabBar() - tabOffsetLeftAndWidth;
+
+        scrollTargetDetermined = tabRightOffset > frameOffsetAndTabWidth;
+      }
+
+      if (scrollTargetDetermined) {
+        scrollTargetIndex = i;
+        break;
+      }
+    }
+
+    this.scrollToTabAtIndex(scrollTargetIndex);
+  }
+
+  layout() {
+    cancelAnimationFrame(this.layoutFrame_);
+    this.scrollFrameScrollLeft_ = this.adapter_.getScrollLeftForScrollFrame();
+    this.layoutFrame_ = requestAnimationFrame(() => this.layout_());
+  }
+
+  isRTL_() {
+    return this.adapter_.isRTL();
+  }
+
+  handlePossibleTabKeyboardFocus_(evt) {
+    if (!this.adapter_.eventTargetHasClass(evt.target, cssClasses$16.TAB) || this.pointerDownRecognized_) {
+      return;
+    }
+
+    const resetAmt = this.isRTL_() ? this.scrollFrameScrollLeft_ : 0;
+    this.adapter_.setScrollLeftForScrollFrame(resetAmt);
+
+    this.focusedTarget_ = evt.target;
+    const scrollFrameWidth = this.adapter_.getOffsetWidthForScrollFrame();
+    const tabBarWidth = this.adapter_.getOffsetWidthForTabBar();
+    const leftEdge = this.adapter_.getOffsetLeftForEventTarget(this.focusedTarget_);
+    const rightEdge = leftEdge + this.adapter_.getOffsetWidthForEventTarget(this.focusedTarget_);
+
+    let shouldScrollBack = rightEdge <= this.currentTranslateOffset_;
+    let shouldScrollForward = rightEdge > this.currentTranslateOffset_ + scrollFrameWidth;
+
+    if (this.isRTL_()) {
+      const normalizedLeftOffset = tabBarWidth - leftEdge;
+      shouldScrollBack = leftEdge >= tabBarWidth - this.currentTranslateOffset_;
+      shouldScrollForward = normalizedLeftOffset > scrollFrameWidth + this.currentTranslateOffset_;
+    }
+
+    if (shouldScrollForward) {
+      this.scrollForward();
+    } else if (shouldScrollBack) {
+      this.scrollBack();
+    }
+
+    this.pointerDownRecognized_ = false;
+  }
+
+  layout_() {
+    const frameWidth = this.adapter_.getOffsetWidthForScrollFrame();
+    const isOverflowing = this.adapter_.getOffsetWidthForTabBar() > frameWidth;
+
+    if (!isOverflowing) {
+      this.currentTranslateOffset_ = 0;
+    }
+
+    this.shiftFrame_();
+    this.updateIndicatorEnabledStates_();
+  }
+
+  scrollToTabAtIndex(index) {
+    const scrollTargetOffsetLeft = this.adapter_.getComputedLeftForTabAtIndex(index);
+    const scrollTargetOffsetWidth = this.adapter_.getComputedWidthForTabAtIndex(index);
+
+    this.currentTranslateOffset_ =
+      this.normalizeForRTL_(scrollTargetOffsetLeft, scrollTargetOffsetWidth);
+
+    requestAnimationFrame(() => this.shiftFrame_());
+  }
+
+  normalizeForRTL_(left, width) {
+    return this.isRTL_() ? this.adapter_.getOffsetWidthForTabBar() - (left + width) : left;
+  }
+
+  shiftFrame_() {
+    const shiftAmount = this.isRTL_() ?
+      this.currentTranslateOffset_ : -this.currentTranslateOffset_;
+
+    this.adapter_.setTransformStyleForTabBar(`translateX(${shiftAmount}px)`);
+    this.updateIndicatorEnabledStates_();
+  }
+
+  updateIndicatorEnabledStates_() {
+    const {INDICATOR_ENABLED} = cssClasses$16;
+    if (this.currentTranslateOffset_ === 0) {
+      this.adapter_.removeClassFromBackIndicator(INDICATOR_ENABLED);
+    } else {
+      this.adapter_.addClassToBackIndicator(INDICATOR_ENABLED);
+    }
+
+    const remainingTabBarWidth = this.adapter_.getOffsetWidthForTabBar() - this.currentTranslateOffset_;
+    if (remainingTabBarWidth > this.adapter_.getOffsetWidthForScrollFrame()) {
+      this.adapter_.addClassToForwardIndicator(INDICATOR_ENABLED);
+    } else {
+      this.adapter_.removeClassFromForwardIndicator(INDICATOR_ENABLED);
+    }
+  }
+}
+
+var TabScroller = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-tab-bar-scroller"},[_c('div',{staticClass:"mdc-tab-bar-scroller__indicator mdc-tab-bar-scroller__indicator--back"},[_c('a',{ref:"backIndicator",staticClass:"mdc-tab-bar-scroller__indicator__inner material-icons",attrs:{"href":"#","aria-label":"scroll back button"}},[_vm._v("navigate_before")])]),_c('div',{ref:"scrollFrame",staticClass:"mdc-tab-bar-scroller__scroll-frame"},[_c('mdc-tab-bar',{ref:"tabBar",staticClass:"mdc-tab-bar-scroller__scroll-frame__tabs"},[_vm._t("default")],2)],1),_c('div',{staticClass:"mdc-tab-bar-scroller__indicator mdc-tab-bar-scroller__indicator--forward"},[_c('a',{ref:"forwardIndicator",staticClass:"mdc-tab-bar-scroller__indicator__inner material-icons",attrs:{"href":"#","aria-label":"scroll forward button"}},[_vm._v("navigate_next")])])])},staticRenderFns: [],
+  name: "MdcTabScroller",
+  inheritAttrs: false,
+  components: { MdcTabBar },
+  computed: {},
+
+  mounted() {
+    const { $el } = this;
+    const { backIndicator, forwardIndicator, scrollFrame, tabBar } = this.$refs;
+
+    const styles = getComputedStyle($el);
+    const transformProp = getCorrectPropertyName(window, "transform");
+
+    this.foundation = new MDCTabBarScrollerFoundation({
+      addClass: className => $el.classList.add(className),
+      removeClass: className => $el.classList.remove(className),
+      eventTargetHasClass: (target, className) => target.classList.contains(className),
+      addClassToForwardIndicator: className => forwardIndicator.classList.add(className),
+      removeClassFromForwardIndicator: className => forwardIndicator.classList.remove(className),
+      addClassToBackIndicator: className => backIndicator.classList.add(className),
+      removeClassFromBackIndicator: className => backIndicator.classList.remove(className),
+      isRTL: () => styles.direction === "rtl",
+      // Interaction handlers
+      registerBackIndicatorClickHandler: (handler) => backIndicator.addEventListener("click", handler),
+      deregisterBackIndicatorClickHandler: (handler) => backIndicator.removeEventListener("click", handler),
+      registerForwardIndicatorClickHandler: (handler) => forwardIndicator.addEventListener("click", handler),
+      deregisterForwardIndicatorClickHandler: (handler) => forwardIndicator.removeEventListener("click", handler),
+      registerCapturedInteractionHandler: (evt, handler) => $el.addEventListener(evt, handler, true),
+      deregisterCapturedInteractionHandler: (evt, handler) => $el.removeEventListener(evt, handler, true),
+      registerWindowResizeHandler: (handler) => window.addEventListener("resize", handler),
+      deregisterWindowResizeHandler: (handler) => window.removeEventListener("resize", handler),
+
+      getNumberOfTabs: () => tabBar.tabs.length,
+      getComputedWidthForTabAtIndex: index => tabBar.tabs[index].$el.computedWidth,
+      getComputedLeftForTabAtIndex: index => tabBar.tabs[index].$el.computedLeft,
+      getOffsetWidthForScrollFrame: () => scrollFrame.offsetWidth,
+      getScrollLeftForScrollFrame: () => scrollFrame.scrollLeft,
+      setScrollLeftForScrollFrame: value => {
+        scrollFrame.scrollLeft = value;
+      },
+      getOffsetWidthForTabBar: () => tabBar.$el.offsetWidth,
+      setTransformStyleForTabBar: value => {
+        tabBar.$el.style[transformProp] = value;
+      },
+      getOffsetLeftForEventTarget: target => target.offsetLeft,
+      getOffsetWidthForEventTarget: target => target.offsetWidth
+    });
+    this.foundation.init();
+  },
+  beforeDestroy() {
+    this.foundation.destroy();
+  }
+};
+
+var TabBar = {
+  functional: true,
+  props: {
+    scroller: Boolean
+  },
+  render(h, ctx) {
+    let tag = ctx.props.scroller ? TabScroller : MdcTabBar;
+    return h(tag, ctx.data, ctx.children);
+  }
+};
+
+function install$20(Vue) {
+  Vue.component(Tab.name, Tab);
+  Vue.component("mdc-tab-bar", TabBar);
+}
+
+var Tabs = /*#__PURE__*/Object.freeze({
+  Tab: Tab,
+  TabBar: TabBar,
+  install: install$20
 });
 
 /**
@@ -6859,183 +7480,6 @@ var Switch = Object.freeze({
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- */
-
-/* eslint no-unused-vars: [2, {"args": "none"}] */
-
-/**
- * Adapter for MDC TextField Bottom Line.
- *
- * Defines the shape of the adapter expected by the foundation. Implement this
- * adapter to integrate the TextField bottom line into your framework. See
- * https://github.com/material-components/material-components-web/blob/master/docs/authoring-components.md
- * for more information.
- *
- * @record
- */
-
-/**
- * @license
- * Copyright 2017 Google Inc. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-/** @enum {string} */
-const strings$13 = {
-  ANIMATION_END_EVENT: 'MDCTextFieldBottomLine:animation-end',
-};
-
-/** @enum {string} */
-const cssClasses$12 = {
-  BOTTOM_LINE_ACTIVE: 'mdc-text-field__bottom-line--active',
-};
-
-/**
- * @license
- * Copyright 2017 Google Inc. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-/**
- * @extends {MDCFoundation<!MDCTextFieldBottomLineAdapter>}
- * @final
- */
-class MDCTextFieldBottomLineFoundation extends MDCFoundation {
-  /** @return enum {string} */
-  static get cssClasses() {
-    return cssClasses$12;
-  }
-
-  /** @return enum {string} */
-  static get strings() {
-    return strings$13;
-  }
-
-  /**
-   * {@see MDCTextFieldBottomLineAdapter} for typing information on parameters and return
-   * types.
-   * @return {!MDCTextFieldBottomLineAdapter}
-   */
-  static get defaultAdapter() {
-    return /** @type {!MDCTextFieldBottomLineAdapter} */ ({
-      addClass: () => {},
-      removeClass: () => {},
-      setAttr: () => {},
-      registerEventHandler: () => {},
-      deregisterEventHandler: () => {},
-      notifyAnimationEnd: () => {},
-    });
-  }
-
-  /**
-   * @param {!MDCTextFieldBottomLineAdapter=} adapter
-   */
-  constructor(adapter = /** @type {!MDCTextFieldBottomLineAdapter} */ ({})) {
-    super(Object.assign(MDCTextFieldBottomLineFoundation.defaultAdapter, adapter));
-
-    /** @private {function(!Event): undefined} */
-    this.transitionEndHandler_ = (evt) => this.handleTransitionEnd(evt);
-  }
-
-  init() {
-    this.adapter_.registerEventHandler('transitionend', this.transitionEndHandler_);
-  }
-
-  destroy() {
-    this.adapter_.deregisterEventHandler('transitionend', this.transitionEndHandler_);
-  }
-
-  /**
-   * Activates the bottom line
-   */
-  activate() {
-    this.adapter_.addClass(cssClasses$12.BOTTOM_LINE_ACTIVE);
-  }
-
-  /**
-   * Sets the transform origin given a user's click location.
-   * @param {!Event} evt
-   */
-  setTransformOrigin(evt) {
-    const targetClientRect = evt.target.getBoundingClientRect();
-    const evtCoords = {x: evt.clientX, y: evt.clientY};
-    const normalizedX = evtCoords.x - targetClientRect.left;
-    const attributeString =
-      `transform-origin: ${normalizedX}px center`;
-
-    this.adapter_.setAttr('style', attributeString);
-  }
-
-  /**
-   * Deactivates the bottom line
-   */
-  deactivate() {
-    this.adapter_.removeClass(cssClasses$12.BOTTOM_LINE_ACTIVE);
-  }
-
-  /**
-   * Handles a transition end event
-   * @param {!Event} evt
-   */
-  handleTransitionEnd(evt) {
-    // Wait for the bottom line to be either transparent or opaque
-    // before emitting the animation end event
-    if (evt.propertyName === 'opacity') {
-      this.adapter_.notifyAnimationEnd();
-    }
-  }
-}
-
-/**
- * @license
- * Copyright 2017 Google Inc. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-/* eslint no-unused-vars: [2, {"args": "none"}] */
-
-/**
- * Adapter for MDC Text Field Helper Text.
- *
- * Defines the shape of the adapter expected by the foundation. Implement this
- * adapter to integrate the TextField helper text into your framework. See
- * https://github.com/material-components/material-components-web/blob/master/docs/authoring-components.md
- * for more information.
- *
- * @record
  */
 
 /**
@@ -7056,13 +7500,13 @@ class MDCTextFieldBottomLineFoundation extends MDCFoundation {
  */
 
 /** @enum {string} */
-const strings$14 = {
+const strings$16 = {
   ARIA_HIDDEN: 'aria-hidden',
   ROLE: 'role',
 };
 
 /** @enum {string} */
-const cssClasses$13 = {
+const cssClasses$17 = {
   HELPER_TEXT_PERSISTENT: 'mdc-text-field-helper-text--persistent',
   HELPER_TEXT_VALIDATION_MSG: 'mdc-text-field-helper-text--validation-msg',
 };
@@ -7084,6 +7528,7 @@ const cssClasses$13 = {
  * limitations under the License.
  */
 
+
 /**
  * @extends {MDCFoundation<!MDCTextFieldHelperTextAdapter>}
  * @final
@@ -7091,12 +7536,12 @@ const cssClasses$13 = {
 class MDCTextFieldHelperTextFoundation extends MDCFoundation {
   /** @return enum {string} */
   static get cssClasses() {
-    return cssClasses$13;
+    return cssClasses$17;
   }
 
   /** @return enum {string} */
   static get strings() {
-    return strings$14;
+    return strings$16;
   }
 
   /**
@@ -7116,9 +7561,9 @@ class MDCTextFieldHelperTextFoundation extends MDCFoundation {
   }
 
   /**
-   * @param {!MDCTextFieldHelperTextAdapter=} adapter
+   * @param {!MDCTextFieldHelperTextAdapter} adapter
    */
-  constructor(adapter = /** @type {!MDCTextFieldHelperTextAdapter} */ ({})) {
+  constructor(adapter) {
     super(Object.assign(MDCTextFieldHelperTextFoundation.defaultAdapter, adapter));
   }
 
@@ -7130,9 +7575,30 @@ class MDCTextFieldHelperTextFoundation extends MDCFoundation {
     this.adapter_.setContent(content);
   }
 
+  /** @param {boolean} isPersistent Sets the persistency of the helper text. */
+  setPersistent(isPersistent) {
+    if (isPersistent) {
+      this.adapter_.addClass(cssClasses$17.HELPER_TEXT_PERSISTENT);
+    } else {
+      this.adapter_.removeClass(cssClasses$17.HELPER_TEXT_PERSISTENT);
+    }
+  }
+
+  /**
+   * @param {boolean} isValidation True to make the helper text act as an
+   *   error validation message.
+   */
+  setValidation(isValidation) {
+    if (isValidation) {
+      this.adapter_.addClass(cssClasses$17.HELPER_TEXT_VALIDATION_MSG);
+    } else {
+      this.adapter_.removeClass(cssClasses$17.HELPER_TEXT_VALIDATION_MSG);
+    }
+  }
+
   /** Makes the helper text visible to the screen reader. */
   showToScreenReader() {
-    this.adapter_.removeAttr(strings$14.ARIA_HIDDEN);
+    this.adapter_.removeAttr(strings$16.ARIA_HIDDEN);
   }
 
   /**
@@ -7140,14 +7606,14 @@ class MDCTextFieldHelperTextFoundation extends MDCFoundation {
    * @param {boolean} inputIsValid
    */
   setValidity(inputIsValid) {
-    const helperTextIsPersistent = this.adapter_.hasClass(cssClasses$13.HELPER_TEXT_PERSISTENT);
-    const helperTextIsValidationMsg = this.adapter_.hasClass(cssClasses$13.HELPER_TEXT_VALIDATION_MSG);
+    const helperTextIsPersistent = this.adapter_.hasClass(cssClasses$17.HELPER_TEXT_PERSISTENT);
+    const helperTextIsValidationMsg = this.adapter_.hasClass(cssClasses$17.HELPER_TEXT_VALIDATION_MSG);
     const validationMsgNeedsDisplay = helperTextIsValidationMsg && !inputIsValid;
 
     if (validationMsgNeedsDisplay) {
-      this.adapter_.setAttr(strings$14.ROLE, 'alert');
+      this.adapter_.setAttr(strings$16.ROLE, 'alert');
     } else {
-      this.adapter_.removeAttr(strings$14.ROLE);
+      this.adapter_.removeAttr(strings$16.ROLE);
     }
 
     if (!helperTextIsPersistent && !validationMsgNeedsDisplay) {
@@ -7160,7 +7626,7 @@ class MDCTextFieldHelperTextFoundation extends MDCFoundation {
    * @private
    */
   hide_() {
-    this.adapter_.setAttr(strings$14.ARIA_HIDDEN, 'true');
+    this.adapter_.setAttr(strings$16.ARIA_HIDDEN, 'true');
   }
 }
 
@@ -7181,19 +7647,6 @@ class MDCTextFieldHelperTextFoundation extends MDCFoundation {
  * limitations under the License.
  */
 
-/* eslint no-unused-vars: [2, {"args": "none"}] */
-
-/**
- * Adapter for MDC Text Field Icon.
- *
- * Defines the shape of the adapter expected by the foundation. Implement this
- * adapter to integrate the text field icon into your framework. See
- * https://github.com/material-components/material-components-web/blob/master/docs/authoring-components.md
- * for more information.
- *
- * @record
- */
-
 /**
  * @license
  * Copyright 2016 Google Inc. All Rights Reserved.
@@ -7212,7 +7665,7 @@ class MDCTextFieldHelperTextFoundation extends MDCFoundation {
  */
 
 /** @enum {string} */
-const strings$15 = {
+const strings$17 = {
   ICON_EVENT: 'MDCTextField:icon',
 };
 
@@ -7233,6 +7686,7 @@ const strings$15 = {
  * limitations under the License.
  */
 
+
 /**
  * @extends {MDCFoundation<!MDCTextFieldIconAdapter>}
  * @final
@@ -7240,7 +7694,7 @@ const strings$15 = {
 class MDCTextFieldIconFoundation extends MDCFoundation {
   /** @return enum {string} */
   static get strings() {
-    return strings$15;
+    return strings$17;
   }
 
   /**
@@ -7258,9 +7712,9 @@ class MDCTextFieldIconFoundation extends MDCFoundation {
   }
 
   /**
-   * @param {!MDCTextFieldIconAdapter=} adapter
+   * @param {!MDCTextFieldIconAdapter} adapter
    */
-  constructor(adapter = /** @type {!MDCTextFieldIconAdapter} */ ({})) {
+  constructor(adapter) {
     super(Object.assign(MDCTextFieldIconFoundation.defaultAdapter, adapter));
 
     /** @private {function(!Event): undefined} */
@@ -7319,22 +7773,26 @@ class MDCTextFieldIconFoundation extends MDCFoundation {
  * limitations under the License.
  */
 
-/* eslint no-unused-vars: [2, {"args": "none"}] */
-
 /**
- * Adapter for MDC Text Field Label.
+ * @license
+ * Copyright 2018 Google Inc. All Rights Reserved.
  *
- * Defines the shape of the adapter expected by the foundation. Implement this
- * adapter to integrate the Text Field label into your framework. See
- * https://github.com/material-components/material-components-web/blob/master/docs/authoring-components.md
- * for more information.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * @record
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 
 /**
  * @license
- * Copyright 2016 Google Inc. All Rights Reserved.
+ * Copyright 2018 Google Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -7350,14 +7808,14 @@ class MDCTextFieldIconFoundation extends MDCFoundation {
  */
 
 /** @enum {string} */
-const cssClasses$14 = {
-  LABEL_FLOAT_ABOVE: 'mdc-text-field__label--float-above',
-  LABEL_SHAKE: 'mdc-text-field__label--shake',
+const cssClasses$18 = {
+  LINE_RIPPLE_ACTIVE: 'mdc-line-ripple--active',
+  LINE_RIPPLE_DEACTIVATING: 'mdc-line-ripple--deactivating',
 };
 
 /**
  * @license
- * Copyright 2016 Google Inc. All Rights Reserved.
+ * Copyright 2018 Google Inc. All Rights Reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -7372,71 +7830,91 @@ const cssClasses$14 = {
  * limitations under the License.
  */
 
+
 /**
- * @extends {MDCFoundation<!MDCTextFieldLabelAdapter>}
+ * @extends {MDCFoundation<!MDCLineRippleAdapter>}
  * @final
  */
-class MDCTextFieldLabelFoundation extends MDCFoundation {
+class MDCLineRippleFoundation extends MDCFoundation {
   /** @return enum {string} */
   static get cssClasses() {
-    return cssClasses$14;
+    return cssClasses$18;
   }
 
   /**
-   * {@see MDCTextFieldLabelAdapter} for typing information on parameters and return
+   * {@see MDCLineRippleAdapter} for typing information on parameters and return
    * types.
-   * @return {!MDCTextFieldLabelAdapter}
+   * @return {!MDCLineRippleAdapter}
    */
   static get defaultAdapter() {
-    return /** @type {!MDCTextFieldLabelAdapter} */ ({
+    return /** @type {!MDCLineRippleAdapter} */ ({
       addClass: () => {},
       removeClass: () => {},
-      getWidth: () => {},
+      hasClass: () => {},
+      setAttr: () => {},
+      registerEventHandler: () => {},
+      deregisterEventHandler: () => {},
     });
   }
 
   /**
-   * @param {!MDCTextFieldLabelAdapter=} adapter
+   * @param {!MDCLineRippleAdapter=} adapter
    */
-  constructor(adapter = /** @type {!MDCTextFieldLabelAdapter} */ ({})) {
-    super(Object.assign(MDCTextFieldLabelFoundation.defaultAdapter, adapter));
+  constructor(adapter = /** @type {!MDCLineRippleAdapter} */ ({})) {
+    super(Object.assign(MDCLineRippleFoundation.defaultAdapter, adapter));
+
+    /** @private {function(!Event): undefined} */
+    this.transitionEndHandler_ = (evt) => this.handleTransitionEnd(evt);
+  }
+
+  init() {
+    this.adapter_.registerEventHandler('transitionend', this.transitionEndHandler_);
+  }
+
+  destroy() {
+    this.adapter_.deregisterEventHandler('transitionend', this.transitionEndHandler_);
   }
 
   /**
-   * Returns the width of the label element.
-   * @return {number}
+   * Activates the line ripple
    */
-  getWidth() {
-    return this.adapter_.getWidth();
+  activate() {
+    this.adapter_.removeClass(cssClasses$18.LINE_RIPPLE_DEACTIVATING);
+    this.adapter_.addClass(cssClasses$18.LINE_RIPPLE_ACTIVE);
   }
 
   /**
-   * Styles the label to produce the label shake for errors.
-   * @param {boolean} isValid Whether the input's value is valid (passes all
-   *     validity checks).
-   * @param {boolean} isFocused Whether the input is focused.
+   * Sets the center of the ripple animation to the given X coordinate.
+   * @param {!number} xCoordinate
    */
-  styleShake(isValid, isFocused) {
-    const {LABEL_SHAKE} = MDCTextFieldLabelFoundation.cssClasses;
-    if (isValid || isFocused) {
-      this.adapter_.removeClass(LABEL_SHAKE);
-    } else {
-      this.adapter_.addClass(LABEL_SHAKE);
-    }
+  setRippleCenter(xCoordinate) {
+    const attributeString =
+        `transform-origin: ${xCoordinate}px center`;
+
+    this.adapter_.setAttr('style', attributeString);
   }
 
   /**
-   * Styles the label to float or defloat as necessary.
-   * @param {string} value The value of the input.
-   * @param {boolean} isFocused Whether the input is focused.
-   * @param {boolean} isBadInput The input's `validity.badInput` value.
+   * Deactivates the line ripple
    */
-  styleFloat(value, isFocused, isBadInput) {
-    const {LABEL_FLOAT_ABOVE} = MDCTextFieldLabelFoundation.cssClasses;
-    if (!!value || isFocused) {
-      this.adapter_.addClass(LABEL_FLOAT_ABOVE);
-    } else if (!isBadInput) {
-      this.adapter_.removeClass(LABEL_FLOAT_ABOVE);
+  deactivate() {
+    this.adapter_.addClass(cssClasses$18.LINE_RIPPLE_DEACTIVATING);
+  }
+
+  /**
+   * Handles a transition end event
+   * @param {!Event} evt
+   */
+  handleTransitionEnd(evt) {
+    // Wait for the line ripple to be either transparent or opaque
+    // before emitting the animation end event
+    const isDeactivating = this.adapter_.hasClass(cssClasses$18.LINE_RIPPLE_DEACTIVATING);
+
+    if (evt.propertyName === 'opacity') {
+      if (isDeactivating) {
+        this.adapter_.removeClass(cssClasses$18.LINE_RIPPLE_ACTIVE);
+        this.adapter_.removeClass(cssClasses$18.LINE_RIPPLE_DEACTIVATING);
+      }
     }
   }
 }
@@ -7458,38 +7936,6 @@ class MDCTextFieldLabelFoundation extends MDCFoundation {
  * limitations under the License.
  */
 
-/* eslint-disable no-unused-vars */
-
-/**
- * @license
- * Copyright 2017 Google Inc. All Rights Reserved.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-/* eslint no-unused-vars: [2, {"args": "none"}] */
-
-/**
- * Adapter for MDC Text Field Outline.
- *
- * Defines the shape of the adapter expected by the foundation. Implement this
- * adapter to integrate the Text Field outline into your framework. See
- * https://github.com/material-components/material-components-web/blob/master/docs/authoring-components.md
- * for more information.
- *
- * @record
- */
-
 /**
  * @license
  * Copyright 2016 Google Inc. All Rights Reserved.
@@ -7508,8 +7954,155 @@ class MDCTextFieldLabelFoundation extends MDCFoundation {
  */
 
 /** @enum {string} */
-const strings$16 = {
-  PATH_SELECTOR: '.mdc-text-field__outline-path',
+const cssClasses$19 = {
+  LABEL_FLOAT_ABOVE: 'mdc-floating-label--float-above',
+  LABEL_SHAKE: 'mdc-floating-label--shake',
+};
+
+/**
+ * @license
+ * Copyright 2016 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/**
+ * @extends {MDCFoundation<!MDCFloatingLabelAdapter>}
+ * @final
+ */
+class MDCFloatingLabelFoundation extends MDCFoundation {
+  /** @return enum {string} */
+  static get cssClasses() {
+    return cssClasses$19;
+  }
+
+  /**
+   * {@see MDCFloatingLabelAdapter} for typing information on parameters and return
+   * types.
+   * @return {!MDCFloatingLabelAdapter}
+   */
+  static get defaultAdapter() {
+    return /** @type {!MDCFloatingLabelAdapter} */ ({
+      addClass: () => {},
+      removeClass: () => {},
+      getWidth: () => {},
+      registerInteractionHandler: () => {},
+      deregisterInteractionHandler: () => {},
+    });
+  }
+
+  /**
+   * @param {!MDCFloatingLabelAdapter} adapter
+   */
+  constructor(adapter) {
+    super(Object.assign(MDCFloatingLabelFoundation.defaultAdapter, adapter));
+
+    /** @private {function(!Event): undefined} */
+    this.shakeAnimationEndHandler_ = () => this.handleShakeAnimationEnd_();
+  }
+
+  init() {
+    this.adapter_.registerInteractionHandler('animationend', this.shakeAnimationEndHandler_);
+  }
+
+  destroy() {
+    this.adapter_.deregisterInteractionHandler('animationend', this.shakeAnimationEndHandler_);
+  }
+
+  /**
+   * Returns the width of the label element.
+   * @return {number}
+   */
+  getWidth() {
+    return this.adapter_.getWidth();
+  }
+
+  /**
+   * Styles the label to produce the label shake for errors.
+   * @param {boolean} shouldShake adds shake class if true,
+   * otherwise removes shake class.
+   */
+  shake(shouldShake) {
+    const {LABEL_SHAKE} = MDCFloatingLabelFoundation.cssClasses;
+    if (shouldShake) {
+      this.adapter_.addClass(LABEL_SHAKE);
+    } else {
+      this.adapter_.removeClass(LABEL_SHAKE);
+    }
+  }
+
+  /**
+   * Styles the label to float or dock.
+   * @param {boolean} shouldFloat adds float class if true, otherwise remove
+   * float and shake class to dock label.
+   */
+  float(shouldFloat) {
+    const {LABEL_FLOAT_ABOVE, LABEL_SHAKE} = MDCFloatingLabelFoundation.cssClasses;
+    if (shouldFloat) {
+      this.adapter_.addClass(LABEL_FLOAT_ABOVE);
+    } else {
+      this.adapter_.removeClass(LABEL_FLOAT_ABOVE);
+      this.adapter_.removeClass(LABEL_SHAKE);
+    }
+  }
+
+  /**
+   * Handles an interaction event on the root element.
+   */
+  handleShakeAnimationEnd_() {
+    const {LABEL_SHAKE} = MDCFloatingLabelFoundation.cssClasses;
+    this.adapter_.removeClass(LABEL_SHAKE);
+  }
+}
+
+/**
+ * @license
+ * Copyright 2017 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/**
+ * @license
+ * Copyright 2018 Google Inc. All Rights Reserved.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+/** @enum {string} */
+const strings$18 = {
+  PATH_SELECTOR: '.mdc-notched-outline__path',
+  IDLE_OUTLINE_SELECTOR: '.mdc-notched-outline__idle',
 };
 
 /**
@@ -7530,48 +8123,52 @@ const strings$16 = {
  */
 
 /**
- * @extends {MDCFoundation<!MDCTextFieldOutlineAdapter>}
+ * @extends {MDCFoundation<!MDCNotchedOutlineAdapter>}
  * @final
  */
-class MDCTextFieldOutlineFoundation extends MDCFoundation {
+class MDCNotchedOutlineFoundation extends MDCFoundation {
   /** @return enum {string} */
   static get strings() {
-    return strings$16;
+    return strings$18;
   }
 
   /**
-   * {@see MDCTextFieldOutlineAdapter} for typing information on parameters and return
+   * {@see MDCNotchedOutlineAdapter} for typing information on parameters and return
    * types.
-   * @return {!MDCTextFieldOutlineAdapter}
+   * @return {!MDCNotchedOutlineAdapter}
    */
   static get defaultAdapter() {
-    return /** @type {!MDCTextFieldOutlineAdapter} */ ({
+    return /** @type {!MDCNotchedOutlineAdapter} */ ({
       getWidth: () => {},
       getHeight: () => {},
       setOutlinePathAttr: () => {},
+      getIdleOutlineStyleValue: () => {},
     });
   }
 
   /**
-   * @param {!MDCTextFieldOutlineAdapter=} adapter
+   * @param {!MDCNotchedOutlineAdapter} adapter
    */
-  constructor(adapter = /** @type {!MDCTextFieldOutlineAdapter} */ ({})) {
-    super(Object.assign(MDCTextFieldOutlineFoundation.defaultAdapter, adapter));
+  constructor(adapter) {
+    super(Object.assign(MDCNotchedOutlineFoundation.defaultAdapter, adapter));
   }
 
   /**
-   * Updates the SVG path of the focus outline element based on the given width of the
-   * label element, the corner radius, and the RTL context.
-   * @param {number} labelWidth
-   * @param {number} radius
+   * Updates the SVG path of the focus outline element based on the notchWidth
+   * and the RTL context.
+   * @param {number} notchWidth
    * @param {boolean=} isRtl
    */
-  updateSvgPath(labelWidth, radius, isRtl = false) {
+  updateSvgPath(notchWidth, isRtl = false) {
+    // Fall back to reading a specific corner's style because Firefox doesn't report the style on border-radius.
+    const radiusStyleValue = this.adapter_.getIdleOutlineStyleValue('border-radius') ||
+        this.adapter_.getIdleOutlineStyleValue('border-top-left-radius');
+    const radius = parseFloat(radiusStyleValue);
     const width = this.adapter_.getWidth();
     const height = this.adapter_.getHeight();
     const cornerWidth = radius + 1.2;
     const leadingStrokeLength = Math.abs(11 - cornerWidth);
-    const paddedLabelWidth = labelWidth + 8;
+    const paddedNotchWidth = notchWidth + 8;
 
     // The right, bottom, and left sides of the outline follow the same SVG path.
     const pathMiddle = 'a' + radius + ',' + radius + ' 0 0 1 ' + radius + ',' + radius
@@ -7584,15 +8181,15 @@ class MDCTextFieldOutlineFoundation extends MDCFoundation {
 
     let path;
     if (!isRtl) {
-      path = 'M' + (cornerWidth + leadingStrokeLength + paddedLabelWidth) + ',' + 1
-        + 'h' + (width - (2 * cornerWidth) - paddedLabelWidth - leadingStrokeLength)
+      path = 'M' + (cornerWidth + leadingStrokeLength + paddedNotchWidth) + ',' + 1
+        + 'h' + (width - (2 * cornerWidth) - paddedNotchWidth - leadingStrokeLength)
         + pathMiddle
         + 'h' + leadingStrokeLength;
     } else {
       path = 'M' + (width - cornerWidth - leadingStrokeLength) + ',' + 1
         + 'h' + leadingStrokeLength
         + pathMiddle
-        + 'h' + (width - (2 * cornerWidth) - paddedLabelWidth - leadingStrokeLength);
+        + 'h' + (width - (2 * cornerWidth) - paddedNotchWidth - leadingStrokeLength);
     }
 
     this.adapter_.setOutlinePathAttr(path);
@@ -7617,18 +8214,17 @@ class MDCTextFieldOutlineFoundation extends MDCFoundation {
  */
 
 /** @enum {string} */
-const strings$17 = {
+const strings$19 = {
   ARIA_CONTROLS: 'aria-controls',
   INPUT_SELECTOR: '.mdc-text-field__input',
-  LABEL_SELECTOR: '.mdc-text-field__label',
+  LABEL_SELECTOR: '.mdc-floating-label',
   ICON_SELECTOR: '.mdc-text-field__icon',
-  IDLE_OUTLINE_SELECTOR: '.mdc-text-field__idle-outline',
-  OUTLINE_SELECTOR: '.mdc-text-field__outline',
-  BOTTOM_LINE_SELECTOR: '.mdc-text-field__bottom-line',
+  OUTLINE_SELECTOR: '.mdc-notched-outline',
+  BOTTOM_LINE_SELECTOR: '.mdc-line-ripple',
 };
 
 /** @enum {string} */
-const cssClasses$15 = {
+const cssClasses$20 = {
   ROOT: 'mdc-text-field',
   UPGRADED: 'mdc-text-field--upgraded',
   DISABLED: 'mdc-text-field--disabled',
@@ -7640,7 +8236,7 @@ const cssClasses$15 = {
 };
 
 /** @enum {number} */
-const numbers$5 = {
+const numbers$4 = {
   LABEL_SCALE: 0.75,
   DENSE_LABEL_SCALE: 0.923,
 };
@@ -7662,8 +8258,13 @@ const numbers$5 = {
  * limitations under the License.
  */
 
-/* eslint-disable no-unused-vars */
-/* eslint-enable no-unused-vars */
+
+// whitelist based off of https://developer.mozilla.org/en-US/docs/Web/Guide/HTML/HTML5/Constraint_validation
+// under section: `Validation-related attributes`
+const VALIDATION_ATTR_WHITELIST = [
+  'pattern', 'min', 'max', 'required', 'step', 'minlength', 'maxlength',
+];
+
 /**
  * @extends {MDCFoundation<!MDCTextFieldAdapter>}
  * @final
@@ -7671,17 +8272,27 @@ const numbers$5 = {
 class MDCTextFieldFoundation extends MDCFoundation {
   /** @return enum {string} */
   static get cssClasses() {
-    return cssClasses$15;
+    return cssClasses$20;
   }
 
   /** @return enum {string} */
   static get strings() {
-    return strings$17;
+    return strings$19;
   }
 
   /** @return enum {string} */
   static get numbers() {
-    return numbers$5;
+    return numbers$4;
+  }
+
+  /** @return {boolean} */
+  get shouldShake() {
+    return !this.isValid() && !this.isFocused_;
+  }
+
+  /** @return {boolean} */
+  get shouldFloat() {
+    return !this.isBadInput_() && (!!this.getValue() || this.isFocused_);
   }
 
   /**
@@ -7698,33 +8309,34 @@ class MDCTextFieldFoundation extends MDCFoundation {
       deregisterTextFieldInteractionHandler: () => {},
       registerInputInteractionHandler: () => {},
       deregisterInputInteractionHandler: () => {},
-      registerBottomLineEventHandler: () => {},
-      deregisterBottomLineEventHandler: () => {},
+      registerValidationAttributeChangeHandler: () => {},
+      deregisterValidationAttributeChangeHandler: () => {},
       getNativeInput: () => {},
-      getIdleOutlineStyleValue: () => {},
       isFocused: () => {},
       isRtl: () => {},
+      activateLineRipple: () => {},
+      deactivateLineRipple: () => {},
+      setLineRippleTransformOrigin: () => {},
+      shakeLabel: () => {},
+      floatLabel: () => {},
+      hasLabel: () => {},
+      getLabelWidth: () => {},
+      hasOutline: () => {},
+      updateOutlinePath: () => {},
     });
   }
 
   /**
-   * @param {!MDCTextFieldAdapter=} adapter
+   * @param {!MDCTextFieldAdapter} adapter
    * @param {!FoundationMapType=} foundationMap Map from subcomponent names to their subfoundations.
    */
-  constructor(adapter = /** @type {!MDCTextFieldAdapter} */ ({}),
-    foundationMap = /** @type {!FoundationMapType} */ ({})) {
+  constructor(adapter, foundationMap = /** @type {!FoundationMapType} */ ({})) {
     super(Object.assign(MDCTextFieldFoundation.defaultAdapter, adapter));
 
-    /** @type {!MDCTextFieldBottomLineFoundation|undefined} */
-    this.bottomLine_ = foundationMap.bottomLine;
     /** @type {!MDCTextFieldHelperTextFoundation|undefined} */
     this.helperText_ = foundationMap.helperText;
     /** @type {!MDCTextFieldIconFoundation|undefined} */
     this.icon_ = foundationMap.icon;
-    /** @type {!MDCTextFieldLabelFoundation|undefined} */
-    this.label_ = foundationMap.label;
-    /** @type {!MDCTextFieldOutlineFoundation|undefined} */
-    this.outline_ = foundationMap.outline;
 
     /** @private {boolean} */
     this.isFocused_ = false;
@@ -7741,19 +8353,20 @@ class MDCTextFieldFoundation extends MDCFoundation {
     /** @private {function(): undefined} */
     this.inputInputHandler_ = () => this.autoCompleteFocus();
     /** @private {function(!Event): undefined} */
-    this.setPointerXOffset_ = (evt) => this.setBottomLineTransformOrigin(evt);
+    this.setPointerXOffset_ = (evt) => this.setTransformOrigin(evt);
     /** @private {function(!Event): undefined} */
     this.textFieldInteractionHandler_ = () => this.handleTextFieldInteraction();
-    /** @private {function(!Event): undefined} */
-    this.bottomLineAnimationEndHandler_ = () => this.handleBottomLineAnimationEnd();
+    /** @private {function(!Array): undefined} */
+    this.validationAttributeChangeHandler_ = (mutations) => this.handleValidationAttributeMutation_(mutations);
+    /** @private {!MutationObserver} */
+    this.validationObserver_;
   }
 
   init() {
     this.adapter_.addClass(MDCTextFieldFoundation.cssClasses.UPGRADED);
     // Ensure label does not collide with any pre-filled value.
-    if (this.label_ && this.getValue()) {
-      this.label_.styleFloat(
-        this.getValue(), this.isFocused_, this.isBadInput_());
+    if (this.adapter_.hasLabel() && this.getValue()) {
+      this.adapter_.floatLabel(this.shouldFloat);
     }
 
     if (this.adapter_.isFocused()) {
@@ -7769,8 +8382,8 @@ class MDCTextFieldFoundation extends MDCFoundation {
     ['click', 'keydown'].forEach((evtType) => {
       this.adapter_.registerTextFieldInteractionHandler(evtType, this.textFieldInteractionHandler_);
     });
-    this.adapter_.registerBottomLineEventHandler(
-      MDCTextFieldBottomLineFoundation.strings.ANIMATION_END_EVENT, this.bottomLineAnimationEndHandler_);
+    this.validationObserver_ = this.adapter_.registerValidationAttributeChangeHandler(
+      this.validationAttributeChangeHandler_);
   }
 
   destroy() {
@@ -7784,8 +8397,7 @@ class MDCTextFieldFoundation extends MDCFoundation {
     ['click', 'keydown'].forEach((evtType) => {
       this.adapter_.deregisterTextFieldInteractionHandler(evtType, this.textFieldInteractionHandler_);
     });
-    this.adapter_.deregisterBottomLineEventHandler(
-      MDCTextFieldBottomLineFoundation.strings.ANIMATION_END_EVENT, this.bottomLineAnimationEndHandler_);
+    this.adapter_.deregisterValidationAttributeChangeHandler(this.validationObserver_);
   }
 
   /**
@@ -7799,22 +8411,32 @@ class MDCTextFieldFoundation extends MDCFoundation {
   }
 
   /**
+   * Handles validation attribute changes
+   * @param {Array<MutationRecord>} mutationsList
+   * @private
+   */
+  handleValidationAttributeMutation_(mutationsList) {
+    mutationsList.some((mutation) => {
+      if (VALIDATION_ATTR_WHITELIST.indexOf(mutation.attributeName) > -1) {
+        this.styleValidity_(true);
+        return true;
+      }
+    });
+  }
+
+  /**
    * Updates the focus outline for outlined text fields.
    */
   updateOutline() {
-    if (!this.outline_ || !this.label_) {
+    if (!this.adapter_.hasOutline() || !this.adapter_.hasLabel()) {
       return;
     }
 
-    const isDense = this.adapter_.hasClass(cssClasses$15.DENSE);
-    const labelScale = isDense ? numbers$5.DENSE_LABEL_SCALE : numbers$5.LABEL_SCALE;
-    const labelWidth = this.label_.getWidth() * labelScale;
-    // Fall back to reading a specific corner's style because Firefox doesn't report the style on border-radius.
-    const radiusStyleValue = this.adapter_.getIdleOutlineStyleValue('border-radius') ||
-      this.adapter_.getIdleOutlineStyleValue('border-top-left-radius');
-    const radius = parseFloat(radiusStyleValue);
+    const isDense = this.adapter_.hasClass(cssClasses$20.DENSE);
+    const labelScale = isDense ? numbers$4.DENSE_LABEL_SCALE : numbers$4.LABEL_SCALE;
+    const labelWidth = this.adapter_.getLabelWidth() * labelScale;
     const isRtl = this.adapter_.isRtl();
-    this.outline_.updateSvgPath(labelWidth, radius, isRtl);
+    this.adapter_.updateOutlinePath(labelWidth, isRtl);
   }
 
   /**
@@ -7823,16 +8445,11 @@ class MDCTextFieldFoundation extends MDCFoundation {
   activateFocus() {
     this.isFocused_ = true;
     this.styleFocused_(this.isFocused_);
-    if (this.bottomLine_) {
-      this.bottomLine_.activate();
-    }
-    if (this.outline_) {
-      this.updateOutline();
-    }
-    if (this.label_) {
-      this.label_.styleShake(this.isValid(), this.isFocused_);
-      this.label_.styleFloat(
-        this.getValue(), this.isFocused_, this.isBadInput_());
+    this.adapter_.activateLineRipple();
+    this.updateOutline();
+    if (this.adapter_.hasLabel()) {
+      this.adapter_.shakeLabel(this.shouldShake);
+      this.adapter_.floatLabel(this.shouldFloat);
     }
     if (this.helperText_) {
       this.helperText_.showToScreenReader();
@@ -7840,14 +8457,15 @@ class MDCTextFieldFoundation extends MDCFoundation {
   }
 
   /**
-   * Sets the bottom line's transform origin, so that the bottom line activate
+   * Sets the line ripple's transform origin, so that the line ripple activate
    * animation will animate out from the user's click location.
    * @param {!Event} evt
    */
-  setBottomLineTransformOrigin(evt) {
-    if (this.bottomLine_) {
-      this.bottomLine_.setTransformOrigin(evt);
-    }
+  setTransformOrigin(evt) {
+    const targetClientRect = evt.target.getBoundingClientRect();
+    const evtCoords = {x: evt.clientX, y: evt.clientY};
+    const normalizedX = evtCoords.x - targetClientRect.left;
+    this.adapter_.setLineRippleTransformOrigin(normalizedX);
   }
 
   /**
@@ -7861,32 +8479,19 @@ class MDCTextFieldFoundation extends MDCFoundation {
   }
 
   /**
-   * Handles when bottom line animation ends, performing actions that must wait
-   * for animations to finish.
-   */
-  handleBottomLineAnimationEnd() {
-    // We need to wait for the bottom line to be entirely transparent
-    // before removing the class. If we do not, we see the line start to
-    // scale down before disappearing
-    if (!this.isFocused_ && this.bottomLine_) {
-      this.bottomLine_.deactivate();
-    }
-  }
-
-  /**
    * Deactivates the Text Field's focus state.
    */
   deactivateFocus() {
     this.isFocused_ = false;
+    this.adapter_.deactivateLineRipple();
     const input = this.getNativeInput_();
     const shouldRemoveLabelFloat = !input.value && !this.isBadInput_();
     const isValid = this.isValid();
     this.styleValidity_(isValid);
     this.styleFocused_(this.isFocused_);
-    if (this.label_) {
-      this.label_.styleShake(this.isValid(), this.isFocused_);
-      this.label_.styleFloat(
-        this.getValue(), this.isFocused_, this.isBadInput_());
+    if (this.adapter_.hasLabel()) {
+      this.adapter_.shakeLabel(this.shouldShake);
+      this.adapter_.floatLabel(this.shouldFloat);
     }
     if (shouldRemoveLabelFloat) {
       this.receivedUserInput_ = false;
@@ -7907,10 +8512,9 @@ class MDCTextFieldFoundation extends MDCFoundation {
     this.getNativeInput_().value = value;
     const isValid = this.isValid();
     this.styleValidity_(isValid);
-    if (this.label_) {
-      this.label_.styleShake(isValid, this.isFocused_);
-      this.label_.styleFloat(
-        this.getValue(), this.isFocused_, this.isBadInput_());
+    if (this.adapter_.hasLabel()) {
+      this.adapter_.shakeLabel(this.shouldShake);
+      this.adapter_.floatLabel(this.shouldFloat);
     }
   }
 
@@ -7932,8 +8536,8 @@ class MDCTextFieldFoundation extends MDCFoundation {
     // Retrieve from the getter to ensure correct logic is applied.
     isValid = this.isValid();
     this.styleValidity_(isValid);
-    if (this.label_) {
-      this.label_.styleShake(isValid, this.isFocused_);
+    if (this.adapter_.hasLabel()) {
+      this.adapter_.shakeLabel(this.shouldShake);
     }
   }
 
@@ -7950,23 +8554,6 @@ class MDCTextFieldFoundation extends MDCFoundation {
   setDisabled(disabled) {
     this.getNativeInput_().disabled = disabled;
     this.styleDisabled_(disabled);
-  }
-
-  /**
-   * @return {boolean} True if the Text Field is required.
-   */
-  isRequired() {
-    return this.getNativeInput_().required;
-  }
-
-  /**
-   * @param {boolean} isRequired Sets the text-field required or not.
-   */
-  setRequired(isRequired) {
-    this.getNativeInput_().required = isRequired;
-    // Addition of the asterisk is automatic based on CSS, but validity checking
-    // needs to be manually run.
-    this.styleValidity_(this.isValid());
   }
 
   /**
@@ -8062,17 +8649,18 @@ class MDCTextFieldFoundation extends MDCFoundation {
   }
 }
 
-function bottomLineFactory($el) {
-  return new MDCTextFieldBottomLineFoundation({
+function lineRippleFactory($el) {
+  return new MDCLineRippleFoundation({
     addClass: className => $el.classList.add(className),
     removeClass: className => $el.classList.remove(className),
-    setAttr: (attr, value) => $el.setAttribute(attr, value),
-    registerEventHandler: (evtType, handler) => $el.addEventListener(evtType, handler),
-    deregisterEventHandler: (evtType, handler) => $el.removeEventListener(evtType, handler),
-    notifyAnimationEnd: () => { console.log("Bottomline animationend"); }
+    hasClass: className => $el.classList.contains(className),
+    setStyle: (prop, value) => {
+      $el.style[prop] = value;
+    },
+    registerEventHandler: (type, handler) => $el.addEventListener(type, handler),
+    deregisterEventHandler: (type, handler) => $el.removeEventListener(type, handler)
   });
 }
-
 function helperTextFactory($el) {
   return new MDCTextFieldHelperTextFoundation({
     addClass: className => $el.classList.add(className),
@@ -8080,99 +8668,142 @@ function helperTextFactory($el) {
     hasClass: className => $el.classList.contains(className),
     setAttr: (attr, value) => $el.setAttribute(attr, value),
     removeAttr: attr => $el.removeAttribute(attr),
-    setContent: content => $el.textContent = content
+    setContent: content => {
+      $el.textContent = content;
+    }
   });
 }
-
 function iconFactory($el, notifyIconAction) {
   return new MDCTextFieldIconFoundation({
     setAttr: (attr, value) => $el.setAttribute(attr, value),
-    registerInteractionHandler: (evtType, handler) => $el.addEventListener(evtType, handler),
-    deregisterInteractionHandler: (evtType, handler) => $el.removeEventListener(evtType, handler),
+    registerInteractionHandler: (tvtType, handler) => $el.addEventListener(type, handler),
+    deregisterInteractionHandler: (type, handler) => $el.removeEventListener(type, handler),
     notifyIconAction
   });
 }
-
 function labelFactory($el) {
-  return new MDCTextFieldLabelFoundation({
+  return new MDCFloatingLabelFoundation({
     addClass: className => $el.classList.add(className),
     removeClass: className => $el.classList.remove(className),
-    getWidth: () => $el.offsetWidth
+    getWidth: () => $el.offsetWidth,
+    registerInteractionHandler: (evtType, handler) => $el.addEventListener(evtType, handler),
+    deregisterInteractionHandler: (evtType, handler) => $el.removeEventListener(evtType, handler)
   });
 }
-
-function outlineFactory($el, $outlinePath) {
-  return new MDCTextFieldOutlineFoundation({
+function outlineFactory($el, { outlinePath, idleOutline }) {
+  const styles = idleOutline && window.getComputedStyle(idleOutline);
+  
+  return new MDCNotchedOutlineFoundation({
     getWidth: () => $el.offsetWidth,
     getHeight: () => $el.offsetHeight,
-    setOutlinePathAttr: value => $outlinePath.setAttribute("d", value)
+    addClass: className => $el.classList.add(className),
+    removeClass: className => $el.classList.remove(className),
+    setOutlinePathAttr: value => outlinePath.setAttribute("d", value),
+    getIdleOutlineStyleValue: prop => styles && styles.getPropertyValue(prop)
   });
 }
 
-const rippleAdapter$3 = {
-  isSurfaceActive() {
-    return this.$refs.input[matches]("active");
-  },
-  registerInteractionHandler(type, handler) {
-    this.$refs.input.addEventListener(type, handler);
-  },
-  deregisterInteractionHandler(type, handler) {
-    this.$refs.input.removeEventListener(type, handler);
-  }
-};
-
-function getFoundationMap(vm) {
-  const { bottomLine, icon, label, outline } = vm.$refs;
-  let helperText = getHelperText(vm.$el.nextElementSibling);
-
-  return {
-    bottomLine: bottomLine && bottomLineFactory(bottomLine),
-    helperText: helperText && helperTextFactory(helperText),
-    icon: icon && iconFactory(icon, () => vm.$emit("icon")),
-    label: label && labelFactory(label),
-    outline: outline && outlineFactory(outline),
-  };
-}
 function getHelperText(helperText) {
   return helperText.classList.contains("mdc-text-field-helper-text") ? helperText : null;
 }
+function uuid() {
+  return "_mdtf_" + Math.random().toString(36).substr(2);
+}
 
-//v-ripple="ripple && box && !fullwidth"
-var Textfield$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-text-field",class:_vm.cssClasses},[(_vm.icon && !_vm.trailingIcon)?_c('i',{ref:"icon",staticClass:"material-icons mdc-text-field__icon",attrs:{"tabindex":_vm.clickIcon && '0'}},[_vm._v(_vm._s(_vm.icon))]):_vm._e(),_c('input',_vm._b({ref:"input",staticClass:"mdc-text-field__input",on:{"input":_vm.onInput}},'input',_vm.$attrs,false)),(!_vm.fullwidth)?_c('label',{ref:"label",staticClass:"mdc-text-field__label"},[_vm._t("default")],2):_vm._e(),(_vm.icon && _vm.trailingIcon)?_c('i',{ref:"icon",staticClass:"material-icons mdc-text-field__icon",attrs:{"tabindex":_vm.clickIcon && '0'}},[_vm._v(_vm._s(_vm.icon))]):_vm._e(),(!_vm.outline)?_c('div',{ref:"bottomLine",staticClass:"mdc-text-field__bottom-line"}):[_c('div',{ref:"outline",staticClass:"mdc-text-field__outline"}),_c('svg',[_c('path',{ref:"outlinePath",staticClass:"mdc-text-field__outline-path"})]),_c('div',{ref:"idleOutline",staticClass:"mdc-text-field__idle-outline"})]],2)},staticRenderFns: [],
+var Textfield = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-text-field",class:_vm.cssClasses},[(_vm.leadingIcon)?_c('mdc-icon',{ref:"icon",attrs:{"name":"text-field","icon":_vm.leadingIcon}}):_vm._e(),_c('input',_vm._b({directives:[{name:"model",rawName:"v-model",value:(_vm.model),expression:"model"}],ref:"input",staticClass:"mdc-text-field__input",domProps:{"value":(_vm.model)},on:{"input":function($event){if($event.target.composing){ return; }_vm.model=$event.target.value;}}},'input',_vm.inputAttrs,false)),(!_vm.fullwidth)?_c('label',{ref:"label",staticClass:"mdc-floating-label",attrs:{"for":_vm.uuid}},[_vm._v(_vm._s(_vm.label))]):_vm._e(),(!_vm.leadingIcon && _vm.trailingIcon)?_c('mdc-icon',{ref:"icon",attrs:{"name":"text-field","icon":_vm.trailingIcon}}):_vm._e(),(!_vm.outlined)?_c('div',{ref:"lineRipple",staticClass:"mdc-line-ripple"}):[_c('div',{ref:"outline",staticClass:"mdc-text-field__outline"},[_c('svg',[_c('path',{ref:"outlinePath",staticClass:"mdc-text-field__outline-path"})])]),_c('div',{ref:"idleOutline",staticClass:"mdc-text-field__idle-outline"})]],2)},staticRenderFns: [],
   name: "MdcTextfield",
-  inheritAttrs: false,
-  mixins: [ Ripple(rippleAdapter$3) ],
+  components: { MdcIcon },
   props: {
-    disabled: Boolean,
     box: Boolean,
-    dense: Boolean,
+    outlined: Boolean,
     fullwidth: Boolean,
-    outline: Boolean,
-    
-    value: String,
+    dense: Boolean,
+    required: Boolean,
+    disabled: Boolean,
 
-    // Icon stuff
-    icon: String,
-    trailingIcon: Boolean,
-    clickIcon: Boolean
+    id: String,
+    type: String,
+    value: String,
+    label: String,
+
+    // Validation
+    pattern: String,
+    min: Number,
+    max: Number,
+    step: Number,
+    minlength: Number,
+    maxlength: Number,
+
+    // Icon definitions
+    trailingIcon: String,
+    leadingIcon: String
   },
   watch: {
-    value(value) {
-      this.foundation.setValue(value);
-    },
     disabled(value) {
       this.foundation.setDisabled(value);
     }
   },
+  computed: {
+    cssClasses() {
+      return {
+        "mdc-text-field--box": this.box,
+        "mdc-text-field--outlined": this.outlined,
+        "mdc-text-field--fullwidth": this.fullwidth,
+        "mdc-text-field--dense": this.dense,
+        "mdc-text-field--with-leading-icon": this.leadingIcon,
+        "mdc-text-field--with-trailing-icon": !this.leadingIcon && this.trailingIcon
+      };
+    },
+    hasIconListener() {
+      return !!(this.$listeners && this.$listeners.icon);
+    },
+    model: {
+      get() {
+        return this.value;
+      },
+      set(value) {
+        this.$emit("input", value);
+      }
+    },
+    inputAttrs() {
+      const label = this.fullwidth && this.label;
+
+      return {
+        required: this.required,
+        placeholder: label,
+        ariaLabel: label,
+
+        // Validation
+        id: this.uuid,
+        type: this.type,
+        pattern: this.pattern,
+        min: this.min,
+        max: this.max,
+        step: this.step,
+        minlength: this.minlength,
+        maxlength: this.maxlength,
+      };
+    }
+  },
+  data() {
+    return { uuid: this.id || uuid()  };
+  },
+
   mounted() {
     const { $el } = this;
-    const { input, idleOutline, bottomLine } = this.$refs;
+    const { input } = this.$refs;
 
     const styles = getComputedStyle($el);
-    const idleOutlineStyles = idleOutline ? getComputedStyle(idleOutline) : undefined;
+    this.foundationMap = this.$_getFoundationMap();
 
-    if(!this.box || !this.outline) {
-      this._ripple.destroy();
+    if(this.$refs.lineRipple) {
+      this._lineRipple = lineRippleFactory(this.$refs.lineRipple);
+    }
+    if(this.$refs.label) {
+      this._label = labelFactory(this.$refs.label);
+    }
+    if(this.$refs.outline) {
+      this._outline = outlineFactory(this.$refs.outline, this.$refs);
     }
 
     this.foundation = new MDCTextFieldFoundation({
@@ -8180,24 +8811,94 @@ var Textfield$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var
       removeClass: className => $el.classList.remove(className),
       hasClass: className => $el.classList.contains(className),
       // Interactions
-      registerTextFieldInteractionHandler: (evtType, handler) => $el.addEventListener(evtType, handler),
-      deregisterTextFieldInteractionHandler: (evtType, handler) => $el.removeEventListener(evtType, handler),
-      registerInputInteractionHandler: (evtType, handler) => input.addEventListener(evtType, handler),
-      deregisterInputInteractionHandler: (evtType, handler) => input.removeEventListener(evtType, handler),
-      registerBottomLineEventHandler: (evtType, handler) => bottomLine && bottomLine.addEventListener(evtType, handler),
-      deregisterBottomLineEventHandler: (evtType, handler) => bottomLine && bottomLine.removeEventListener(evtType, handler),
+      registerTextFieldInteractionHandler: (type, handler) => $el.addEventListener(type, handler),
+      deregisterTextFieldInteractionHandler: (type, handler) => $el.removeEventListener(type, handler),
+      registerInputInteractionHandler: (type, handler) => input.addEventListener(type, handler),
+      deregisterInputInteractionHandler: (type, handler) => input.removeEventListener(type, handler),
+      registerValidationAttributeChangeHandler: handler => {
+        const observer = new MutationObserver(handler);
+        observer.observe(this.$refs.input, { attributes: true });
+        return observer;
+      },
+      deregisterValidationAttributeChangeHandler: observer => observer.disconnect(),
       
-      getIdleOutlineStyleValue: prop => idleOutlineStyles && idleOutlineStyles.getPropertyValue(prop),
       getNativeInput: () => input,
       isFocused: () => document.activeElement === input,
-      isRtl: () => styles.direction === "rtl"
-    }, getFoundationMap(this));
+      isRtl: () => styles.direction === "rtl",
+
+      // Line Ripple methods
+      activateLineRipple: () => this._lineRipple && this._lineRipple.activate(),
+      deactivateLineRipple: () => this._lineRipple && this._lineRipple.deactivate(),
+      setLineRippleTransformOrigin: normalizedX => this._lineRipple && this._lineRipple.setRippleCenter(normalizedX),
+      // Label methods
+      shakeLabel: shouldShake => this._label.shake(shouldShake),
+      floatLabel: shouldFloat => this._label.float(shouldFloat),
+      hasLabel: () => !!this._label,
+      getLabelWidth: () => this._label.getWidth(),
+      // Outline methods
+      hasOutline: () => !!this._outline,
+      notchOutline: (labelWidth, isRtl) => this._outline.notch(labelWidth, isRtl),
+      closeOutline: () => this._outline.closeNotch(),
+    }, this.foundationMap);
 
     this.foundation.init();
     this.foundation.setDisabled(this.disabled);
   },
   beforeDestroy() {
     this.foundation.destroy();
+
+    if(this.foundationMap.helperText) {
+      this.foundationMap.helperText.destroy();
+    }
+    if(this.foundationMap.icon) {
+      this.foundationMap.icon.destroy();
+    }
+    if(this._lineRipple) {
+      this._lineRipple.destroy();
+    }
+    if(this._label) {
+      this._label.destroy();
+    }
+    if(this._outline) {
+      this._outline.destroy();
+    }
+  },
+  methods: {
+    $_getFoundationMap() {
+      const { icon } = this.$refs;
+      const helperText = getHelperText(this.$el.nextElementSibling);
+
+      return {
+        helperText: helperText && helperTextFactory(helperText),
+        icon: icon && this.hasIconListener && iconFactory(icon.$el, () => this.$emit("icon")),
+      };
+    }
+  }
+};
+
+function getHelperText$1(helperText) {
+  return helperText.classList.contains("mdc-text-field-helper-text") ? helperText : null;
+}
+
+var Textarea = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-text-field mdc-text-field--textarea",class:_vm.cssClasses},[_c('textarea',_vm._b({directives:[{name:"model",rawName:"v-model",value:(_vm.model),expression:"model"}],ref:"input",staticClass:"mdc-text-field__input",attrs:{"label":_vm.fullwidth && _vm.label},domProps:{"value":(_vm.model)},on:{"input":function($event){if($event.target.composing){ return; }_vm.model=$event.target.value;}}},'textarea',_vm.$attrs,false)),(!_vm.fullwidth)?_c('label',{ref:"label",staticClass:"mdc-floating-label"},[_vm._v(_vm._s(_vm.label))]):_vm._e()])},staticRenderFns: [],
+  name: "MdcTextarea",
+  inheritAttrs: false,
+  props: {
+    fullwidth: Boolean,
+    disabled: Boolean,
+    dense: Boolean,
+    required: Boolean,
+    // For v-model
+    value: String,
+    label: String
+  },
+  watch: {
+    disabled(value) {
+      this.foundation.setDisabled(value);
+    },
+    required(value) {
+      this.foundation.setRequired(value);
+    }
   },
   computed: {
     model: {
@@ -8210,29 +8911,70 @@ var Textfield$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var
     },
     cssClasses() {
       return {
-        "mdc-text-field--box": this.box,
-        "mdc-text-field--dense": this.dense,
         "mdc-text-field--fullwidth": this.fullwidth,
-        "mdc-text-field--with-leading-icon": this.icon && !this.trailingIcon,
-        "mdc-text-field--with-trailing-icon": this.icon && this.trailingIcon
+        "mdc-text-field--dense": this.dense
       };
     }
   },
+  mounted() {
+    const { $el } = this;
+    const { input } = this.$refs;
+
+    const styles = getComputedStyle($el);
+    const foundationMap = this.$_getFoundationMap();
+
+    this.foundation = new MDCTextFieldFoundation({
+      addClass: className => $el.classList.add(className),
+      removeClass: className => $el.classList.remove(className),
+      hasClass: className => $el.classList.contains(className),
+      // Interactions
+      registerTextFieldInteractionHandler: (evtType, handler) => $el.addEventListener(evtType, handler),
+      deregisterTextFieldInteractionHandler: (evtType, handler) => $el.removeEventListener(evtType, handler),
+      registerInputInteractionHandler: (evtType, handler) => input.addEventListener(evtType, handler),
+      deregisterInputInteractionHandler: (evtType, handler) => input.removeEventListener(evtType, handler),
+      
+      getNativeInput: () => input,
+      isFocused: () => document.activeElement === input,
+      isRtl: () => styles.direction === "rtl",
+
+      activateLineRipple: () => {},
+      deactivateLineRipple: () => {},
+      setLineRippleTransformOrigin: () => {},
+    }, foundationMap);
+
+    this.foundation.init();
+    this.foundation.setDisabled(this.disabled);
+    this.foundation.setRequired(this.required);
+    this.foundation.setValue(this.value);
+  },
+  beforeDestroy() {
+    this.foundation.destroy();
+  },
   methods: {
-    onInput(e) {
-      this.$emit("input", e.target.value);
+    $_getFoundationMap(vm) {
+      const { lineRipple, icon, label, outline, outlinePath, idleOutline } = this.$refs;
+      let helperText = getHelperText$1(this.$el.nextElementSibling);
+
+      return {
+        lineRipple: lineRipple && lineRippleFactory(lineRipple),
+        helperText: helperText && helperTextFactory(helperText),
+        icon: icon && iconFactory(icon, () => this.$emit("icon")),
+        label: label && labelFactory(label),
+        outline: outline && outlineFactory(outline, outlinePath, idleOutline),
+      };
     }
   }
 };
 
-var textarea = {
-  name: "MdcTextarea",
-  props: {},
-  data() {
-    return {};
+var Textfield$1 = {
+  functional: true,
+  props: {
+    textarea: Boolean
   },
-  computed: {},
-  methods: {}
+  render(h, ctx) {
+    let tag = ctx.props.textarea ? Textarea : Textfield;
+    return h(tag, ctx.data, ctx.children);
+  }
 };
 
 var TextfieldHelpertext = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('p',{staticClass:"mdc-text-field-helper-text",class:_vm.cssClasses,attrs:{"aria-hidden":"true"}},[_vm._t("default")],2)},staticRenderFns: [],
@@ -8251,17 +8993,15 @@ var TextfieldHelpertext = {render: function(){var _vm=this;var _h=_vm.$createEle
   }
 };
 
-function install$20(Vue) {
-  Vue.component(Textfield$1.name, Textfield$1);
-  //Vue.component(Textarea.name, Textarea);
+function install$21(Vue) {
+  Vue.component("mdc-textfield", Textfield$1);
   Vue.component(TextfieldHelpertext.name, TextfieldHelpertext);
 }
 
-var Textfield = Object.freeze({
-	Textfield: Textfield$1,
-	Textarea: textarea,
-	TextfieldHelpertext: TextfieldHelpertext,
-	install: install$20
+var Textfield$2 = /*#__PURE__*/Object.freeze({
+  Textfield: Textfield$1,
+  TextfieldHelpertext: TextfieldHelpertext,
+  install: install$21
 });
 
 /**
@@ -8280,7 +9020,7 @@ var Textfield = Object.freeze({
  * limitations under the License.
  */
 
-const cssClasses$16 = {
+const cssClasses$21 = {
   FIXED: 'mdc-toolbar--fixed',
   FIXED_LASTROW: 'mdc-toolbar--fixed-lastrow-only',
   FIXED_AT_LAST_ROW: 'mdc-toolbar--fixed-at-last-row',
@@ -8290,13 +9030,13 @@ const cssClasses$16 = {
   FLEXIBLE_MIN: 'mdc-toolbar--flexible-space-minimized',
 };
 
-const strings$18 = {
+const strings$20 = {
   TITLE_SELECTOR: '.mdc-toolbar__title',
   FIRST_ROW_SELECTOR: '.mdc-toolbar__row:first-child',
   CHANGE_EVENT: 'MDCToolbar:change',
 };
 
-const numbers$6 = {
+const numbers$5 = {
   MAX_TITLE_SIZE: 2.125,
   MIN_TITLE_SIZE: 1.25,
   TOOLBAR_ROW_HEIGHT: 64,
@@ -8319,17 +9059,18 @@ const numbers$6 = {
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 class MDCToolbarFoundation extends MDCFoundation {
   static get cssClasses() {
-    return cssClasses$16;
+    return cssClasses$21;
   }
 
   static get strings() {
-    return strings$18;
+    return strings$20;
   }
 
   static get numbers() {
-    return numbers$6;
+    return numbers$5;
   }
 
   static get defaultAdapter() {
@@ -8559,7 +9300,7 @@ function applyPassive$2(globalObj = window, forceRefresh = false) {
   return supportsPassive_$2 ? {passive: true} : false;
 }
 
-var Toolbar$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('header',{staticClass:"mdc-toolbar",class:_vm.cssClasses},[_vm._t("default")],2)},staticRenderFns: [],
+var Toolbar = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('header',{staticClass:"mdc-toolbar",class:_vm.cssClasses},[_vm._t("default")],2)},staticRenderFns: [],
   name: "MdcToolbar",
   props: {
     flexible: Boolean,
@@ -8637,14 +9378,14 @@ var ToolbarSection = {render: function(){var _vm=this;var _h=_vm.$createElement;
   props: {
     alignStart: Boolean,
     alignEnd: Boolean,
-    shrink: Boolean
+    shrinkToFit: Boolean
   },
   computed: {
     cssClasses() {
       return {
         "mdc-toolbar__section--align-start": this.alignStart,
         "mdc-toolbar__section--align-end": this.alignEnd,
-        "mdc-toolbar__section--shrink-to-fit": this.shrink,
+        "mdc-toolbar__section--shrink-to-fit": this.shrinkToFit,
       };
     }
   }
@@ -8654,8 +9395,9 @@ var ToolbarTitle = {render: function(){var _vm=this;var _h=_vm.$createElement;va
   name: "MdcToolbarTitle"
 };
 
-var ToolbarIcon = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c(_vm.tag,{tag:"component",staticClass:"material-icons mdc-toolbar__icon",attrs:{"href":_vm.link,"aria-label":_vm.label,"alt":_vm.label}},[_vm._v(_vm._s(_vm.icon))])},staticRenderFns: [],
+var ToolbarIcon = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('mdc-icon',{attrs:{"tag":_vm.tag,"name":"toolbar","icon":_vm.icon,"label":_vm.label,"href":_vm.link}},[_vm._v(_vm._s(_vm.icon))])},staticRenderFns: [],
   name: "MdcToolbarIcon",
+  components: { MdcIcon },
   props: {
     link: String,
     label: String,
@@ -8683,8 +9425,8 @@ var ToolbarMenuIcon = {render: function(){var _vm=this;var _h=_vm.$createElement
   }
 };
 
-function install$21(Vue) {
-  Vue.component(Toolbar$1.name, Toolbar$1);
+function install$22(Vue) {
+  Vue.component(Toolbar.name, Toolbar);
   Vue.component(ToolbarRow.name, ToolbarRow);
   Vue.component(ToolbarSection.name, ToolbarSection);
   Vue.component(ToolbarTitle.name, ToolbarTitle);
@@ -8692,29 +9434,18 @@ function install$21(Vue) {
   Vue.component(ToolbarMenuIcon.name, ToolbarMenuIcon);
 }
 
-var Toolbar = Object.freeze({
-	Toolbar: Toolbar$1,
-	ToolbarRow: ToolbarRow,
-	ToolbarSection: ToolbarSection,
-	ToolbarTitle: ToolbarTitle,
-	ToolbarIcon: ToolbarIcon,
-	ToolbarMenuIcon: ToolbarMenuIcon,
-	install: install$21
+var Toolbar$1 = /*#__PURE__*/Object.freeze({
+  Toolbar: Toolbar,
+  ToolbarRow: ToolbarRow,
+  ToolbarSection: ToolbarSection,
+  ToolbarTitle: ToolbarTitle,
+  ToolbarIcon: ToolbarIcon,
+  ToolbarMenuIcon: ToolbarMenuIcon,
+  install: install$22
 });
 
-//import { default as Toolbar } from "./toolbar.vue";
-
-
-
-//export { };
-/*export function install(Vue) {
-
-}*/
-
-//import * as Elevation from "./packages/elevation";
-//import * as Tabs from "./packages/tabs";
 const DEFAULT_OPTS = {
-  theme: null,
+  theme: "",
   typography: false
 };
 
@@ -8723,41 +9454,41 @@ var index = {
   install(Vue, opts) {
     const { body } = document;
     opts = Object.assign({}, DEFAULT_OPTS, opts);
+
     // Add typography on body
     if (opts.typography) {
       body.classList.add("mdc-typography");
     }
     // Apply theme on body
     if (opts.theme) {
-      body.classList.add(`theme--${opts.theme}`);
+      body.classList.add(`mdc-theme--${opts.theme}`);
     }
     
     // Add all the packages as global components
-    Vue.use(App);
+    Vue.use(App$1);
     Vue.use(Button);
-    Vue.use(Card);
-    Vue.use(Checkbox);
-    Vue.use(Dialog);
-    Vue.use(Drawer);
-    //Vue.use(Elevation);
-    Vue.use(Fab);
-    Vue.use(FormField);
-    Vue.use(GridList);
-    Vue.use(IconToggle);
-    Vue.use(LayoutGrid);
-    Vue.use(LinearProgress);
-    Vue.use(List);
-    Vue.use(Menu);
-    Vue.use(Radio);
-    Vue.use(Select);
-    Vue.use(Slider);
-    Vue.use(Snackbar);
-    Vue.use(Switch);
-    //Vue.use(Tabs);
-    Vue.use(Textfield);
-    Vue.use(Toolbar);
+    Vue.use(Card$1);
+    Vue.use(Checkbox$1);
+    Vue.use(Chips);
+    Vue.use(Dialog$1);
+    Vue.use(Drawer$1);
+    Vue.use(Fab$1);
+    Vue.use(FormField$1);
+    Vue.use(GridList$1);
+    Vue.use(IconToggle$1);
+    Vue.use(LayoutGrid$1);
+    Vue.use(LinearProgress$1);
+    Vue.use(List$1);
+    Vue.use(Menu$1);
+    Vue.use(Radio$1);
+    Vue.use(Select$1);
+    //Vue.use(Slider);
+    Vue.use(Snackbar$1);
+    Vue.use(Switch$1);
+    Vue.use(Tabs);
+    Vue.use(Textfield$2);
+    Vue.use(Toolbar$1);
   }
 };
 
 export default index;
-//# sourceMappingURL=vue-mdc-web.esm.js.map

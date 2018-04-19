@@ -11,10 +11,7 @@ const pascal = str => {
 export default [
   {
     path: "/",
-    component: Home,
-    meta: {
-      title: "Home"
-    }
+    component: Home
   },
   {
     path: "/demo/:view",

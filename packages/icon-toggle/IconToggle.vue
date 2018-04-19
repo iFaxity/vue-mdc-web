@@ -13,7 +13,7 @@ const rippleAdapter = {
 };
 
 export default {
-  name: "MdcIconToggle",
+  name: "MDCIconToggle",
   mixins: [ Ripple(rippleAdapter, { unbounded: true }) ],
   props: {
     active: Boolean,

@@ -31,7 +31,7 @@ const MdcLink = {
 
 export default function install(activeClass, exactActiveClass) {
   return {
-    components: { MdcLink },
+    components: { MdcLink: MdcLink },
     props: {
       to: String,
       replace: Boolean,

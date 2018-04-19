@@ -1,17 +1,18 @@
 <template lang="pug">
 aside.mdc-dialog(role="alertdialog")
   .mdc-dialog__surface(ref="surface")
-    header.mdc-dialog__header(v-if="title")
-      h2.mdc-dialog__header__title {{ title }}
+    header.mdc-dialog__header(v-if="header")
+      h2.mdc-dialog__header__title {{ header }}
     section.mdc-dialog__body(v-if="hasContent", :class="cssBodyClasses")
       slot
     footer.mdc-dialog__footer
       mdc-button.mdc-dialog__footer__button.mdc-dialog__footer__button--cancel(ref="cancel") {{ cancelText }}
-      mdc-button.mdc-dialog__footer__button.mdc-dialog__footer__button--accept(ref="accept", raised) {{ acceptText }}
+      mdc-button.mdc-dialog__footer__button.mdc-dialog__footer__button--accept(ref="accept", :disabled="!valid") {{ acceptText }}
   .mdc-dialog__backdrop
 </template>
 
 <script>
+import { Button as MdcButton } from "../button";
 import Foundation from "@material/dialog/foundation";
 import { createFocusTrapInstance } from "@material/dialog/util";
 
@@ -19,10 +20,15 @@ import { getCorrectEventName } from "@material/animation";
 const transitionEnd = getCorrectEventName(window, "transitionend");
 
 export default {
-  name: "MdcDialog",
+  name: "MDCDialog",
+  components: { MdcButton },
   props: {
-    title: String,
-    scrollable: Boolean,
+    header: String,
+    scroll: Boolean,
+    valid: {
+      type: Boolean,
+      default: true
+    },
     acceptText: {
       type: String,
       default: "Ok"
@@ -34,7 +40,7 @@ export default {
   },
   computed: {
     cssBodyClasses() {
-      return this.scrollable && "mdc-dialog__body--scrollable";
+      return this.scroll && "mdc-dialog__body--scrollable";
     },
     hasContent() {
       return !!this.$slots.default;

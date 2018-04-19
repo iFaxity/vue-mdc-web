@@ -32,7 +32,7 @@ const plugins = [
       outputStyle: "compressed",
       includePaths: SASS_INCLUDE_PATHS
     },
-    processor: css => postcss([ autoprefixer ]).process(css).then(result => result.css)
+    processor: css => postcss([ autoprefixer ]).process(css, { from: null }).then(result => result.css)
   }),
 ];
 

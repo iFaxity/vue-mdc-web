@@ -9,7 +9,7 @@ import Foundation from "@material/grid-list/foundation";
 const RATIOS = ["1x1", "16x9", "2x3", "3x2", "4x3", "3x4"];
 
 export default {
-  name: "MdcGridList",
+  name: "MDCGridList",
   props: {
     headerCaption: Boolean,
     twoline: Boolean,

@@ -4,7 +4,7 @@ h3.mdc-list-group__subheader {{ text }}
 
 <script>
 export default {
-  name: "MdcListGroupSubheader",
+  name: "MDCListGroupSubheader",
   props: {
     text: {
       type: String,

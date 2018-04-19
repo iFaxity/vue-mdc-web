@@ -12,7 +12,7 @@ import Foundation from "@material/drawer/temporary/foundation";
 import * as util from "@material/drawer/util";
 
 export default {
-  name: "MdcTemporaryDrawer",
+  name: "MDCTemporaryDrawer",
   props: {
     open: Boolean,
     spacer: Boolean,

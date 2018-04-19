@@ -6,7 +6,7 @@
 
 <script>
 export default {
-  name: "MdcLayoutGrid",
+  name: "MDCLayoutGrid",
   props: {
     fixedColumnWidth: Boolean,
     alignLeft: Boolean,

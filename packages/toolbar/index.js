@@ -7,7 +7,7 @@ import ToolbarMenuIcon from "./ToolbarMenuIcon.vue";
 import "@material/toolbar/mdc-toolbar.scss";
 
 export { Toolbar, ToolbarRow, ToolbarSection, ToolbarTitle, ToolbarIcon, ToolbarMenuIcon };
-export function install(Vue) {
+export function install(Vue, register) {
   Vue.component(Toolbar.name, Toolbar);
   Vue.component(ToolbarRow.name, ToolbarRow);
   Vue.component(ToolbarSection.name, ToolbarSection);

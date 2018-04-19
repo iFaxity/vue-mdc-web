@@ -11,7 +11,7 @@
 import "./app.scss";
 
 export default {
-  name: "MdcApp",
+  name: "MDCApp",
   props: {
     flip: Boolean, // flips the drawer & toolbar slot
     drawerHideMobile: Boolean,
@@ -27,6 +27,7 @@ export default {
     cssClasses() {
       return {
         "mdc-app--flipped": this.flip,
+        "mdc-app--align-start": this.alignStart,
         "mdc-app--drawer-hide-mobile": this.drawerHideMobile
       };
     },

@@ -2,7 +2,7 @@
 .mdc-chip
   mdc-icon.mdc-chip__icon--leading(v-if="leadingIcon", v-bind="leadingIcon")
   .mdc-chip__text {{ text }}
-  mdc-icon.mdc-chip__icon--trailing(v-if="trailingIcon", v-bind="trailinIcon")
+  mdc-icon.mdc-chip__icon--trailing(v-if="trailingIcon", v-bind="trailingIcon")
 </template>
 
 <script>
@@ -11,7 +11,7 @@ import { Ripple } from "../ripple";
 import MdcIcon from "../icon";
 
 export default {
-  name: "MdcChip",
+  name: "MDCChip",
   mixins: [ Ripple() ],
   components: { MdcIcon },
   props: {
@@ -65,6 +65,9 @@ export default {
       notifyInteraction: () => this.$emit("click")
     });
     this.foundation.init();
+  },
+  beforeDestroy() {
+    this.foundation.destroy();
   }
 };
 </script>

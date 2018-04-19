@@ -11,7 +11,7 @@ import { getCorrectEventName } from "@material/animation";
 
 const transitionend = getCorrectEventName(window, "transitionend");
 export default {
-  name: "MdcSnackbar",
+  name: "MDCSnackbar",
   props: {
     alignStart: Boolean,
     dismissesOnAction: {
@@ -32,12 +32,8 @@ export default {
     const { actionButton } = this.$refs;
 
     this.foundation = new Foundation({
-      addClass: className => {
-        $el.classList.add(className);
-      },
-      removeClass: className => {
-        $el.classList.remove(className);
-      },
+      addClass: className => $el.classList.add(className),
+      removeClass: className => $el.classList.remove(className),
       setAriaHidden: () => {
         this.hidden = true;
       },

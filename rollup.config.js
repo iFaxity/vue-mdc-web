@@ -28,7 +28,7 @@ const plugins = [
       outputStyle: "compressed",
       includePaths: ["node_modules"]
     },
-    processor: css => postcss([autoprefixer]).process(css).then(result => result.css)
+    processor: css => postcss([autoprefixer]).process(css, { from: null }).then(result => result.css)
   }),
   //buble({ exclude: "node_modules/**" }),
 ];

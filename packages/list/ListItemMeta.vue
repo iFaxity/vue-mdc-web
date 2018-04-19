@@ -4,7 +4,7 @@ mdc-link.mdc-list-item__meta(:is="tag", :class="cssClasses", :aria-label="icon &
 
 <script>
 export default {
-  name: "MdcListItemMeta",
+  name: "MDCListItemMeta",
   props: {
     icon: String,
     label: String,

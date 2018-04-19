@@ -1,34 +1,52 @@
 <template lang="pug">
-main
-  h2 Card not finished so no docs
+demo-template
+  mdc-card(slot="hero")
+    mdc-card-media(image="/images/16-9.jpg")
+    mdc-card-actions
+      mdc-button(slot="button") Click me
+      mdc-button(slot="button") Or me
 
-  mdc-card
-    mdc-card-media(image="kek.png")
-
-    mdc-card-actions(full-bleed)
-      mdc-button Kek
-      mdc-button link
-//demo-template
-  h1 MdcCard
-  p MdcCard is a simple card wrapper for the material.io card
+      mdc-icon-toggle(slot="icon", :on="{content: 'favorite', label: 'Add to favorites'}", :off="{content: 'favorite_border', label: 'Remove from favorites'}")
+      mdc-icon(slot="icon", icon="share", label="Share", ripple, action)
+      mdc-icon(slot="icon", icon="more_vert", label="More Options", ripple, action)
 
   template(slot="usage")
     demo-code(lang="markup", code=`
-  <mdc-card>...text</mdc-card>`)
+<mdc-card>
+  <mdc-card-media image="<image source>"/>
+  <mdc-card-actions>
+    <mdc-button slot="button">Click me</mdc-button>
+    <mdc-button slot="button">Or me</mdc-button>
 
-  template(slot="props")
+    <mdc-icon-toggle slot="icon" :on="{content: 'favorite', label: 'Add to favorites'}" :off="{content: 'favorite_border', label: 'Remove from favorites'}"/>
+  </mdc-card-actions>
+</mdc-form-field>`)
+
+  // TODO: add data
+  //template(slot="props")
     tr
-      td stroked
+      td checked
       td Boolean
       td false
-      td Adds an stroke outlining the card
+      td Used to change the checked state of the checkbox
+    tr
+      td disabled
+      td Boolean
+      td false
+      td Disables the checkbox from any input
+    tr
+      td indeterminate
+      td Boolean
+      td false
+      td Changes the indetermined state of the checkbox
 </template>
 
 <script>
 import DemoTemplate from "../DemoTemplate.vue";
+import MdcIcon from "../../../packages/icon";
 
 export default {
   name: "DemoCard",
-  components: { DemoTemplate }
+  components: { DemoTemplate, MdcIcon }
 };
 </script>

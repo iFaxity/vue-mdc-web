@@ -5,6 +5,6 @@ span.mdc-toolbar__title
 
 <script>
 export default {
-  name: "MdcToolbarTitle"
+  name: "MDCToolbarTitle"
 };
 </script>

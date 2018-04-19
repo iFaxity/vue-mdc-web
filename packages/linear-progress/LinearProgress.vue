@@ -21,7 +21,7 @@ function assertNumber(value, fn) {
 }
 
 export default {
-  name: "MdcLinearProgress",
+  name: "MDCLinearProgress",
   model: {
     prop: "value",
     event: "change"

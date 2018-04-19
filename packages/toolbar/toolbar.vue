@@ -8,7 +8,7 @@ import Foundation from "@material/toolbar/foundation";
 import { applyPassive } from "@material/toolbar/util";
 
 export default {
-  name: "MdcToolbar",
+  name: "MDCToolbar",
   props: {
     flexible: Boolean,
     waterfall: Boolean,

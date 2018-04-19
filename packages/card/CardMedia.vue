@@ -5,26 +5,19 @@
 </template>
 
 <script>
-const RATIOS = ["16x9", "square"];
 
 export default {
-  name: "MdcCardMedia",
+  name: "MDCCardMedia",
   props: {
-    ratio: {
-      type: String,
-      validator: value => RATIOS.includes(value)
-    },
+    square: Boolean,
     image: String
   },
   computed: {
     cssStyles() {
-      return this.image && `background-image: ${this.image};`;
+      return this.image && `background-image: url(${this.image});`;
     },
     cssClasses() {
-      return {
-        "mdc-card__media--square": this.ratio === "square",
-        "mdc-card__media--16-9": this.ratio === "16x9"
-      };
+      return this.square ? "mdc-card__media--square" : "mdc-card__media--16-9";
     },
     hasContent() {
       return !!this.$slots.default;

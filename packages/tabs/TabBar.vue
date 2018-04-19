@@ -8,7 +8,7 @@ nav.mdc-tab-bar(:class="cssClasses")
 import Foundation from "@material/tabs/tab-bar/foundation";
 
 export default {
-  name: "MdcTabBar",
+  name: "MDCTabBar",
   props: {
     icons: Boolean,
     iconsWithText: Boolean,

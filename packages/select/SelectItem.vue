@@ -4,7 +4,7 @@ li.mdc-list-item(role="option", :aria-disabled="disabled && 'true'", :tabindex="
 
 <script>
 export default {
-  name: "MdcSelectItem",
+  name: "MDCSelectItem",
   props: {
     disabled: Boolean,
     value: String,

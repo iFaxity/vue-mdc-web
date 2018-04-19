@@ -1,6 +1,6 @@
 <template lang="pug">
-component(:is=`link ? "a" : "button"`, :class="cssClasses", :href="link", v-on="$listeners")
-  i.material-icons.mdc-button__icon(v-if="icon") {{icon}}
+component.mdc-button(:is=`link ? "a" : "button"`, :class="cssClasses", :href="link", :disabled="disabled", v-on="$listeners")
+  i.material-icons.mdc-button__icon(v-if="icon") {{ icon }}
   slot
 </template>
 
@@ -8,7 +8,7 @@ component(:is=`link ? "a" : "button"`, :class="cssClasses", :href="link", v-on="
 import { Ripple } from "../ripple";
 
 export default {
-  name: "MdcButton",
+  name: "MDCButton",
   mixins: [ Ripple() ],
   props: {
     icon: String,
@@ -17,13 +17,13 @@ export default {
     stroked: Boolean,
     dense: Boolean,
     compact: Boolean,
+    disabled: Boolean,
 
     link: String
   },
   computed: {
     cssClasses() {
       return {
-        "mdc-button": true,
         "mdc-button--raised": this.raised,
         "mdc-button--unelevated": this.unelevated,
         "mdc-button--stroked": this.stroked,

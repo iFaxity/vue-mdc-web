@@ -2,15 +2,15 @@
 .mdc-card__actions(:class="cssClasses")
   slot
   .mdc-card__action-buttons(v-if="hasButtons")
-    slot(name="buttons")
+    slot(name="button")
   .mdc-card__action-icons(v-if="hasIcons")
-    slot(name="icons")
+    slot(name="icon")
 </template>
 
 <script>
 
 export default {
-  name: "MdcCardActions",
+  name: "MDCCardActions",
   props: {
     fullBleed: Boolean
   },
@@ -19,24 +19,22 @@ export default {
       return this.fullBleed && "mdc-card__actions--full-bleed";
     },
     hasButtons() {
-      return !!this.$slots.buttons;
+      return !!this.$slots.button;
     },
     hasIcons() {
-      return !!this.$slots.icons;
+      return !!this.$slots.icon;
     }
   },
-  mounted() {
-    const buttons = this.$el.querySelectorAll(".mdc-button");
-    const icons = this.$el.querySelectorAll(".mdc-icon-toggle");
-
-    buttons.forEach(button => {
-      button.classList.add("mdc-card__action");
-      button.classList.add("mdc-card__action--button");
-    });
-    icons.forEach(icon => {
-      icon.classList.add("mdc-card__action");
-      icon.classList.add("mdc-card__action--icon");
-    });
+  beforeMount() {
+    const addClass = ({ data }, className) => {
+      if(data.staticClass) {
+        data.staticClass += ` ${className}`;
+      } else {
+        data.staticClass = className;
+      }
+    };
+    this.$slots.button && this.$slots.button.forEach(button => addClass(button, "mdc-card__action mdc-card__action--button"));
+    this.$slots.icon && this.$slots.icon.forEach(icon => addClass(icon, "mdc-card__action mdc-card__action--icon"));
   }
 };
 </script>

@@ -1,8 +1,5 @@
 <template lang="pug">
 demo-template
-  h1 MdcApp
-  p MdcApp is a component made from the material.io page layout using flexbox to quickly rig the app layout
-
   template(slot="usage")
     demo-code(lang="markup", code=`
 <mdc-app>

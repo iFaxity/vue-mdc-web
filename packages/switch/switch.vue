@@ -7,7 +7,7 @@
 
 <script>
 export default {
-  name: "MdcSwitch",
+  name: "MDCSwitch",
   inheritAttrs: false,
   model: {
     prop: "checked",

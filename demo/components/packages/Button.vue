@@ -1,11 +1,20 @@
 <template lang="pug">
 demo-template
-  h1 MdcButton
-  p MdcButton is a simple button wrapper for the material.io button
+
+  mdc-button(slot="hero") Flat
+  mdc-button(slot="hero", raised) Raised
+  mdc-button(slot="hero", icon="favorite") Icon
 
   template(slot="usage")
     demo-code(lang="markup", code=`
 <mdc-button>...text</mdc-button>`)
+
+  template(slot="events")
+    tr
+      td click
+      td
+      td Triggers when button is clicked
+
 
   template(slot="props")
     tr

@@ -3,28 +3,34 @@ component.material-icons(:is="tag", :class="cssClasses", :tabindex="action && '0
 </template>
 
 <script>
+import { Ripple } from "../ripple";
+
 export default {
-  name: "MdcIcon",
+  name: "MDCIcon",
+  mixins: [ Ripple(null, { unbounded: true, surface: true }) ],
   props: {
-    name: {
-      type: String,
-      required: true
-    },
     icon: {
       type: String,
       required: true
     },
-    
-    action: Boolean,
+    name: String,
     label: String,
     tag: {
       type: String,
       default: "i"
-    }
+    },
+    
+    ripple: Boolean,
+    action: Boolean
   },
   computed: {
     cssClasses() {
-      return `mdc-${this.name}__icon`;
+      return !!this.name && `mdc-${this.name}__icon`;
+    }
+  },
+  mounted() {
+    if(!this.ripple) {
+      this._ripple.destroy();
     }
   }
 };

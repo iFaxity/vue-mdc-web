@@ -23,7 +23,7 @@ const rippleAdapter = {
 };
 
 export default {
-  name: "MdcRadio",
+  name: "MDCRadio",
   mixins: [ Ripple(rippleAdapter, { unbounded: true }) ],
   inheritAttrs: false,
   model: {

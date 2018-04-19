@@ -4,7 +4,7 @@ hr.mdc-list-divider(:class="cssClasses")
 
 <script>
 export default {
-  name: "MdcListGroupDivider",
+  name: "MDCListGroupDivider",
   props: {
     inset: Boolean
   },

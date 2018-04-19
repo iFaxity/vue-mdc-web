@@ -7,7 +7,7 @@ mdc-icon(:tag="tag", name="toolbar", :icon="icon", :label="label", :href="link")
 import MdcIcon from "../icon";
 
 export default {
-  name: "MdcToolbarIcon",
+  name: "MDCToolbarIcon",
   components: { MdcIcon },
   props: {
     link: String,
