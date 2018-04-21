@@ -25,9 +25,16 @@ export default {
 
   computed: {
     cssClasses() {
+      // Don't allow options when the bar is of the type short
+      if(this.short) {
+        return {
+          'mdc-top-app-bar--short': this.short,
+          'mdc-top-app-bar--short-collapsed': this.shortCollapsed,
+        }
+      }
+
       return {
-        'mdc-top-app-bar--short': this.short,
-        'mdc-top-app-bar--short-collapsed': this.shortCollapsed,
+        'mdc-top-app-bar--dense': this.dense,
         'mdc-top-app-bar--fixed': this.fixed,
         'mdc-top-app-bar--prominent': this.prominent,
       };
