@@ -23,7 +23,7 @@ import * as Switch from "./packages/switch";
 //import * as Tabs from "./packages/tabs";
 import * as Textfield from "./packages/textfield";
 import * as Toolbar from "./packages/toolbar";
-//import * as TopAppBar from "./packages/top-app-bar";
+import * as TopAppBar from "./packages/top-app-bar";
 
 import "@material/typography/mdc-typography.scss"; // add typography classes
 
@@ -81,6 +81,6 @@ export default {
     //Vue.use(Tabs, register);
     Vue.use(Textfield, register);
     Vue.use(Toolbar, register);
-    //Vue.use(TopAppBar, register);
+    Vue.use(TopAppBar, register);
   }
 };
