@@ -1,10 +1,10 @@
-import Tab  from "./Tab.vue";
-import TabBar from "./tabs";
+import MDCTab  from "./Tab.vue";
+import MDCTabBar from "./tabs";
 import "@material/tabs/mdc-tabs.scss";
 
-export { Tab, TabBar };
+export { MDCTab, MDCTabBar };
 export function install(Vue, register) {
-  register(Tab);
+  register(MDCTab);
   // Register TabBar like this for now.
-  Vue.component("mdc-tab-bar", TabBar);
+  Vue.component("mdc-tab-bar", MDCTabBar);
 }

@@ -1,7 +1,7 @@
-import Radio from "./Radio.vue";
+import MDCRadio from "./Radio.vue";
 import "@material/radio/mdc-radio.scss";
 
-export { Radio };
+export { MDCRadio };
 export function install(Vue, register) {
-  register(Radio);
+  register(MDCRadio);
 }

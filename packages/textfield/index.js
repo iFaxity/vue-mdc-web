@@ -1,10 +1,10 @@
-import Textfield from "./textfield";
-import TextfieldHelpertext from "./TextfieldHelpertext.vue";
+import MDCTextfield from "./textfield";
+import MDCTextfieldHelpertext from "./TextfieldHelpertext.vue";
 import "@material/textfield/mdc-text-field.scss";
 
-export { Textfield, TextfieldHelpertext };
+export { MDCTextfield, MDCTextfieldHelpertext };
 export function install(Vue, register) {
-  register(TextFieldHelpertext);
+  register(MDCTextFieldHelpertext);
   // Register Textfield like this for now
-  Vue.component("mdc-textfield", Textfield);
+  Vue.component("mdc-textfield", MDCTextfield);
 }

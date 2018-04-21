@@ -1,13 +1,13 @@
-import Drawer from "./drawer";
-import PermanentDrawer from "./PermanentDrawer.vue";
-import PersistentDrawer from "./PersistentDrawer.vue";
-import TemporaryDrawer from "./TemporaryDrawer.vue";
-import DrawerItem from "./DrawerItem.vue";
-import DrawerDivider from "./DrawerDivider.vue";
+import MDCDrawer from "./drawer";
+import MDCPermanentDrawer from "./PermanentDrawer.vue";
+import MDCPersistentDrawer from "./PersistentDrawer.vue";
+import MDCTemporaryDrawer from "./TemporaryDrawer.vue";
+import MDCDrawerItem from "./DrawerItem.vue";
+import MDCDrawerDivider from "./DrawerDivider.vue";
 import "@material/drawer/mdc-drawer.scss";
 
-export { PermanentDrawer, PersistentDrawer, TemporaryDrawer, DrawerItem, DrawerDivider };
+export { MDCPermanentDrawer, MDCPersistentDrawer, MDCTemporaryDrawer, MDCDrawerItem, MDCDrawerDivider };
 export function install(Vue, register) {
-  register(Drawer, PermanentDrawer, PersistentDrawer,
-    TemporaryDrawer, DrawerItem, DrawerDivider);
+  register(MDCDrawer, MDCPermanentDrawer, MDCPersistentDrawer,
+    MDCTemporaryDrawer, MDCDrawerItem, MDCDrawerDivider);
 }

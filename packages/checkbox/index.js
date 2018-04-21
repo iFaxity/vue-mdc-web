@@ -1,7 +1,7 @@
-import Checkbox from "./Checkbox.vue";
+import MDCCheckbox from "./Checkbox.vue";
 import "@material/checkbox/mdc-checkbox.scss";
 
-export { Checkbox };
+export { MDCCheckbox };
 export function install(Vue, register) {
-  register(Checkbox);
+  register(MDCCheckbox);
 }

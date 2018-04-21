@@ -1,7 +1,7 @@
-import Slider from "./Slider.vue";
+import MDCSlider from "./Slider.vue";
 import "@material/slider/mdc-slider.scss";
 
-export { Slider };
+export { MDCSlider };
 export function install(Vue, register) {
-  register(Slider);
+  register(MDCSlider);
 };

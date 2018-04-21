@@ -1,8 +1,8 @@
-import Menu from "./Menu.vue";
-import MenuItem from "./MenuItem.vue";
+import MDCMenu from "./Menu.vue";
+import MDCMenuItem from "./MenuItem.vue";
 import "@material/menu/mdc-menu.scss";
 
-export { Menu, MenuItem };
+export { MDCMenu, MDCMenuItem };
 export function install(Vue, register) {
-  register(Menu, MenuItem);
+  register(MDCMenu, MDCMenuItem);
 }

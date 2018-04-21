@@ -1,7 +1,7 @@
-import ImageList from "./ImageList.vue";
+import MDCImageList from "./ImageList.vue";
 import "@material/image-list/image-list.scss";
 
-export { ImageList };
+export { MDCImageList };
 export function install(Vue, register) {
-  register(ImageList);
+  register(MDCImageList);
 }

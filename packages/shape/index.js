@@ -1,7 +1,7 @@
-import Shape from "./Shape.vue";
+import MDCShape from "./Shape.vue";
 import "@material/shape/mdc-shape.scss";
 
-export { Shape };
+export { MDCShape };
 export function install(Vue, register) {
-  register(Shape);
+  register(MDCShape);
 }

@@ -1,7 +1,7 @@
-import FormField from "./FormField.vue";
+import MDCFormField from "./FormField.vue";
 import "@material/form-field/mdc-form-field.scss";
 
-export { FormField };
+export { MDCFormField };
 export function install(Vue, register) {
-  register(FormField);
+  register(MDCFormField);
 }

@@ -1,11 +1,11 @@
-import Card from "./Card.vue";
-import CardActions from "./CardActions.vue";
-import CardIcon from "./CardIcon.vue";
-import CardMedia from "./CardMedia.vue";
+import MDCCard from "./Card.vue";
+import MDCCardActions from "./CardActions.vue";
+import MDCCardIcon from "./CardIcon.vue";
+import MDCCardMedia from "./CardMedia.vue";
 import "@material/card/mdc-card.scss";
 
-export { Card, CardActions, CardIcon, CardMedia };
+export { MDCCard, MDCCardActions, MDCCardIcon, MDCCardMedia };
 export function install(Vue, register) {
-  register(Card, CardActions, CardIcon, CardMedia);
+  register(MDCCard, MDCCardActions, MDCCardIcon, MDCCardMedia);
 }
 

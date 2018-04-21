@@ -1,3 +1,3 @@
-import Icon from "./Icon.vue";
+import MDCIcon from "./Icon.vue";
 
-export default Icon;
+export default MDCIcon;

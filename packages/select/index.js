@@ -1,8 +1,8 @@
-import Select from "./Select.vue";
-import SelectItem from "./SelectItem.vue";
+import MDCSelect from "./Select.vue";
+import MDCSelectItem from "./SelectItem.vue";
 import "@material/select/mdc-select.scss";
 
-export { Select, SelectItem };
+export { MDCSelect, MDCSelectItem };
 export function install(Vue, register) {
-  register(Select, SelectItem);
+  register(MDCSelect, MDCSelectItem);
 }

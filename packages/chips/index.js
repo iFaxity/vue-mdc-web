@@ -1,8 +1,8 @@
-import Chip from "./Chip.vue";
-import ChipSet from "./ChipSet.vue";
+import MDCChip from "./Chip.vue";
+import MDCChipSet from "./ChipSet.vue";
 import "@material/chips/mdc-chips.scss";
 
-export { Chip, ChipSet };
+export { MDCChip, MDCChipSet };
 export function install (Vue, register) {
-  register(Chip, ChipSet);
+  register(MDCChip, MDCChipSet);
 }

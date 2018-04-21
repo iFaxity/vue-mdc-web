@@ -1,7 +1,7 @@
-import Dialog from "./Dialog.vue";
+import MDCDialog from "./Dialog.vue";
 import "@material/dialog/mdc-dialog.scss";
 
-export { Dialog };
+export { MDCDialog };
 export function install(Vue, register) {
-  register(Dialog);
+  register(MDCDialog);
 }

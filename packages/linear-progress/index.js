@@ -1,7 +1,7 @@
-import LinearProgress from "./LinearProgress.vue";
+import MDCLinearProgress from "./LinearProgress.vue";
 import "@material/linear-progress/mdc-linear-progress.scss";
 
-export { LinearProgress };
+export { MDCLinearProgress };
 export function install(Vue, register) {
-  register(LinearProgress);
+  register(MDCLinearProgress);
 }

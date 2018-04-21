@@ -1,12 +1,12 @@
-import Toolbar from "./Toolbar.vue";
-import ToolbarRow from "./ToolbarRow.vue";
-import ToolbarSection from "./ToolbarSection.vue";
-import ToolbarTitle from "./ToolbarTitle.vue";
-import ToolbarIcon from "./ToolbarIcon.vue";
-import ToolbarMenuIcon from "./ToolbarMenuIcon.vue";
+import MDCToolbar from "./Toolbar.vue";
+import MDCToolbarRow from "./ToolbarRow.vue";
+import MDCToolbarSection from "./ToolbarSection.vue";
+import MDCToolbarTitle from "./ToolbarTitle.vue";
+import MDCToolbarIcon from "./ToolbarIcon.vue";
+import MDCToolbarMenuIcon from "./ToolbarMenuIcon.vue";
 import "@material/toolbar/mdc-toolbar.scss";
 
-export { Toolbar, ToolbarRow, ToolbarSection, ToolbarTitle, ToolbarIcon, ToolbarMenuIcon };
+export { MDCToolbar, MDCToolbarRow, MDCToolbarSection, MDCToolbarTitle, MDCToolbarIcon, MDCToolbarMenuIcon };
 export function install(Vue, register) {
-  register(Toolbar, ToolbarRow, ToolbarSection, ToolbarTitle, ToolbarIcon, ToolbarMenuIcon);
+  register(MDCToolbar, MDCToolbarRow, MDCToolbarSection, MDCToolbarTitle, MDCToolbarIcon, MDCToolbarMenuIcon);
 }

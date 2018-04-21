@@ -1,9 +1,9 @@
-import TopAppBar from "./TopAppBar.vue";
-import TopAppBarSection from "./TopAppBarSection";
-import TopAppBarActionItem from "./TopAppBarActionItem.vue";
+import MDCTopAppBar from "./TopAppBar.vue";
+import MDCTopAppBarSection from "./TopAppBarSection";
+import MDCTopAppBarActionItem from "./TopAppBarActionItem.vue";
 import "@material/top-app-bar/mdc-top-app-bar.scss";
 
-export { TopAppBar, TopAppBarSection, TopAppBarActionItem };
+export { MDCTopAppBar, MDCTopAppBarSection, MDCTopAppBarActionItem };
 export function install(Vue, register) {
-  register(TopAppBar, TopAppBarSection, TopAppBarActionItem);
+  register(MDCTopAppBar, MDCTopAppBarSection, MDCTopAppBarActionItem);
 }

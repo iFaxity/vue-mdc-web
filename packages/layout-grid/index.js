@@ -1,9 +1,9 @@
-import LayoutGrid from "./LayoutGrid.vue";
-import LayoutCell from "./LayoutCell.vue";
-import LayoutInner from "./LayoutInner.vue";
+import MDCLayoutGrid from "./LayoutGrid.vue";
+import MDCLayoutCell from "./LayoutCell.vue";
+import MDCLayoutInner from "./LayoutInner.vue";
 import "@material/layout-grid/mdc-layout-grid.scss";
 
-export { LayoutGrid, LayoutCell, LayoutInner };
+export { MDCLayoutGrid, MDCLayoutCell, MDCLayoutInner };
 export function install(Vue, register) {
-  register(LayoutGrid, LayoutCell, LayoutInner);
+  register(MDCLayoutGrid, MDCLayoutCell, MDCLayoutInner);
 }

@@ -1,7 +1,7 @@
-import Snackbar from "./Snackbar.vue";
+import MDCSnackbar from "./Snackbar.vue";
 import "@material/snackbar/mdc-snackbar.scss";
 
-export { Snackbar };
+export { MDCSnackbar };
 export function install(Vue, register) {
-  register(Snackbar);
+  register(MDCSnackbar);
 }

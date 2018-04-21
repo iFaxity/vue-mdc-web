@@ -1,7 +1,7 @@
-import App from "./App.vue";
-import "./app.scss";
+import MDCApp from "./App.vue";
+import "./mdc-app.scss";
 
-export { App };
-export function install(Vue) {
-  Vue.component(App.name, App);
+export { MDCApp };
+export function install(Vue, register) {
+  register(MDCApp);
 }

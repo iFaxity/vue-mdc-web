@@ -1,16 +1,16 @@
-import List from "./List.vue";
-import ListItem from "./ListItem.vue";
-import ListDivider from "./ListDivider.vue";
-import ListItemGraphic from "./ListItemGraphic.vue";
-import ListItemMeta from "./ListItemMeta.vue";
+import MDCList from "./List.vue";
+import MDCListItem from "./ListItem.vue";
+import MDCListDivider from "./ListDivider.vue";
+import MDCListItemGraphic from "./ListItemGraphic.vue";
+import MDCListItemMeta from "./ListItemMeta.vue";
 // List groups
-import ListGroup from "./group/ListGroup.vue";
-import ListGroupDivider from "./group/ListGroupDivider.vue";
-import ListGroupSubheader from "./group/ListGroupSubheader.vue";
+import MDCListGroup from "./group/ListGroup.vue";
+import MDCListGroupDivider from "./group/ListGroupDivider.vue";
+import MDCListGroupSubheader from "./group/ListGroupSubheader.vue";
 import "@material/list/mdc-list.scss";
 
-export { List, ListItem, ListDivider, ListItemGraphic, ListItemMeta, ListGroup, ListGroupDivider, ListGroupSubheader };
+export { MDCList, MDCListItem, MDCListDivider, MDCListItemGraphic, MDCListItemMeta, MDCListGroup, MDCListGroupDivider, MDCListGroupSubheader };
 export function install(Vue, register) {
-  register(List, ListItem, ListDivider, ListItemGraphic, ListItemMeta,
-    ListGroup, ListGroupDivider, ListGroupSubheader);
+  register(MDCList, MDCListItem, MDCListDivider, MDCListItemGraphic, MDCListItemMeta,
+    MDCListGroup, MDCListGroupDivider, MDCListGroupSubheader);
 }
