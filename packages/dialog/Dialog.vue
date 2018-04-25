@@ -12,7 +12,7 @@ aside.mdc-dialog(role="alertdialog")
 </template>
 
 <script>
-import { Button as MdcButton } from "../button";
+import { MDCButton } from "../button";
 import Foundation from "@material/dialog/foundation";
 import { createFocusTrapInstance } from "@material/dialog/util";
 
@@ -21,7 +21,7 @@ const transitionEnd = getCorrectEventName(window, "transitionend");
 
 export default {
   name: "MDCDialog",
-  components: { MdcButton },
+  components: { MdcButton: MDCButton },
   props: {
     header: String,
     scroll: Boolean,

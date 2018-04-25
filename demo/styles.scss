@@ -81,6 +81,9 @@ pre[class*="language-"] {
     justify-content: center;
     align-items:center;
 
+    &--stacked {
+      flex-direction: column;
+    }
     & > * {
       margin: 0 1em;
     }

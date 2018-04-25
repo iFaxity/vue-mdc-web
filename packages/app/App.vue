@@ -8,8 +8,6 @@
 </template>
 
 <script>
-import "./app.scss";
-
 export default {
   name: "MDCApp",
   props: {

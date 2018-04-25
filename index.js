@@ -2,7 +2,7 @@ import * as App from "./packages/app";
 import * as Button from "./packages/button";
 import * as Card from "./packages/card";
 import * as Checkbox from "./packages/checkbox";
-//import * as Chips from "./packages/chips";
+import * as Chips from "./packages/chips";
 import * as Dialog from "./packages/dialog";
 import * as Drawer from "./packages/drawer";
 import * as Fab from "./packages/fab";
@@ -33,6 +33,7 @@ const DEFAULT_OPTS = {
 };
 
 //TODO: make option manager in mixins and other stuff...instead of having options in components
+//TODO: fix all v-model DRY with arrays strings bindings. Chips, Checkbox, Radio, Select, Switch, Textfield.
 export default {
   install(Vue, opts) {
     const { body } = document;
@@ -51,7 +52,7 @@ export default {
     const register = (...components) => {
       components.forEach(component => {
         const name = component.name.substr(3);
-        Vue.component("Mdc" + name);
+        Vue.component("Mdc" + name, component);
       });
     };
     
@@ -60,7 +61,7 @@ export default {
     Vue.use(Button, register);
     Vue.use(Card, register);
     Vue.use(Checkbox, register);
-    //Vue.use(Chips, register);
+    Vue.use(Chips, register);
     Vue.use(Dialog, register);
     Vue.use(Drawer, register);
     Vue.use(Fab, register);

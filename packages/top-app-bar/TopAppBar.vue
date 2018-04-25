@@ -67,7 +67,7 @@ export default {
       getViewportScrollY: () => window.pageYOffset,
       
       // Check if this works with 'preserveWhitespace' to true
-      getTotalActionItems: () => this.$slots.default.map(n => !!n.tag).length,
+      getTotalActionItems: () => this.$slots.default.filter(n => !!n.tag).length,
     };
 
     // Create foundation instance

@@ -1,5 +1,5 @@
 import MDCTopAppBar from "./TopAppBar.vue";
-import MDCTopAppBarSection from "./TopAppBarSection";
+import MDCTopAppBarSection from "./TopAppBarSection.vue";
 import MDCTopAppBarActionItem from "./TopAppBarActionItem.vue";
 import "@material/top-app-bar/mdc-top-app-bar.scss";
 

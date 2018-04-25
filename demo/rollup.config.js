@@ -42,11 +42,11 @@ if (process.env.NODE_ENV === "production") {
 
 export default {
   input: APP_INPUT,
-  sourcemap: true,
   plugins,
   output: {
     format: "iife",
-    file: APP_OUTPUT
+    file: APP_OUTPUT,
+    sourcemap: true
   }
 };
 

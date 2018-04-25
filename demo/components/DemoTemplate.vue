@@ -1,10 +1,13 @@
 <template lang="pug">
 main.demo-app
-  section.demo-app__hero(v-if="hasHero")
+  section.demo-app__hero(v-if="hasHero", :class="cssClasses")
     slot(name="hero")
+
   article.demo-app__content
     section.demo-app__usage
-      h2 Usage
+      h2
+        | Usage 
+        a(:href="link", target="_blank") #material.io
       p To use the component type this into your Vue Component
       slot(name="usage")
     
@@ -27,7 +30,20 @@ main.demo-app
 <script>
 export default {
   name: "DemoTemplate",
+  props: {
+    link: String,
+    stacked: Boolean
+  },
   computed: {
+    link() {
+      const { view } = this.$route.params;
+      return `//material.io/components/web/catalog/${view}/`;
+    },
+    cssClasses() {
+      return {
+        'demo-app__hero--stacked': this.stacked
+      }
+    },
     hasSlots() {
       return !!this.$slots.slots;
     },
