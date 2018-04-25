@@ -3,8 +3,8 @@ i.mdc-icon-toggle.material-icons(role="button", tabindex="0")
 </template>
 
 <script>
-import Foundation from "@material/icon-toggle/foundation";
-import { Ripple } from "../ripple";
+import Foundation from '@material/icon-toggle/foundation';
+import { Ripple } from '../ripple';
 
 const rippleAdapter = {
   isSurfaceActive() {
@@ -13,7 +13,7 @@ const rippleAdapter = {
 };
 
 export default {
-  name: "MDCIconToggle",
+  name: 'MDCIconToggle',
   mixins: [ Ripple(rippleAdapter, { unbounded: true }) ],
   props: {
     active: Boolean,
@@ -28,8 +28,8 @@ export default {
     }
   },
   model: {
-    prop: "active",
-    event: "change"
+    prop: 'active',
+    event: 'change'
   },
   watch: {
     active(value) {
@@ -63,7 +63,7 @@ export default {
       getAttr: (name, value) => $el.getAttribute(name, value),
       setAttr: (name, value) => $el.setAttribute(name, value),
       rmAttr: name => $el.removeAttribute(name),
-      notifyChange: data => this.$emit("change", data),
+      notifyChange: data => this.$emit('change', data),
     });
     this.foundation.init();
 

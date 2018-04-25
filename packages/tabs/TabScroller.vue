@@ -11,12 +11,12 @@
 </template>
 
 <script>
-import Foundation from "@material/tabs/tab-bar-scroller/foundation";
-import { getCorrectPropertyName } from "@material/animation";
-import MdcTabBar from "./TabBar.vue";
+import Foundation from '@material/tabs/tab-bar-scroller/foundation';
+import { getCorrectPropertyName } from '@material/animation';
+import MdcTabBar from './TabBar.vue';
 
 export default {
-  name: "MDCTabScroller",
+  name: 'MDCTabScroller',
   inheritAttrs: false,
   components: { MdcTabBar },
   computed: {},
@@ -26,7 +26,7 @@ export default {
     const { backIndicator, forwardIndicator, scrollFrame, tabBar } = this.$refs;
 
     const styles = getComputedStyle($el);
-    const transformProp = getCorrectPropertyName(window, "transform");
+    const transformProp = getCorrectPropertyName(window, 'transform');
 
     this.foundation = new Foundation({
       addClass: className => $el.classList.add(className),
@@ -36,16 +36,16 @@ export default {
       removeClassFromForwardIndicator: className => forwardIndicator.classList.remove(className),
       addClassToBackIndicator: className => backIndicator.classList.add(className),
       removeClassFromBackIndicator: className => backIndicator.classList.remove(className),
-      isRTL: () => styles.direction === "rtl",
+      isRTL: () => styles.direction === 'rtl',
       // Interaction handlers
-      registerBackIndicatorClickHandler: (handler) => backIndicator.addEventListener("click", handler),
-      deregisterBackIndicatorClickHandler: (handler) => backIndicator.removeEventListener("click", handler),
-      registerForwardIndicatorClickHandler: (handler) => forwardIndicator.addEventListener("click", handler),
-      deregisterForwardIndicatorClickHandler: (handler) => forwardIndicator.removeEventListener("click", handler),
+      registerBackIndicatorClickHandler: (handler) => backIndicator.addEventListener('click', handler),
+      deregisterBackIndicatorClickHandler: (handler) => backIndicator.removeEventListener('click', handler),
+      registerForwardIndicatorClickHandler: (handler) => forwardIndicator.addEventListener('click', handler),
+      deregisterForwardIndicatorClickHandler: (handler) => forwardIndicator.removeEventListener('click', handler),
       registerCapturedInteractionHandler: (evt, handler) => $el.addEventListener(evt, handler, true),
       deregisterCapturedInteractionHandler: (evt, handler) => $el.removeEventListener(evt, handler, true),
-      registerWindowResizeHandler: (handler) => window.addEventListener("resize", handler),
-      deregisterWindowResizeHandler: (handler) => window.removeEventListener("resize", handler),
+      registerWindowResizeHandler: (handler) => window.addEventListener('resize', handler),
+      deregisterWindowResizeHandler: (handler) => window.removeEventListener('resize', handler),
 
       getNumberOfTabs: () => tabBar.tabs.length,
       getComputedWidthForTabAtIndex: index => tabBar.tabs[index].$el.computedWidth,

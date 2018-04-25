@@ -6,7 +6,7 @@
 
 <script>
 export default {
-  name: "MDCLayoutGrid",
+  name: 'MDCLayoutGrid',
   props: {
     fixedColumnWidth: Boolean,
     alignLeft: Boolean,
@@ -15,9 +15,9 @@ export default {
   computed: {
     cssClasses() {
       return {
-        "mdc-layout-grid--fixed-column-width": this.fixedColumnWidth,
-        "mdc-layout-grid--align-left": this.alignLeft,
-        "mdc-layout-grid--align-right": this.alignRight
+        'mdc-layout-grid--fixed-column-width': this.fixedColumnWidth,
+        'mdc-layout-grid--align-left': this.alignLeft,
+        'mdc-layout-grid--align-right': this.alignRight
       };
     }
   }

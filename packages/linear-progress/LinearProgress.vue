@@ -9,22 +9,22 @@
 </template>
 
 <script>
-import Foundation from "@material/linear-progress/foundation";
+import Foundation from '@material/linear-progress/foundation';
 
 function assertNumber(value, fn) {
-  if(typeof value === "string") {
+  if(typeof value === 'string') {
     value = parseFloat(value);
-    if(isNaN(value)) throw new Error("LinearProgress: value invalid!");
+    if(isNaN(value)) throw new Error('LinearProgress: value invalid!');
   }
   
   fn(value);
 }
 
 export default {
-  name: "MDCLinearProgress",
+  name: 'MDCLinearProgress',
   model: {
-    prop: "value",
-    event: "change"
+    prop: 'value',
+    event: 'change'
   },
   props: {
     indeterminate: Boolean,

@@ -4,7 +4,7 @@ component.mdc-list-item__graphic(:is="tag", :class="cssClasses", :aria-label="ic
 
 <script>
 export default {
-  name: "MDCListItemGraphic",
+  name: 'MDCListItemGraphic',
   props: {
     icon: String,
     label: String,
@@ -12,12 +12,10 @@ export default {
   },
   computed: {
     cssClasses() {
-      return {
-        "material-icons": this.icon
-      };
+      return this.icon && 'material-icons';
     },
     tag() {
-      return this.src ? "img" : "i";
+      return this.src ? 'img' : 'i';
     }
   }
 };

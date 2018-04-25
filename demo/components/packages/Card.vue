@@ -42,11 +42,11 @@ demo-template(link="cards")
 </template>
 
 <script>
-import DemoTemplate from "../DemoTemplate.vue";
-import MdcIcon from "../../../packages/icon";
+import DemoTemplate from '../DemoTemplate.vue';
+import MdcIcon from '../../../packages/icon';
 
 export default {
-  name: "DemoCard",
+  name: 'DemoCard',
   components: { DemoTemplate, MdcIcon }
 };
 </script>

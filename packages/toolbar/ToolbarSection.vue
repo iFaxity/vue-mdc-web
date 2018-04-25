@@ -5,7 +5,7 @@ section.mdc-toolbar__section(role="toolbar", :class="cssClasses")
 
 <script>
 export default {
-  name: "MDCToolbarSection",
+  name: 'MDCToolbarSection',
   props: {
     alignStart: Boolean,
     alignEnd: Boolean,
@@ -14,9 +14,9 @@ export default {
   computed: {
     cssClasses() {
       return {
-        "mdc-toolbar__section--align-start": this.alignStart,
-        "mdc-toolbar__section--align-end": this.alignEnd,
-        "mdc-toolbar__section--shrink-to-fit": this.shrinkToFit,
+        'mdc-toolbar__section--align-start': this.alignStart,
+        'mdc-toolbar__section--align-end': this.alignEnd,
+        'mdc-toolbar__section--shrink-to-fit': this.shrinkToFit,
       };
     }
   }

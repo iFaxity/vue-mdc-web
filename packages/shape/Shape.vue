@@ -4,7 +4,7 @@
 
 <script>
 export default {
-  name: "MDCShape",
+  name: 'MDCShape',
   props: {},
   data() {
     return {};

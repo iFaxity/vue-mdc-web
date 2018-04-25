@@ -16,10 +16,10 @@ demo-template(link="drawers")
 </template>
 
 <script>
-import DemoTemplate from "../DemoTemplate.vue";
+import DemoTemplate from '../DemoTemplate.vue';
 
 export default {
-  name: "DemoDrawer",
+  name: 'DemoDrawer',
   components: { DemoTemplate }
 };
 </script>

@@ -7,8 +7,8 @@
 </template>
 
 <script>
-import Foundation from "@material/radio/foundation";
-import { Ripple } from "../ripple";
+import Foundation from '@material/radio/foundation';
+import { Ripple } from '../ripple';
 
 const rippleAdapter = {
   isSurfaceActive() {
@@ -23,12 +23,12 @@ const rippleAdapter = {
 };
 
 export default {
-  name: "MDCRadio",
+  name: 'MDCRadio',
   mixins: [ Ripple(rippleAdapter, { unbounded: true }) ],
   inheritAttrs: false,
   model: {
-    prop: "checked",
-    event: "change",
+    prop: 'checked',
+    event: 'change',
   },
 
   props: {
@@ -45,7 +45,7 @@ export default {
         return this.checked;
       },
       set(value) {
-        this.$emit("change", value);
+        this.$emit('change', value);
       }
     }
   },

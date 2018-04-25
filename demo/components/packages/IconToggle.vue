@@ -16,10 +16,10 @@ demo-template(link="buttons/icon-toggle-buttons")
 </template>
 
 <script>
-import DemoTemplate from "../DemoTemplate.vue";
+import DemoTemplate from '../DemoTemplate.vue';
 
 export default {
-  name: "DemoIconToggle",
+  name: 'DemoIconToggle',
   components: { DemoTemplate }
 };
 </script>

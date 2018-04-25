@@ -16,10 +16,10 @@ demo-template(link="input-controls/sliders")
 </template>
 
 <script>
-import DemoTemplate from "../DemoTemplate.vue";
+import DemoTemplate from '../DemoTemplate.vue';
 
 export default {
-  name: "DemoSlider",
+  name: 'DemoSlider',
   components: { DemoTemplate }
 };
 </script>

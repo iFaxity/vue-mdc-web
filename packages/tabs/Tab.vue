@@ -7,15 +7,15 @@ mdc-link.mdc-tab(v-bind="$_link", role="tab", :link="link")
 </template>
 
 <script>
-import Foundation from "@material/tabs/tab/foundation";
-import { Ripple } from "../ripple";
-import RouterLink from "../app/routerLink";
-import MdcIcon from "../icon";
+import Foundation from '@material/tabs/tab/foundation';
+import { Ripple } from '../ripple';
+import RouterLink from '../app/routerLink';
+import MDCIcon from '../icon';
 
 export default {
-  name: "MDCTab",
-  mixins: [ Ripple(), RouterLink("mdc-tab--active") ],
-  components: { MdcIcon },
+  name: 'MDCTab',
+  mixins: [ Ripple(), RouterLink('mdc-tab--active') ],
+  components: { MdcIcon: MDCIcon },
   props: {
     link: String,
     icon: String,
@@ -32,7 +32,7 @@ export default {
       deregisterInteractionHandler: (type, handler) => $el.removeEventListener(type, handler),
       getOffsetWidth: () => $el.offsetWidth,
       getOffsetLeft: () => $el.offsetLeft,
-      notifySelected: () => this.$parent.$emit("selected", this),
+      notifySelected: () => this.$parent.$emit('selected', this),
     });
     this.foundation.init();
   },

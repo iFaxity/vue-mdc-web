@@ -4,7 +4,7 @@ component(:is="view")
 
 <script>
 export default {
-  name: "DemoView",
+  name: 'DemoView',
   computed: {
     view() {
       const { view } = this.$route.params;

@@ -16,10 +16,10 @@ demo-template(link="input-controls/radio-buttons")
 </template>
 
 <script>
-import DemoTemplate from "../DemoTemplate.vue";
+import DemoTemplate from '../DemoTemplate.vue';
 
 export default {
-  name: "DemoRadio",
+  name: 'DemoRadio',
   components: { DemoTemplate }
 };
 </script>

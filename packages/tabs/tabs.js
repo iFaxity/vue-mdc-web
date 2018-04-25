@@ -1,5 +1,5 @@
-import TabBar from "./TabBar.vue";
-import TabScroller from "./TabScroller.vue";
+import TabBar from './TabBar.vue';
+import TabScroller from './TabScroller.vue';
 
 export default {
   functional: true,

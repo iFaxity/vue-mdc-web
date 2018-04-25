@@ -1,14 +1,14 @@
-const TYPES = ["permanent", "persistent", "temporary"];
+const TYPES = [ 'permanent', 'persistent', 'temporary' ];
 
 export default {
-  name: "MDCDrawer",
+  name: 'MDCDrawer',
   functional: true,
   inheritAttrs: true,
 
   props: {
     type: {
       type: String,
-      default: "permanent"
+      default: 'permanent'
     },
     temporary: Boolean,
     permanent: Boolean,
@@ -20,7 +20,7 @@ export default {
     let type = props.type || TYPES.find(n => props[n] === true);
 
     if(!TYPES.includes(type)) {
-      throw new Error("MDC Drawer: a valid type was not specified");
+      throw new Error('MDC Drawer: a valid type was not specified');
     }
     return h(`mdc-${type}-drawer`, ctx.data, ctx.children)
   }

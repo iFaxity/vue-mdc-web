@@ -44,7 +44,7 @@ demo-template
 </template>
 
 <script>
-import DemoTemplate from "../DemoTemplate.vue";
+import DemoTemplate from '../DemoTemplate.vue';
 
 export default {
   name: 'DemoApp',

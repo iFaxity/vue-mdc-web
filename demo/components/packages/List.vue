@@ -16,10 +16,10 @@ demo-template(link="lists")
 </template>
 
 <script>
-import DemoTemplate from "../DemoTemplate.vue";
+import DemoTemplate from '../DemoTemplate.vue';
 
 export default {
-  name: "DemoList",
+  name: 'DemoList',
   components: { DemoTemplate }
 };
 </script>

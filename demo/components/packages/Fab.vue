@@ -16,10 +16,10 @@ demo-template(link="buttons/floating-action-buttons")
 </template>
 
 <script>
-import DemoTemplate from "../DemoTemplate.vue";
+import DemoTemplate from '../DemoTemplate.vue';
 
 export default {
-  name: "DemoFab",
+  name: 'DemoFab',
   components: { DemoTemplate }
 };
 </script>

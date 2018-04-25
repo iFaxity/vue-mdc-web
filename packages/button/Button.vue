@@ -5,10 +5,10 @@ component.mdc-button(:is="link ? 'a' : 'button'", :class="cssClasses", :href="li
 </template>
 
 <script>
-import { Ripple } from "../ripple";
+import { Ripple } from '../ripple';
 
 export default {
-  name: "MDCButton",
+  name: 'MDCButton',
   mixins: [ Ripple() ],
   props: {
     icon: String,
@@ -24,11 +24,11 @@ export default {
   computed: {
     cssClasses() {
       return {
-        "mdc-button--raised": this.raised,
-        "mdc-button--unelevated": this.unelevated,
-        "mdc-button--stroked": this.stroked,
-        "mdc-button--dense": this.dense,
-        "mdc-button--compact": this.compact
+        'mdc-button--raised': this.raised,
+        'mdc-button--unelevated': this.unelevated,
+        'mdc-button--stroked': this.stroked,
+        'mdc-button--dense': this.dense,
+        'mdc-button--compact': this.compact
       };
     }
   }

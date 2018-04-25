@@ -16,10 +16,10 @@ demo-template(link="snackbars")
 </template>
 
 <script>
-import DemoTemplate from "../DemoTemplate.vue";
+import DemoTemplate from '../DemoTemplate.vue';
 
 export default {
-  name: "DemoSnackbar",
+  name: 'DemoSnackbar',
   components: { DemoTemplate }
 };
 </script>

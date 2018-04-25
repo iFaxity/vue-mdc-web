@@ -82,22 +82,22 @@ demo-template(link="dialogs")
 </template>
 
 <script>
-import DemoTemplate from "../DemoTemplate.vue";
+import DemoTemplate from '../DemoTemplate.vue';
 
 export default {
-  name: "DemoDialog",
+  name: 'DemoDialog',
   components: { DemoTemplate },
   computed: {
     dialogValid() {
-      return !!this.selectedItem && this.selectedItem !== "Kiwi";
+      return !!this.selectedItem && this.selectedItem !== 'Kiwi';
     }
   },
   data() {
-    return { selectedItem: "" };
+    return { selectedItem: '' };
   },
   methods: {
     openValidDialog() {
-      this.selectedItem = "";
+      this.selectedItem = '';
       this.$refs.validDialog.open();
     }
   }

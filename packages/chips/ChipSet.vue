@@ -6,10 +6,10 @@ transition-group.mdc-chip-set(v-if="input", :class="cssClasses", v-bind="$_trans
 </template>
 
 <script>
-import { MDCChipSetFoundation } from "@material/chips";
+import { MDCChipSetFoundation } from '@material/chips';
 
 export default {
-  name: "MDCChipSet",
+  name: 'MDCChipSet',
   provide() {
     const $_vm = this;
     return {
@@ -78,10 +78,7 @@ export default {
       registerInteractionHandler: (type, handler) => $el.addEventListener(type, handler),
       deregisterInteractionHandler: (type, handler) => $el.removeEventListener(type, handler),
       appendChip: () => {},
-      removeChip: () => {},
-      /*removeChip: chip => {
-        this.$emit('remove', this.$_getIndexOfChip(chip));
-      },*/
+      removeChip: () => {}
     });
 
     this.foundation.init();
@@ -89,11 +86,5 @@ export default {
   beforeDestroy() {
     this.foundation.destroy();
   },
-  methods: {
-    $_getIndexOfChip(chip) {
-      const chips = this.$slots.default.filter(vnode => !!vnode.tag);
-      return chips.findIndex(vnode => vnode.componentInstance === chip);
-    }
-  }
 };
 </script>

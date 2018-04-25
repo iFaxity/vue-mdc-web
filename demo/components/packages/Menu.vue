@@ -16,10 +16,10 @@ demo-template(link="menus")
 </template>
 
 <script>
-import DemoTemplate from "../DemoTemplate.vue";
+import DemoTemplate from '../DemoTemplate.vue';
 
 export default {
-  name: "DemoMenu",
+  name: 'DemoMenu',
   components: { DemoTemplate }
 };
 </script>

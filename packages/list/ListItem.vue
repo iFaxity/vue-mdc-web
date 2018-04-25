@@ -7,11 +7,10 @@ li.mdc-list-item
 </template>
 
 <script>
-import { Ripple } from "../ripple";
-//TODO: support router links?
+import { Ripple } from '../ripple';
 
 export default {
-  name: "MDCListItem",
+  name: 'MDCListItem',
   mixins: [ Ripple() ],
   props: {
     text: {

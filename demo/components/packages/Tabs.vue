@@ -16,10 +16,10 @@ demo-template(link="tabs")
 </template>
 
 <script>
-import DemoTemplate from "../DemoTemplate.vue";
+import DemoTemplate from '../DemoTemplate.vue';
 
 export default {
-  name: "DemoTabs",
+  name: 'DemoTabs',
   components: { DemoTemplate }
 };
 </script>

@@ -5,13 +5,13 @@
 
 <script>
 export default {
-  name: "MDCCard",
+  name: 'MDCCard',
   props: {
     stroked: Boolean
   },
   computed: {
     cssClasses() {
-      return this.stroked && "mdc-card--stroked";
+      return this.stroked && 'mdc-card--stroked';
     }
   }
 };

@@ -5,10 +5,10 @@ nav.mdc-tab-bar(:class="cssClasses")
 </template>
 
 <script>
-import Foundation from "@material/tabs/tab-bar/foundation";
+import Foundation from '@material/tabs/tab-bar/foundation';
 
 export default {
-  name: "MDCTabBar",
+  name: 'MDCTabBar',
   props: {
     icons: Boolean,
     iconsWithText: Boolean,
@@ -21,9 +21,9 @@ export default {
   computed: {
     cssClasses() {
       return {
-        "mdc-tab-bar--upgraded": true,
-        "mdc-tab-bar--icon-tab-bar": this.icons,
-        "mdc-tab-bar--icons-with-text": this.iconsWithText
+        'mdc-tab-bar--upgraded': true,
+        'mdc-tab-bar--icon-tab-bar': this.icons,
+        'mdc-tab-bar--icons-with-text': this.iconsWithText
       };
     }
   },
@@ -36,16 +36,16 @@ export default {
     this.foundation = new Foundation({
       addClass: className => $el.classList.add(className),
       removeClass: className => $el.classList.remove(className),
-      bindOnMDCTabSelectedEvent: () => this.$on("selected", this.onSelected),
-      unbindOnMDCTabSelectedEvent: () => this.$off("selected", this.onSelected),
-      registerResizeHandler: handler => window.addEventListener("resize", handler),
-      deregisterResizeHandler: handler => window.removeEventListener("resize", handler),
+      bindOnMDCTabSelectedEvent: () => this.$on('selected', this.onSelected),
+      unbindOnMDCTabSelectedEvent: () => this.$off('selected', this.onSelected),
+      registerResizeHandler: handler => window.addEventListener('resize', handler),
+      deregisterResizeHandler: handler => window.removeEventListener('resize', handler),
       getOffsetWidth: () => $el.offsetWidth,
       setStyleForIndicator: (prop, value) => {
         indicator.style[prop] = value;
       },
       getOffsetWidthForIndicator: () => indicator.offsetWidth,
-      notifyChange: data => this.$emit("change", data),
+      notifyChange: data => this.$emit('change', data),
       getNumberOfTabs: () => this.tabs.length,
       isTabActiveAtIndex: index => this.tabs[index].isActive(),
       setTabActiveAtIndex: (index, active) => this.tabs[index].setActive(active),
@@ -65,7 +65,7 @@ export default {
       const index = this.tabs.indexOf(tab);
 
       if(index < 0) {
-        throw new Error("Invalid tab?");
+        throw new Error('Invalid tab?');
       }
       this.foundation.switchToTabAtIndex(index, true);
     }

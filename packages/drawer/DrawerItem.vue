@@ -5,12 +5,12 @@ mdc-link.mdc-list-item(tag="a", :link="link", v-bind="$_link", v-on="$listeners"
 </template>
 
 <script>
-import { Ripple } from "../ripple";
-import RouterLink from "../app/routerLink";
+import { Ripple } from '../ripple';
+import RouterLink from '../app/routerLink';
 
 export default {
-  name: "MDCDrawerItem",
-  mixins: [ Ripple(), RouterLink("mdc-list-item--activated") ],
+  name: 'MDCDrawerItem',
+  mixins: [ Ripple(), RouterLink('mdc-list-item--activated') ],
   props: {
     link: String,
     text: {

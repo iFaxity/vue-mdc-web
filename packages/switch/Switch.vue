@@ -7,11 +7,11 @@
 
 <script>
 export default {
-  name: "MDCSwitch",
+  name: 'MDCSwitch',
   inheritAttrs: false,
   model: {
-    prop: "checked",
-    event: "change"
+    prop: 'checked',
+    event: 'change'
   },
   
   props: {
@@ -24,13 +24,11 @@ export default {
         return this.checked;
       },
       set(value) {
-        this.$emit("change", value);
+        this.$emit('change', value);
       }
     },
     cssClasses() {
-      return {
-        "mdc-switch--disabled": this.disabled
-      };
+      return this.disabled && 'mdc-switch--disabled';
     }
   }
 };

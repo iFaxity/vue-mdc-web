@@ -4,6 +4,6 @@
 
 <script>
 export default {
-  name: "MDCDrawerDivider"
+  name: 'MDCDrawerDivider'
 };
 </script>

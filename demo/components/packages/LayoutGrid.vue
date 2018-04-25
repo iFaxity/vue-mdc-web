@@ -16,10 +16,10 @@ demo-template(link="layout-grid")
 </template>
 
 <script>
-import DemoTemplate from "../DemoTemplate.vue";
+import DemoTemplate from '../DemoTemplate.vue';
 
 export default {
-  name: "DemoLayoutGrid",
+  name: 'DemoLayoutGrid',
   components: { DemoTemplate }
 };
 </script>

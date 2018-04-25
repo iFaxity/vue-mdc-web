@@ -16,10 +16,10 @@ demo-template(link="input-controls/select-menus")
 </template>
 
 <script>
-import DemoTemplate from "../DemoTemplate.vue";
+import DemoTemplate from '../DemoTemplate.vue';
 
 export default {
-  name: "DemoSelect",
+  name: 'DemoSelect',
   components: { DemoTemplate }
 };
 </script>

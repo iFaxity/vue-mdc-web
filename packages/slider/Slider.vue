@@ -13,11 +13,11 @@
 </template>
 
 <script>
-import Foundation from "@material/slider/foundation";
+import Foundation from '@material/slider/foundation';
 
-const LAST_MARKER_SELECTOR = ".mdc-slider__track-marker:last-child";
+const LAST_MARKER_SELECTOR = '.mdc-slider__track-marker:last-child';
 function assertValue(value, fn) {
-  if(typeof value === "string") {
+  if(typeof value === 'string') {
     value = parseFloat(value);
 
     if(isNaN(value)) return;
@@ -26,7 +26,7 @@ function assertValue(value, fn) {
 }
 
 export default {
-  name: "MDCSlider",
+  name: 'MDCSlider',
   props: {
     label: String,
     disabled: Boolean,
@@ -71,14 +71,14 @@ export default {
     return { markerValue: 0, markers: 0 };
   },
   model: {
-    prop: "value",
-    event: "change"
+    prop: 'value',
+    event: 'change'
   },
   computed: {
     cssClasses() {
       return {
-        "mdc-slider--discrete": this.discrete,
-        "mdc-slider--display-markers": this.displayMarkers
+        'mdc-slider--discrete': this.discrete,
+        'mdc-slider--display-markers': this.displayMarkers
       };
     },
     discrete() {
@@ -106,10 +106,10 @@ export default {
       deregisterThumbContainerInteractionHandler: (type, handler) => thumbContainer.removeEventListener(type, handler),
       registerBodyInteractionHandler: (type, handler) => document.body.addEventListener(type, handler),
       deregisterBodyInteractionHandler: (type, handler) => document.body.removeEventListener(type, handler),
-      registerResizeHandler: handler => window.addEventListener("resize", handler),
-      deregisterResizeHandler: handler => window.removeEventListener("resize", handler),
-      notifyInput: () => this.$emit("input", this.foundation.getValue()),
-      notifyChange: () => this.$emit("change", this.foundation.getValue()),
+      registerResizeHandler: handler => window.addEventListener('resize', handler),
+      deregisterResizeHandler: handler => window.removeEventListener('resize', handler),
+      notifyInput: () => this.$emit('input', this.foundation.getValue()),
+      notifyChange: () => this.$emit('change', this.foundation.getValue()),
 
       setThumbContainerStyleProperty: (prop, value) => thumbContainer.style.setProperty(prop, value),
       setTrackStyleProperty: (prop, value) => track.style.setProperty(prop, value),
@@ -123,7 +123,7 @@ export default {
         const $marker = $el.querySelector(LAST_MARKER_SELECTOR);
         $marker.style.setProperty(prop, value);
       },
-      isRTL: () => styles.direction === "rtl",
+      isRTL: () => styles.direction === 'rtl',
     });
 
     this.foundation.init();

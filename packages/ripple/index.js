@@ -1,5 +1,5 @@
-import Foundation from "@material/ripple/foundation.js";
-import { supportsCssVariables, getMatchesProperty, applyPassive } from "@material/ripple/util";
+import Foundation from '@material/ripple/foundation.js';
+import { supportsCssVariables, getMatchesProperty, applyPassive } from '@material/ripple/util';
 
 const matches = getMatchesProperty(HTMLElement.prototype);
 const supportsCssVars = supportsCssVariables(window);
@@ -8,7 +8,7 @@ function createRipple(vm, adapter, { unbounded }) {
   const { $el } = vm;
   const { documentElement } = document;
 
-  let rippleAdapter = {
+  const rippleAdapter = {
     browserSupportsCssVars() {
       return supportsCssVars;
     },
@@ -19,7 +19,7 @@ function createRipple(vm, adapter, { unbounded }) {
       return { x: window.pageXOffset, y: window.pageYOffset };
     },
     isSurfaceActive() {
-      return $el[matches](":active");
+      return $el[matches](':active');
     },
     isSurfaceDisabled() {
       return !!this.disabled;
@@ -51,14 +51,14 @@ function createRipple(vm, adapter, { unbounded }) {
       documentElement.removeEventListener(evtType, handler, applyPassive());
     },
     registerResizeHandler(handler) {
-      window.addEventListener("resize", handler);
+      window.addEventListener('resize', handler);
     },
     deregisterResizeHandler(handler) {
-      window.removeEventListener("resize", handler);
+      window.removeEventListener('resize', handler);
     }
   };
 
-  if(adapter != null && typeof adapter === "object") {
+  if(adapter != null && typeof adapter === 'object') {
     Object.assign(rippleAdapter, adapter);
   }
 
@@ -88,9 +88,9 @@ export function Ripple(adapter = null, opts = {}) {
     beforeMount() {
       if(opts.surface) {
         if(this.$vnode.data.staticClass) {
-          this.$vnode.data.staticClass += " mdc-ripple-surface";
+          this.$vnode.data.staticClass += ' mdc-ripple-surface';
         } else {
-          this.$vnode.data.staticClass = "mdc-ripple-surface";
+          this.$vnode.data.staticClass = 'mdc-ripple-surface';
         }
         
         // Add unbounded attribute to element
@@ -98,7 +98,7 @@ export function Ripple(adapter = null, opts = {}) {
           if(this.$vnode.data.attrs) {
             this.$vnode.data.attrs = {};
           }
-          this.$vnode.data.attrs["data-mdc-ripple-is-unbounded"] = true;
+          this.$vnode.data.attrs['data-mdc-ripple-is-unbounded'] = true;
         }
       }
     },

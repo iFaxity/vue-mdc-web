@@ -100,16 +100,16 @@ demo-template(stacked, link="chips")
 </template>
 
 <script>
-import DemoTemplate from "../DemoTemplate.vue";
+import DemoTemplate from '../DemoTemplate.vue';
 
 export default {
-  name: "DemoChips",
+  name: 'DemoChips',
   components: { DemoTemplate },
   data() {
     return {
-      chips: [ "Chip one", "Chip two", "Chip three" ],
+      chips: [ 'Chip one', 'Chip two', 'Chip three' ],
       selectFilter: [],
-      selectChoice: "",
+      selectChoice: '',
       inputInterval: 0
     };
   },
@@ -120,7 +120,7 @@ export default {
       if(this.chips.length === 4) {
         this.chips.splice(3, 1); // remove last chip
       } else {
-        this.chips.push("Chip four");
+        this.chips.push('Chip four');
       }
       this.$nextTick(() => {
         debugger;

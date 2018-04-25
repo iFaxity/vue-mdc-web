@@ -4,13 +4,13 @@ component.material-icons.mdc-toolbar__menu-icon(:is="tag", :href="link", v-on="$
 
 <script>
 export default {
-  name: "MDCToolbarMenuIcon",
+  name: 'MDCToolbarMenuIcon',
   props: {
     link: String
   },
   computed: {
     tag() {
-      return this.link ? "a" : "button";
+      return this.link ? 'a' : 'button';
     }
   }
 };

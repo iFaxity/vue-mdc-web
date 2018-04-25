@@ -16,10 +16,10 @@ demo-template(link="grid-lists")
 </template>
 
 <script>
-import DemoTemplate from "../DemoTemplate.vue";
+import DemoTemplate from '../DemoTemplate.vue';
 
 export default {
-  name: "DemoGridList",
+  name: 'DemoGridList',
   components: { DemoTemplate }
 };
 </script>

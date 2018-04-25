@@ -8,15 +8,14 @@
 </template>
 
 <script>
-
 export default {
-  name: "MDCCardActions",
+  name: 'MDCCardActions',
   props: {
     fullBleed: Boolean
   },
   computed: {
     cssClasses() {
-      return this.fullBleed && "mdc-card__actions--full-bleed";
+      return this.fullBleed && 'mdc-card__actions--full-bleed';
     },
     hasButtons() {
       return !!this.$slots.button;
@@ -33,8 +32,8 @@ export default {
         data.staticClass = className;
       }
     };
-    this.$slots.button && this.$slots.button.forEach(button => addClass(button, "mdc-card__action mdc-card__action--button"));
-    this.$slots.icon && this.$slots.icon.forEach(icon => addClass(icon, "mdc-card__action mdc-card__action--icon"));
+    this.$slots.button && this.$slots.button.forEach(button => addClass(button, 'mdc-card__action mdc-card__action--button'));
+    this.$slots.icon && this.$slots.icon.forEach(icon => addClass(icon, 'mdc-card__action mdc-card__action--icon'));
   }
 };
 </script>

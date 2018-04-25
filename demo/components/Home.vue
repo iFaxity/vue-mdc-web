@@ -15,6 +15,6 @@ main
 
 <script>
 export default {
-  name: "DemoHome"
+  name: 'DemoHome'
 };
 </script>

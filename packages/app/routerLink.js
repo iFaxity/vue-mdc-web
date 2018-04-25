@@ -1,9 +1,9 @@
-const MdcLink = {
+const MDCLink = {
   functional: true,
   props: {
     tag: {
       type: String,
-      default: "a"
+      default: 'a'
     },
     link: String,
     to: String,
@@ -16,11 +16,11 @@ const MdcLink = {
     let tag = props.tag;
 
     if(props.to) {
-      tag = "router-link";
+      tag = 'router-link';
       // remove the link
       data.props = Object.assign({}, props, { link: undefined });
     } else {
-      if(tag === "a") {
+      if(tag === 'a') {
         data.attrs.href = props.link;
       }
     }
@@ -31,7 +31,7 @@ const MdcLink = {
 
 export default function install(activeClass, exactActiveClass) {
   return {
-    components: { MdcLink: MdcLink },
+    components: { MdcLink: MDCLink },
     props: {
       to: String,
       replace: Boolean,

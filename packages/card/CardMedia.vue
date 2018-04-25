@@ -7,7 +7,7 @@
 <script>
 
 export default {
-  name: "MDCCardMedia",
+  name: 'MDCCardMedia',
   props: {
     square: Boolean,
     image: String
@@ -17,7 +17,7 @@ export default {
       return this.image && `background-image: url(${this.image});`;
     },
     cssClasses() {
-      return this.square ? "mdc-card__media--square" : "mdc-card__media--16-9";
+      return this.square ? 'mdc-card__media--square' : 'mdc-card__media--16-9';
     },
     hasContent() {
       return !!this.$slots.default;

@@ -4,7 +4,7 @@ mdc-link.mdc-list-item__meta(:is="tag", :class="cssClasses", :aria-label="icon &
 
 <script>
 export default {
-  name: "MDCListItemMeta",
+  name: 'MDCListItemMeta',
   props: {
     icon: String,
     label: String,
@@ -12,18 +12,16 @@ export default {
   },
   computed: {
     cssClasses() {
-      return {
-        "material-icons": this.icon
-      };
+      return this.icon && 'material-icons';
     },
     content() {
       return this.icon || this.label;
     },
     tag() {
       if(this.link) {
-        return "a";
+        return 'a';
       }
-      return this.icon ? "i" : "span";
+      return this.icon ? 'i' : 'span';
     }
   }
 };

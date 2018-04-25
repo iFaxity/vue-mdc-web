@@ -30,7 +30,7 @@ export default {
         return {
           'mdc-top-app-bar--short': this.short,
           'mdc-top-app-bar--short-collapsed': this.shortCollapsed,
-        }
+        };
       }
 
       return {

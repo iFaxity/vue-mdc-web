@@ -4,12 +4,12 @@ pre
 </template>
 
 <script>
-import Prism from "prismjs";
+import Prism from 'prismjs';
 // Include prism and its css file
-import "prismjs/themes/prism.css";
+import 'prismjs/themes/prism.css';
 
 export default {
-  name: "DemoCode",
+  name: 'DemoCode',
   props: {
     lang: {
       type: String,

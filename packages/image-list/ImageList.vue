@@ -4,7 +4,7 @@
 
 <script>
 export default {
-  name: "MDCImageList",
+  name: 'MDCImageList',
   props: {},
 
   data() {

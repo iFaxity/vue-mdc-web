@@ -14,7 +14,7 @@
 import { MDCChipFoundation } from '@material/chips';
 import { Ripple } from '../ripple';
 import MDCIcon from '../icon';
-import { emitCustomEvent } from "../util";
+import { emitCustomEvent } from '../util';
 
 export default {
   name: 'MDCChip',

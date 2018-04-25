@@ -4,11 +4,11 @@
 </template>
 
 <script>
-const ALIGNMENTS = [ "top", "bottom", "middle" ];
+const ALIGNMENTS = [ 'top', 'bottom', 'middle' ];
 const spanValidator = value => value >= 1 && value <= 12;
 
 export default {
-  name: "MDCLayoutCell",
+  name: 'MDCLayoutCell',
   props: {
     span: {
       type: [Number, String],

@@ -4,15 +4,13 @@ li.mdc-list-divider(:class="cssClasses", role="separator")
 
 <script>
 export default {
-  name: "MDCListDivider",
+  name: 'MDCListDivider',
   props: {
     inset: Boolean
   },
   computed: {
     cssClasses() {
-      return {
-        "mdc-list-divider--inset": this.inset
-      };
+      return this.inset && 'mdc-list-divider--inset';
     }
   }
 };

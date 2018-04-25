@@ -3,10 +3,10 @@ mdc-icon(:tag="tag", name="toolbar", :icon="icon", :label="label", :href="link")
 </template>
 
 <script>
-import MdcIcon from "../icon";
+import MdcIcon from '../icon';
 
 export default {
-  name: "MDCToolbarIcon",
+  name: 'MDCToolbarIcon',
   components: { MdcIcon },
   props: {
     link: String,
@@ -18,7 +18,7 @@ export default {
   },
   computed: {
     tag() {
-      return this.link ? "a" : "button";
+      return this.link ? 'a' : 'button';
     }
   }
 };

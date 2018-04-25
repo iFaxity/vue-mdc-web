@@ -1,10 +1,23 @@
-import MDCTextfield from "./textfield";
-import MDCTextfieldHelpertext from "./TextfieldHelpertext.vue";
-import "@material/textfield/mdc-text-field.scss";
+import MDCTextfield from './Textfield.vue';
+import MDCTextarea from './Textarea.vue';
+import MDCTextfieldHelpertext from './TextfieldHelpertext.vue';
+import '@material/textfield/mdc-text-field.scss';
 
-export { MDCTextfield, MDCTextfieldHelpertext };
+// Used to easily separate the textarea and textfield components
+const MDCTextfieldProxy = {
+  functional: true,
+  props: {
+    textarea: Boolean
+  },
+  render(h, ctx) {
+    const tag = ctx.props.textarea ? Textarea : Textfield;
+    return h(tag, ctx.data, ctx.children);
+  }
+};
+
+export { MDCTextfieldProxy as MDCTextfield, MDCTextfieldHelpertext };
 export function install(Vue, register) {
   register(MDCTextfieldHelpertext);
-  // Register Textfield like this for now
-  Vue.component("mdc-textfield", MDCTextfield);
+  // Register proxy component seperately
+  Vue.component('mdc-textfield', MDCTextFieldProxy);
 }

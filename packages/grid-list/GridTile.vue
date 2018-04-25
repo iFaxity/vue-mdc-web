@@ -10,10 +10,10 @@ li.mdc-grid-tile
 </template>
 
 <script>
-import MdcIcon from "../icon";
+import MdcIcon from '../icon';
 
 export default {
-  name: "MDCGridTile",
+  name: 'MDCGridTile',
   components: { MdcIcon },
   props: {
     cover: Boolean,

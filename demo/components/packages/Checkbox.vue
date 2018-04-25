@@ -43,10 +43,10 @@ export default {
 </template>
 
 <script>
-import DemoTemplate from "../DemoTemplate.vue";
+import DemoTemplate from '../DemoTemplate.vue';
 
 export default {
-  name: "DemoCheckbox",
+  name: 'DemoCheckbox',
   components: { DemoTemplate }
 };
 </script>

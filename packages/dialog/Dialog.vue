@@ -12,15 +12,15 @@ aside.mdc-dialog(role="alertdialog")
 </template>
 
 <script>
-import { MDCButton } from "../button";
-import Foundation from "@material/dialog/foundation";
-import { createFocusTrapInstance } from "@material/dialog/util";
+import { MDCButton } from '../button';
+import Foundation from '@material/dialog/foundation';
+import { createFocusTrapInstance } from '@material/dialog/util';
 
-import { getCorrectEventName } from "@material/animation";
-const transitionEnd = getCorrectEventName(window, "transitionend");
+import { getCorrectEventName } from '@material/animation';
+const transitionEnd = getCorrectEventName(window, 'transitionend');
 
 export default {
-  name: "MDCDialog",
+  name: 'MDCDialog',
   components: { MdcButton: MDCButton },
   props: {
     header: String,
@@ -32,11 +32,11 @@ export default {
     },
     acceptText: {
       type: String,
-      default: "Ok"
+      default: 'Ok'
     },
     cancelText: {
       type: String,
-      default: "Cancel"
+      default: 'Cancel'
     }
   },
 
@@ -52,7 +52,7 @@ export default {
   },
   computed: {
     cssBodyClasses() {
-      return this.scroll && "mdc-dialog__body--scrollable";
+      return this.scroll && 'mdc-dialog__body--scrollable';
     },
     hasContent() {
       return !!this.$slots.default;
@@ -75,18 +75,18 @@ export default {
       deregisterInteractionHandler: (evt, handler) => $el.removeEventListener(evt, handler),
       registerSurfaceInteractionHandler: (evt, handler) => surface.addEventListener(evt, handler),
       deregisterSurfaceInteractionHandler: (evt, handler) => surface.removeEventListener(evt, handler),
-      registerDocumentKeydownHandler: handler => document.addEventListener("keydown", handler),
-      deregisterDocumentKeydownHandler: handler => document.removeEventListener("keydown", handler),
+      registerDocumentKeydownHandler: handler => document.addEventListener('keydown', handler),
+      deregisterDocumentKeydownHandler: handler => document.removeEventListener('keydown', handler),
       registerTransitionEndHandler: handler => surface.addEventListener(transitionEnd, handler),
       deregisterTransitionEndHandler: handler => surface.removeEventListener(transitionEnd, handler),
 
       notifyAccept: () => {
-        this.$emit("action", "accept");
-        this.$emit("accept");
+        this.$emit('action', 'accept');
+        this.$emit('accept');
       },
       notifyCancel: () => {
-        this.$emit("action", "cancel");
-        this.$emit("cancel");
+        this.$emit('action', 'cancel');
+        this.$emit('cancel');
       },
       trapFocusOnSurface: () => focusTrap.activate(),
       untrapFocusOnSurface: () => focusTrap.deactivate(),

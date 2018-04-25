@@ -5,6 +5,6 @@
 
 <script>
 export default {
-  name: "MDCToolbarRow"
+  name: 'MDCToolbarRow'
 };
 </script>

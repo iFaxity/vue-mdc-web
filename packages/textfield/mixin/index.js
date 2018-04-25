@@ -3,8 +3,73 @@ import { lineRippleFactory, labelFactory, outlineFactory, iconFactory, helperTex
 function getHelperText(helperText) {
   return helperText.classList.contains('mdc-text-field-helper-text') ? helperText : null;
 }
+// Creates a uuid for the labelFor attribute.
+function uuid() {
+  return '_mdtf_' + Math.random().toString(36).substr(2);
+}
 
 export default {
+  props: {
+    fullwidth: Boolean,
+    dense: Boolean,
+    disabled: Boolean,
+    required: Boolean,
+
+    id: String,
+    value: String,
+    label: String,
+    name: String,
+
+    // Validation
+    pattern: String,
+    min: [String, Number],
+    max: [String, Number],
+    step: [String, Number],
+    minlength: [String, Number],
+    maxlength: [String, Number],
+  },
+  computed: {
+    hasIconListener() {
+      return !!(this.$listeners && this.$listeners.icon);
+    },
+    model: {
+      get() {
+        return this.value;
+      },
+      set(value) {
+        this.$emit('input', value);
+      }
+    },
+    inputAttrs() {
+      const label = this.fullwidth && this.label;
+
+      return {
+        required: this.required,
+        placeholder: label,
+        ariaLabel: label,
+        name: this.name,
+
+        // Validation
+        id: this.uuid,
+        type: this.type,
+        pattern: this.pattern,
+        min: this.min,
+        max: this.max,
+        step: this.step,
+        minlength: this.minlength,
+        maxlength: this.maxlength,
+      };
+    }
+  },
+  watch: {
+    disabled(value) {
+      this.foundation.setDisabled(value);
+    }
+  },
+  data() {
+    return { uuid: this.id || uuid() };
+  },
+  
   mounted() {
     const { $el } = this.$el;
     const { input } = this.$refs;
@@ -37,7 +102,7 @@ export default {
       deregisterInputInteractionHandler: (type, handler) => input.removeEventListener(type, handler),
       registerValidationAttributeChangeHandler: handler => {
         const observer = new MutationObserver(handler);
-        observer.observe(this.$refs.input, { attributes: true });
+        observer.observe(input, { attributes: true });
         return observer;
       },
       deregisterValidationAttributeChangeHandler: observer => observer.disconnect(),

@@ -1,5 +1,5 @@
-import MDCFab from "./Fab.vue";
-import "@material/fab/mdc-fab.scss";
+import MDCFab from './Fab.vue';
+import '@material/fab/mdc-fab.scss';
 
 export { MDCFab };
 export function install(Vue, register) {

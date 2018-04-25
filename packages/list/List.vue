@@ -5,7 +5,7 @@ ul.mdc-list(:class="cssClasses")
 
 <script>
 export default {
-  name: "MDCList",
+  name: 'MDCList',
   props: {
     dense: Boolean,
     avatar: Boolean,
@@ -14,9 +14,9 @@ export default {
   computed: {
     cssClasses() {
       return {
-        "mdc-list--dense": this.dense,
-        "mdc-list--avatar-list": this.avatar,
-        "mdc-list--two-line": this.twoLine
+        'mdc-list--dense': this.dense,
+        'mdc-list--avatar-list': this.avatar,
+        'mdc-list--two-line': this.twoLine
       };
     }
   }

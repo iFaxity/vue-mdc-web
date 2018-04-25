@@ -3,11 +3,11 @@ mdc-icon(action, :icon="icon", :label="label") {{ icon }}
 </template>
 
 <script>
-import MdcIcon from "../icon";
+import MDCIcon from '../icon';
 
 export default {
-  name: "MDCCardIcon",
-  components: { MdcIcon },
+  name: 'MDCCardIcon',
+  components: { MdcIcon: MDCIcon },
   props: {
     icon: {
       type: String,

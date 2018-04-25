@@ -29,7 +29,7 @@ main.demo-app
 
 <script>
 export default {
-  name: "DemoTemplate",
+  name: 'DemoTemplate',
   props: {
     link: String,
     stacked: Boolean

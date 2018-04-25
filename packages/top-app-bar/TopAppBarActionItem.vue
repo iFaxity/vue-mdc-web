@@ -4,7 +4,7 @@ mdc-icon.mdc-top-app-bar__action-item(tag="a", :icon="icon", :label="label", :hr
 
 <script>
 export default {
-  name: "MDCTopAppBarActionItem",
+  name: 'MDCTopAppBarActionItem',
   props: {
     icon: {
       type: String,

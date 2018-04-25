@@ -9,11 +9,11 @@ aside.mdc-drawer.mdc-drawer--persistent
 </template>
 
 <script>
-import Foundation from "@material/drawer/persistent/foundation";
-import * as util from "@material/drawer/util";
+import Foundation from '@material/drawer/persistent/foundation';
+import * as util from '@material/drawer/util';
 
 export default {
-  name: "MDCPersistentDrawer",
+  name: 'MDCPersistentDrawer',
   props: {
     open: Boolean,
     spacer: Boolean,
@@ -47,10 +47,10 @@ export default {
       deregisterInteractionHandler: (evt, handler) => $el.removeEventListener(util.remapEvent(evt), handler, util.applyPassive()),
       registerDrawerInteractionHandler: (evt, handler) => drawer.addEventListener(util.remapEvent(evt), handler),
       deregisterDrawerInteractionHandler: (evt, handler) => drawer.removeEventListener(util.remapEvent(evt), handler),
-      registerTransitionEndHandler: handler => $el.addEventListener("transitionend", handler),
-      deregisterTransitionEndHandler: handler => $el.removeEventListener("transitionend", handler),
-      registerDocumentKeydownHandler: handler => document.addEventListener("keydown", handler),
-      deregisterDocumentKeydownHandler: handler => document.removeEventListener("keydown", handler),
+      registerTransitionEndHandler: handler => $el.addEventListener('transitionend', handler),
+      deregisterTransitionEndHandler: handler => $el.removeEventListener('transitionend', handler),
+      registerDocumentKeydownHandler: handler => document.addEventListener('keydown', handler),
+      deregisterDocumentKeydownHandler: handler => document.removeEventListener('keydown', handler),
 
       getDrawerWidth: () => drawer.offsetWidth,
       setTranslateX: value => {
@@ -60,10 +60,10 @@ export default {
       getFocusableElements: () => drawer.querySelectorAll(Foundation.strings.FOCUSABLE_ELEMENTS),
       saveElementTabState: el => util.saveElementTabState(el),
       restoreElementTabState: el => util.restoreElementTabState(el),
-      makeElementUntabbable: el => el.setAttribute("tabindex", -1),
-      notifyOpen: () => this.$emit("open"),
-      notifyClose: () => this.$emit("close"),
-      isRtl: () => styles.direction === "rtl",
+      makeElementUntabbable: el => el.setAttribute('tabindex', -1),
+      notifyOpen: () => this.$emit('open'),
+      notifyClose: () => this.$emit('close'),
+      isRtl: () => styles.direction === 'rtl',
       isDrawer: el => el === drawer
     });
     this.foundation.init();

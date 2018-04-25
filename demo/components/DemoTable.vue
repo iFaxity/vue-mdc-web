@@ -8,12 +8,12 @@ table
 </template>
 
 <script>
-const SLOT_HEADERS = [ "Slot", "Description" ];
-const PROP_HEADERS = [ "Prop", "Type", "Default", "Description" ];
-const EVENT_HEADERS = [ "Event", "Args", "Description" ]
+const SLOT_HEADERS = [ 'Slot', 'Description' ];
+const PROP_HEADERS = [ 'Prop', 'Type', 'Default', 'Description' ];
+const EVENT_HEADERS = [ 'Event', 'Args', 'Description' ]
 
 export default {
-  name: "DemoTable",
+  name: 'DemoTable',
   props: {
     props: Boolean,
     slots: Boolean,

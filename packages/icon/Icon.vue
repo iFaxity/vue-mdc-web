@@ -3,10 +3,10 @@ component.material-icons(:is="tag", :class="cssClasses", :tabindex="action && '0
 </template>
 
 <script>
-import { Ripple } from "../ripple";
+import { Ripple } from '../ripple';
 
 export default {
-  name: "MDCIcon",
+  name: 'MDCIcon',
   mixins: [ Ripple(null, { unbounded: true, surface: true }) ],
   props: {
     icon: {
@@ -17,7 +17,7 @@ export default {
     label: String,
     tag: {
       type: String,
-      default: "i"
+      default: 'i'
     },
     
     ripple: Boolean,

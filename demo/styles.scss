@@ -40,11 +40,11 @@ th {
   text-align: left;
 }
 
-pre[class*="language-"] {
+pre[class*='language-'] {
   padding-right: 2em !important;
 
-  &, code[class*="language-"] {  
-    font-family: "Roboto Mono", "Consolas", "Monaco", "Ubuntu Mono", monospace;
+  &, code[class*='language-'] {  
+    font-family: 'Roboto Mono', 'Consolas', 'Monaco', 'Ubuntu Mono', monospace;
     font-size: 14px;
     letter-spacing: .5px;
     line-height: 2;

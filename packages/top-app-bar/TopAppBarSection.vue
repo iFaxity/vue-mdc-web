@@ -5,7 +5,7 @@ section.mdc-top-app-bar__section(:class="cssClasses")
 
 <script>
 export default {
-  name: "MDCTopAppBarSection",
+  name: 'MDCTopAppBarSection',
   props: {
     alignStart: Boolean,
     alignEnd: Boolean,
@@ -14,8 +14,8 @@ export default {
   computed: {
     cssClasses() {
       return {
-        "mdc-top-app-bar__section--align-start": this.alignStart,
-        "mdc-top-app-bar__section--align-end": this.alignEnd
+        'mdc-top-app-bar__section--align-start': this.alignStart,
+        'mdc-top-app-bar__section--align-end': this.alignEnd
       };
     }
   }

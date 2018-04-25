@@ -54,10 +54,10 @@ demo-template(link="buttons")
 </template>
 
 <script>
-import DemoTemplate from "../DemoTemplate.vue";
+import DemoTemplate from '../DemoTemplate.vue';
 
 export default {
-  name: "DemoButton",
+  name: 'DemoButton',
   components: { DemoTemplate }
 };
 </script>

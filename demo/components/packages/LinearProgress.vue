@@ -16,10 +16,10 @@ demo-template(link="linear-progress")
 </template>
 
 <script>
-import DemoTemplate from "../DemoTemplate.vue";
+import DemoTemplate from '../DemoTemplate.vue';
 
 export default {
-  name: "DemoLinearProgress",
+  name: 'DemoLinearProgress',
   components: { DemoTemplate }
 };
 </script>

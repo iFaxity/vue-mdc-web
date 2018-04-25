@@ -8,14 +8,14 @@
 </template>
 
 <script>
-import Foundation from "@material/checkbox/foundation";
-import { getCorrectEventName } from "@material/animation";
-import { Ripple, matches } from "../ripple";
+import Foundation from '@material/checkbox/foundation';
+import { getCorrectEventName } from '@material/animation';
+import { Ripple, matches } from '../ripple';
 
-const animationEnd = getCorrectEventName(window, "animationend");
+const animationEnd = getCorrectEventName(window, 'animationend');
 const rippleAdapter = {
   isSurfaceActive() {
-    return this.$refs.input[matches](":active");
+    return this.$refs.input[matches](':active');
   },
   registerInteractionHandler(typeName, handler) {
     this.$refs.input.addEventListener(typeName, handler);
@@ -26,12 +26,12 @@ const rippleAdapter = {
 };
 
 export default {
-  name: "MDCCheckbox",
+  name: 'MDCCheckbox',
   mixins: [ Ripple(rippleAdapter, { unbounded: true }) ],
   inheritAttrs: false,
   model: {
-    prop: "checked",
-    event: "change"
+    prop: 'checked',
+    event: 'change'
   },
   props: {
     checked: [Boolean, Array],
@@ -63,8 +63,8 @@ export default {
       removeNativeControlAttr: attr => input.removeAttribute(attr),
       registerAnimationEndHandler: handler => $el.removeEventListener(animationEnd, handler),
       deregisterAnimationEndHandler: handler => $el.removeEventListener(animationEnd, handler),
-      registerChangeHandler: handler => input.addEventListener("change", handler),
-      deregisterChangeHandler: handler => input.removeEventListener("change", handler),
+      registerChangeHandler: handler => input.addEventListener('change', handler),
+      deregisterChangeHandler: handler => input.removeEventListener('change', handler),
       getNativeControl: () => input,
       forceLayout: () => this.$forceUpdate(),
       isAttachedToDOM: () => !!$el.parentNode,
@@ -88,7 +88,7 @@ export default {
     },
     onChange(e) {
       let { checked } = e.target;
-      this.$emit("update:indeterminate", this.foundation.isIndeterminate());
+      this.$emit('update:indeterminate', this.foundation.isIndeterminate());
 
       if(Array.isArray(this.checked)) {
         checked = this.checked;
@@ -101,7 +101,7 @@ export default {
         checked = this.value;
       }
 
-      this.$emit("change", checked);
+      this.$emit('change', checked);
     }
   }
 };

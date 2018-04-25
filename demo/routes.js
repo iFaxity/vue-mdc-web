@@ -1,5 +1,5 @@
-import Home from "./components/Home.vue";
-import Demo from "./components/Demo.vue";
+import Home from './components/Home.vue';
+import Demo from './components/Demo.vue';
 
 const pascal = str => {
   const res = str.replace(/(-\w)/g, match => {
@@ -10,11 +10,11 @@ const pascal = str => {
 
 export default [
   {
-    path: "/",
+    path: '/',
     component: Home
   },
   {
-    path: "/demo/:view",
+    path: '/demo/:view',
     component: Demo,
     meta: {
       title: (to, from) => pascal(to.params.view)

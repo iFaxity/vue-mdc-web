@@ -5,6 +5,6 @@
 
 <script>
 export default {
-  name: "MDCListGroup"
+  name: 'MDCListGroup'
 };
 </script>

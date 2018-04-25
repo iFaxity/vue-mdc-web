@@ -16,10 +16,10 @@ demo-template(link="toolbar")
 </template>
 
 <script>
-import DemoTemplate from "../DemoTemplate.vue";
+import DemoTemplate from '../DemoTemplate.vue';
 
 export default {
-  name: "DemoToolbar",
+  name: 'DemoToolbar',
   components: { DemoTemplate }
 };
 </script>

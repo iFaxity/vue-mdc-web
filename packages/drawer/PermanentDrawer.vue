@@ -8,7 +8,7 @@ nav.mdc-drawer.mdc-drawer--permanent.mdc-typography
 
 <script>
 export default {
-  name: "MDCPermanentDrawer",
+  name: 'MDCPermanentDrawer',
   props: {
     spacer: Boolean
   }

@@ -5,12 +5,12 @@
 </template>
 
 <script>
-import { MDCMenuFoundation as Foundation } from "@material/menu/foundation";
-import { Corner } from "@material/menu/constants";
-import { getTransformPropertyName } from "@material/menu/util";
+import { MDCMenuFoundation as Foundation } from '@material/menu/foundation';
+import { Corner } from '@material/menu/constants';
+import { getTransformPropertyName } from '@material/menu/util';
 
 export default {
-  name: "MDCMenu",
+  name: 'MDCMenu',
   props: {
     anchor: Boolean,
 
@@ -22,10 +22,10 @@ export default {
     },
     corner: {
       type: String,
-      default: "top_left",
+      default: 'top_left',
       validator: value => {
         let prop = value.toUpperCase();
-        return typeof Corner[prop] !== "undefined";
+        return typeof Corner[prop] !== 'undefined';
       }
     }
   },
@@ -48,7 +48,7 @@ export default {
     
     if(this.anchor) {
       $anchor = $el.parentElement;
-      $anchor.classList.add("mdc-menu-anchor");
+      $anchor.classList.add('mdc-menu-anchor');
     }
 
     this.foundation = new Foundation({
@@ -65,11 +65,11 @@ export default {
       getNumberOfItems: () => this.items.length,
       registerInteractionHandler: (type, handler) => $el.addEventListener(type, handler),
       deregisterInteractionHandler: (type, handler) => $el.removeEventListener(type, handler),
-      registerBodyClickHandler: handler => document.body.addEventListener("click", handler),
-      deregisterBodyClickHandler: handler => document.body.removeEventListener("click", handler),
+      registerBodyClickHandler: handler => document.body.addEventListener('click', handler),
+      deregisterBodyClickHandler: handler => document.body.removeEventListener('click', handler),
       getIndexForEventTarget: target => this.items.indexOf(target),
-      notifySelected: data => this.$emit("selected", data.index, this.items[data.index]),
-      notifyCancel: () => this.$emit("cancel"),
+      notifySelected: data => this.$emit('selected', data.index, this.items[data.index]),
+      notifyCancel: () => this.$emit('cancel'),
       saveFocus: () => {
         prevFocus = document.activeElement;
       },
@@ -78,16 +78,16 @@ export default {
       focus: () => $el.focus(),
       getFocusedItemIndex: () => this.items.indexOf(document.activeElement),
       focusItemAtIndex: index => this.items[index].focus(),
-      isRtl: () => $styles.direction === "rtl",
+      isRtl: () => $styles.direction === 'rtl',
       setTransformOrigin: origin => {
         const prop = getTransformPropertyName(window);
         $el.style[`${prop}-origin`] = origin;
       },
       setPosition: pos => {
-        $el.style.left = "left" in pos ? pos.left : null;
-        $el.style.right = "right" in pos ? pos.right : null;
-        $el.style.top = "top" in pos ? pos.top : null;
-        $el.style.bottom = "bottom" in pos ? pos.bottom : null;
+        $el.style.left = 'left' in pos ? pos.left : null;
+        $el.style.right = 'right' in pos ? pos.right : null;
+        $el.style.top = 'top' in pos ? pos.top : null;
+        $el.style.bottom = 'bottom' in pos ? pos.bottom : null;
       },
       setMaxHeight: height => $el.style.maxHeight = height,
       setAttrForOptionAtIndex: (index, attr, value) => this.items[index].setAttribute(attr, value),
@@ -117,7 +117,7 @@ export default {
       this.foundation.close();
     },
     $_findItems() {
-      return Array.prototype.slice.call(this.$refs.itemsContainer.querySelectorAll(".mdc-list-item[role]"));
+      return Array.prototype.slice.call(this.$refs.itemsContainer.querySelectorAll('.mdc-list-item[role]'));
     }
   }
 };

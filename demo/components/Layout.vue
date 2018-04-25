@@ -18,39 +18,39 @@ mdc-app(flip, align-start)
 <script>
 
 export default {
-  name: "AppRoot",
+  name: 'AppRoot',
   data() {
     return {
-      title: "MDC Vue Demo",
-      drawer: "persistent",
+      title: 'MDC Vue Demo',
+      drawer: 'persistent',
       drawerOpen: false,
       routes: [
-        "App",
-        "Button",
-        "Card",
-        "Checkbox",
-        "Chips",
-        "Dialog",
-        "Drawer",
-        "Elevation",
-        "Fab",
-        "FormField",
-        "GridList",
-        "IconToggle",
-        "LayoutGrid",
-        "LinearProgress",
-        "List",
-        "Menu",
-        "Radio",
-        "Ripple",
-        "Select",
-        "Slider",
-        "Snackbar",
-        "Switch",
-        "Tabs",
-        "Textfield",
-        "Toolbar",
-        "Typography"
+        'App',
+        'Button',
+        'Card',
+        'Checkbox',
+        'Chips',
+        'Dialog',
+        'Drawer',
+        'Elevation',
+        'Fab',
+        'FormField',
+        'GridList',
+        'IconToggle',
+        'LayoutGrid',
+        'LinearProgress',
+        'List',
+        'Menu',
+        'Radio',
+        'Ripple',
+        'Select',
+        'Slider',
+        'Snackbar',
+        'Switch',
+        'Tabs',
+        'Textfield',
+        'Toolbar',
+        'Typography'
       ]
     };
   },
@@ -58,20 +58,20 @@ export default {
   mounted() {
     const isMobile = () => document.documentElement.clientWidth < 720;
     if(isMobile()) {
-      this.drawer = "temporary";
+      this.drawer = 'temporary';
     }
 
-    window.addEventListener("resize", () => {
+    window.addEventListener('resize', () => {
       const mobile = isMobile();
-      this.drawer = mobile ? "temporary" : "persistent";
+      this.drawer = mobile ? 'temporary' : 'persistent';
       this.drawerOpen = !mobile;
     });
-    this.$state.$on("demoRouted", title => {
+    this.$state.$on('demoRouted', title => {
       this.title = `MDC ${title}`;
     })
   },
   beforeDestroy() {
-    this.$state.$off("demoRouted");
+    this.$state.$off('demoRouted');
   },
 
   methods: {
@@ -90,10 +90,10 @@ export default {
       // Simple hack for toggling resize on elements when drawer is toggled
       let event;
       try {
-        event = new Event("resize");
+        event = new Event('resize');
       } catch(ex) {
-        event = document.createEvent("UIEvents");
-        event.initUIEvent("resize", true, false, window, 0);
+        event = document.createEvent('UIEvents');
+        event.initUIEvent('resize', true, false, window, 0);
       }
       window.dispatchEvent(event);
     }

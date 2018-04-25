@@ -6,7 +6,7 @@
 
 <script>
 export default {
-  name: "MDCFormField",
+  name: 'MDCFormField',
   props: {
     label: {
       type: String,
@@ -17,7 +17,7 @@ export default {
   },
   computed: {
     cssClasses() {
-      return this.alignEnd && "mdc-form-field--align-end";
+      return this.alignEnd && 'mdc-form-field--align-end';
     }
   }
 };

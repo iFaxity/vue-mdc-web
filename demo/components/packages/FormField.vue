@@ -16,10 +16,10 @@ demo-template(link="input-controls/form-fields")
 </template>
 
 <script>
-import DemoTemplate from "../DemoTemplate.vue";
+import DemoTemplate from '../DemoTemplate.vue';
 
 export default {
-  name: "DemoFormField",
+  name: 'DemoFormField',
   components: { DemoTemplate }
 };
 </script>

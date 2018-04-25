@@ -10,20 +10,20 @@
 </template>
 
 <script>
-import Foundation from "@material/select/foundation";
-import LabelFoundation from "@material/select/label/foundation";
-import BottomLineFoundation from "@material/select/bottom-line/foundation";
-import { Ripple } from "../ripple";
+import Foundation from '@material/select/foundation';
+import LabelFoundation from '@material/select/label/foundation';
+import BottomLineFoundation from '@material/select/bottom-line/foundation';
+import { Ripple } from '../ripple';
 
-const getEventType = type => type.substr(type.indexOf(":") + 1);
+const getEventType = type => type.substr(type.indexOf(':') + 1);
 
 //TODO: complete after created mdc-list and mdc-menu
 export default {
-  name: "MDCSelect",
+  name: 'MDCSelect',
   mixins: [ Ripple() ],
   model: {
-    prop: "value",
-    event: "change"
+    prop: 'value',
+    event: 'change'
   },
   props: {
     disabled: Boolean,
@@ -45,11 +45,11 @@ export default {
   },
   computed: {
     cssClasses() {
-      return this.box && "mdc-select--box";
+      return this.box && 'mdc-select--box';
     }
   },
   data() {
-    return { selectedText: "" };
+    return { selectedText: '' };
   },
 
   mounted() {
@@ -85,7 +85,7 @@ export default {
       },
       getComputedStyleValue: prop => window.getComputedStyle(surface)[prop],
       setStyle: (prop, value) => surface.style[prop] = value,
-      create2dRenderingContext: () => document.createElement("canvas").getContext("2d"),
+      create2dRenderingContext: () => document.createElement('canvas').getContext('2d'),
       setMenuElStyle: (prop, value) => menu.$el.style[prop] = value,
       setMenuElAttr: (attr, value) => menu.$el.setAttribute(attr, value),
       rmMenuElAttr: attr => menu.$el.removeAttribute(attr),
@@ -104,7 +104,7 @@ export default {
       getOffsetTopForOptionAtIndex: index => menu.items[index].offsetTop,
       registerMenuInteractionHandler: (type, handler) => menu.$on(getEventType(type), handler), //menu.$el.addEventListener(type, handler),
       deregisterMenuInteractionHandler: (type, handler) => menu.$off(getEventType(type), handler), //menu.$el.removeEventListener(type, handler),
-      notifyChange: () => this.$emit("change", this.foundation.getValue()),
+      notifyChange: () => this.$emit('change', this.foundation.getValue()),
       getWindowInnerHeight: () => window.innerHeight,
       addBodyClass: className => document.body.classList.add(className),
       removeBodyClass: className => document.body.classList.remove(className)
@@ -130,7 +130,7 @@ export default {
       });
       if(index >= 0 && this.foundation.getSelectedIndex() !== index) {
         this.foundation.setSelectedIndex(index);
-        emit && this.$emit("change", needle);
+        emit && this.$emit('change', needle);
         // Fix the label so it floats correctly
         label.classList.add(Foundation.cssClasses.LABEL_FLOAT_ABOVE);
       }

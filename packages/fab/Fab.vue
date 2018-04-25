@@ -4,10 +4,10 @@ button.mdc-fab.material-icons(:class="cssClasses", :aria-label="label", :title="
 </template>
 
 <script>
-import { Ripple } from "../ripple";
+import { Ripple } from '../ripple';
 
 export default {
-  name: "MDCFab",
+  name: 'MDCFab',
   mixins: [ Ripple() ],
   props: {
     mini: Boolean,
@@ -25,8 +25,8 @@ export default {
   computed: {
     cssClasses() {
       return {
-        "mdc-fab--mini": this.mini,
-        "mdc-fab--exited": this.exited
+        'mdc-fab--mini': this.mini,
+        'mdc-fab--exited': this.exited
       };
     }
   }
