@@ -1,5 +1,5 @@
 <template lang="pug">
-demo-template
+demo-template(link="input-controls/checkboxes")
   mdc-form-field(slot="hero", label="Checkbox")
     mdc-checkbox
   mdc-form-field(slot="hero", label="Indeterminate")

@@ -1,5 +1,5 @@
 <template lang="pug">
-transition-group.mdc-chip-set(v-if="input", :class="cssClasses", enter-active-class="", leave-active-class="mdc-chip--exit")
+transition-group.mdc-chip-set(v-if="input", :class="cssClasses", v-bind="$_transition")
   slot
 .mdc-chip-set(v-else, :class="cssClasses")
   slot
@@ -57,6 +57,17 @@ export default {
         'mdc-chip-set--filter': this.filter
       };
     },
+    $_transition() {
+      return {
+        name: null,
+        enterClass: null,
+        enterActiveClass: null,
+        enterToClass: null,
+        leaveClass: null,
+        leaveActiveClass: 'mdc-chip--exit',
+        leaveToClass: null,
+      };
+    }
   },
 
   mounted() {

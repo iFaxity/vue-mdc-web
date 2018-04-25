@@ -1,23 +1,24 @@
 <template lang="pug">
-demo-template(stacked)
-  h3(slot="hero") Basic
-  mdc-chip-set(slot="hero")
-    mdc-chip(text="Chip one")
-    mdc-chip(text="Chip two")
-    mdc-chip(text="Chip three", leading-icon="bookmark")
-  h3(slot="hero") Input
-  mdc-chip-set(slot="hero", input)
-    mdc-chip(v-for="chip in chips", :key="chip", :text="chip")
-  h3(slot="hero") Choice (selected: {{ selectChoice }})
-  mdc-chip-set(slot="hero", choice, v-model="selectChoice")
-    mdc-chip(text="Chip one")
-    mdc-chip(text="Chip two", value="chip 2")
-    mdc-chip(text="Chip three", value="bookmark", leading-icon="bookmark")  
-  h3(slot="hero") Filter (selected: {{ selectFilter }})
-  mdc-chip-set(slot="hero", filter, v-model="selectFilter")
-    mdc-chip(text="Chip 1")
-    mdc-chip(text="Chip 2", value="chip 2")
-    mdc-chip(text="Chip 3", value="bookmark", leading-icon="bookmark")    
+demo-template(stacked, link="chips")
+  template(slot="hero")
+    h3 Basic
+    mdc-chip-set
+      mdc-chip(text="Chip one")
+      mdc-chip(text="Chip two")
+      mdc-chip(text="Chip three", leading-icon="bookmark")
+    h3 Input
+    mdc-chip-set(input)
+      mdc-chip(v-for="chip in chips", :key="chip", :text="chip")
+    h3 Choice (selected: {{ selectChoice }})
+    mdc-chip-set(choice, v-model="selectChoice")
+      mdc-chip(text="Chip one")
+      mdc-chip(text="Chip two", value="chip 2")
+      mdc-chip(text="Chip three", value="bookmark", leading-icon="bookmark")  
+    h3 Filter (selected: {{ selectFilter }})
+    mdc-chip-set(filter, v-model="selectFilter")
+      mdc-chip(text="Chip 1")
+      mdc-chip(text="Chip 2", value="chip 2")
+      mdc-chip(text="Chip 3", value="bookmark", leading-icon="bookmark")    
 
   template(slot="usage")
     demo-code(lang="markup", code=`
@@ -79,7 +80,7 @@ demo-template(stacked)
       td input
       td Boolean
       td false
-      td Adds entry and exit animation to chip
+      td Adds entry and exit animation to chip. It's recommended to use v-for with a key on each MDCChip.
     tr
       td choice
       td Boolean
@@ -121,6 +122,9 @@ export default {
       } else {
         this.chips.push("Chip four");
       }
+      this.$nextTick(() => {
+        debugger;
+      });
     }, 3000);
   },
   beforeDestroy() {

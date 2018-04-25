@@ -1,5 +1,5 @@
 <template lang="pug">
-demo-template
+demo-template(link="dialogs")
   mdc-button(slot="hero", raised, @click="$refs.dialog.open()") Open dialog
   mdc-button(slot="hero", raised, @click="$refs.scrollDialog.open()") Open scrolling dialog
   mdc-button(slot="hero", raised, @click="openValidDialog") Open validation dialog

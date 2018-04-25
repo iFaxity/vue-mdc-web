@@ -1,5 +1,5 @@
 <template lang="pug">
-demo-template
+demo-template(link="buttons/floating-action-buttons")
   mdc(slot="hero")
 
   template(slot="usage")

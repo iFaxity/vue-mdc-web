@@ -1,6 +1,5 @@
 <template lang="pug">
-demo-template
-
+demo-template(link="buttons")
   mdc-button(slot="hero") Flat
   mdc-button(slot="hero", raised) Raised
   mdc-button(slot="hero", icon="favorite") Icon

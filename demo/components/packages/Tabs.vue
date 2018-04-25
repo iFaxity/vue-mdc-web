@@ -1,5 +1,5 @@
 <template lang="pug">
-demo-template
+demo-template(link="tabs")
   mdc(slot="hero")
 
   template(slot="usage")

@@ -1,5 +1,5 @@
 <template lang="pug">
-demo-template
+demo-template(link="input-controls/radio-buttons")
   mdc(slot="hero")
 
   template(slot="usage")

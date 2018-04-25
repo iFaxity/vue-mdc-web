@@ -1,5 +1,5 @@
 <template lang="pug">
-demo-template
+demo-template(link="linear-progress")
   mdc(slot="hero")
 
   template(slot="usage")

@@ -1,5 +1,5 @@
 <template lang="pug">
-demo-template
+demo-template(link="cards")
   mdc-card(slot="hero")
     mdc-card-media(image="/images/16-9.jpg")
     mdc-card-actions

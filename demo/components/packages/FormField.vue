@@ -1,5 +1,5 @@
 <template lang="pug">
-demo-template
+demo-template(link="input-controls/form-fields")
   mdc(slot="hero")
 
   template(slot="usage")

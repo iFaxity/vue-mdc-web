@@ -102,7 +102,7 @@ async function serve(req, res) {
 
   // parse routes here
   if(req.url.startsWith("/demo/")) {
-    pathname = __dirname + "\\index.html";
+    pathname = path.join(__dirname, "index.html");
   }
 
   try {

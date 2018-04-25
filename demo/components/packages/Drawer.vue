@@ -1,5 +1,5 @@
 <template lang="pug">
-demo-template
+demo-template(link="drawers")
   mdc(slot="hero")
 
   template(slot="usage")

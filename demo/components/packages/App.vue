@@ -47,7 +47,7 @@ demo-template
 import DemoTemplate from "../DemoTemplate.vue";
 
 export default {
-  name: "DemoApp",
+  name: 'DemoApp',
   components: { DemoTemplate }
 };
 </script>

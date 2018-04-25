@@ -5,9 +5,9 @@ main.demo-app
 
   article.demo-app__content
     section.demo-app__usage
-      h2
-        | Usage 
-        a(:href="link", target="_blank") #material.io
+      h2(v-if="getLink") Usage #[a(:href="getLink", target="_blank") #material.io]
+      h2(v-else) Usage
+
       p To use the component type this into your Vue Component
       slot(name="usage")
     
@@ -35,9 +35,10 @@ export default {
     stacked: Boolean
   },
   computed: {
-    link() {
-      const { view } = this.$route.params;
-      return `//material.io/components/web/catalog/${view}/`;
+    getLink() {
+      if(!this.link) return;
+
+      return `//material.io/components/web/catalog/${this.link}/`;
     },
     cssClasses() {
       return {
