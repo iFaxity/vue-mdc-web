@@ -4,7 +4,7 @@ import "@material/textfield/mdc-text-field.scss";
 
 export { MDCTextfield, MDCTextfieldHelpertext };
 export function install(Vue, register) {
-  register(MDCTextFieldHelpertext);
+  register(MDCTextfieldHelpertext);
   // Register Textfield like this for now
   Vue.component("mdc-textfield", MDCTextfield);
 }

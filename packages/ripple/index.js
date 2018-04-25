@@ -70,11 +70,21 @@ function createRipple(vm, adapter, { unbounded }) {
   return new Foundation(rippleAdapter);
 }
 
+function getSize(el) {
+  return {
+    width: el.offsetWidth,
+    height: el.offsetHeight
+  };
+}
+function isSizeEqual(size1, size2) {
+  return size1.width === size2.width && size1.height === size2.height;
+}
+
 // Exports the directive and the matches property
 export { matches };
 export function Ripple(adapter = null, opts = {}) {
   return {
-    data() { return { _ripple: null } },
+    data() { return { _ripple: null, _rippleBounds: null } },
     beforeMount() {
       if(opts.surface) {
         if(this.$vnode.data.staticClass) {
@@ -83,11 +93,11 @@ export function Ripple(adapter = null, opts = {}) {
           this.$vnode.data.staticClass = "mdc-ripple-surface";
         }
         
+        // Add unbounded attribute to element
         if(opts.unbounded) {
           if(this.$vnode.data.attrs) {
             this.$vnode.data.attrs = {};
           }
-          debugger;
           this.$vnode.data.attrs["data-mdc-ripple-is-unbounded"] = true;
         }
       }
@@ -95,11 +105,19 @@ export function Ripple(adapter = null, opts = {}) {
     mounted() {
       this._ripple = createRipple(this, adapter, opts);
       this._ripple.init();
+
+      this._rippleBounds = getSize(this.$el);
     },
     updated() {
-      this._ripple.layout();
+      const newSize = getSize(this.$el);
+
+      // When a components size changes then update the ripple
+      if(isSizeEqual(this._rippleBounds, newSize)) {
+        this._ripple.layout();
+        this._rippleBounds = newSize;
+      }
     },
-    beforeDestroy($el, binding, vnode) {
+    beforeDestroy() {
       this._ripple.destroy();
     }
   };

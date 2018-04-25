@@ -1,12 +1,10 @@
-import LineRippleFoundation from "@material/line-ripple/foundation";
-import LabelFoundation from "@material/floating-label/foundation";
-import NotchedOutlineFoundation from "@material/notched-outline/foundation";
-
-import HelperTextFoundation from "@material/textfield/helper-text/foundation";
-import IconFoundation from "@material/textfield/icon/foundation";
+import { MDCLineRippleFoundation } from '@material/line-ripple';
+import { MDCFloatingLabelFoundation } from '@material/floating-label';
+import { MDCNotchedOutlineFoundation } from '@material/notched-outline';
+import { MDCTextFieldFoundation, MDCTextFieldHelperTextFoundation, MDCTextFieldIconFoundation } from '@material/textfield';
 
 export function lineRippleFactory($el) {
-  return new LineRippleFoundation({
+  return new MDCLineRippleFoundation({
     addClass: className => $el.classList.add(className),
     removeClass: className => $el.classList.remove(className),
     hasClass: className => $el.classList.contains(className),
@@ -16,10 +14,13 @@ export function lineRippleFactory($el) {
     registerEventHandler: (type, handler) => $el.addEventListener(type, handler),
     deregisterEventHandler: (type, handler) => $el.removeEventListener(type, handler)
   });
-};
+}
+export function helperTextFactory(helperText) {
+  // Check if helperText is really a helper text element
+  const $el = helperText.classList.contains('mdc-text-field-helper-text') ? helperText : null;
+  if(!$el) return; // return undefined if a valid helperText doesn't exist
 
-export function helperTextFactory($el) {
-  return new HelperTextFoundation({
+  return new MDCTextFieldHelperTextFoundation({
     addClass: className => $el.classList.add(className),
     removeClass: className => $el.classList.remove(className),
     hasClass: className => $el.classList.contains(className),
@@ -29,36 +30,35 @@ export function helperTextFactory($el) {
       $el.textContent = content;
     }
   });
-};
-
+}
 export function iconFactory($el, notifyIconAction) {
-  return new IconFoundation({
+  return new MDCTextFieldIconFoundation({
+    getAttr: attr => $el.getAttribute(attr),
     setAttr: (attr, value) => $el.setAttribute(attr, value),
+    removeAttr: attr => $el.removeAttribute(attr),
     registerInteractionHandler: (tvtType, handler) => $el.addEventListener(type, handler),
     deregisterInteractionHandler: (type, handler) => $el.removeEventListener(type, handler),
     notifyIconAction
   });
-};
-
+}
 export function labelFactory($el) {
-  return new LabelFoundation({
+  return new MDCFloatingLabelFoundation({
     addClass: className => $el.classList.add(className),
     removeClass: className => $el.classList.remove(className),
     getWidth: () => $el.offsetWidth,
     registerInteractionHandler: (evtType, handler) => $el.addEventListener(evtType, handler),
     deregisterInteractionHandler: (evtType, handler) => $el.removeEventListener(evtType, handler)
   });
-};
-
+}
 export function outlineFactory($el, { outlinePath, idleOutline }) {
   const styles = idleOutline && window.getComputedStyle(idleOutline);
   
-  return new NotchedOutlineFoundation({
+  return new MDCNotchedOutlineFoundation({
     getWidth: () => $el.offsetWidth,
     getHeight: () => $el.offsetHeight,
     addClass: className => $el.classList.add(className),
     removeClass: className => $el.classList.remove(className),
-    setOutlinePathAttr: value => outlinePath.setAttribute("d", value),
+    setOutlinePathAttr: value => outlinePath.setAttribute('d', value),
     getIdleOutlineStyleValue: prop => styles && styles.getPropertyValue(prop)
   });
-};
+}
