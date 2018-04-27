@@ -18,6 +18,7 @@ const MDCTextfieldProxy = {
 export { MDCTextfieldProxy as MDCTextfield, MDCTextfieldHelpertext };
 export function install(Vue, register) {
   register(MDCTextfieldHelpertext);
+  
   // Register proxy component seperately
   Vue.component('mdc-textfield', MDCTextfieldProxy);
 }

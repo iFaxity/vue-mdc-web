@@ -1,12 +1,37 @@
 import { MDCTextFieldFoundation } from '@material/textfield';
-import { iconFactory, helperTextFactory } from './foundations';
-import { MDCFloatingLabel } from '../../floating-label';
-import { MDCLineRipple } from '../../line-ripple';
-import { MDCNotchedOutline } from '../../notched-outline';
+import { MDCFloatingLabel } from '../floating-label';
+import { MDCLineRipple } from '../line-ripple';
+import { MDCNotchedOutline } from '../notched-outline';
 
-function getHelperText(helperText) {
-  return helperText && helperText.classList.contains('mdc-text-field-helper-text') ? helperText : null;
+// Foundations for HelperText and Icon
+import { MDCTextFieldHelperTextFoundation, MDCTextFieldIconFoundation } from '@material/textfield';
+function helperTextFactory(helperText) {
+  // Check if helperText is really a helper text element
+  const $el = helperText && helperText.classList.contains('mdc-text-field-helper-text') ? helperText : null;
+  if (!$el) return; // return undefined if a valid helperText doesn't exist
+
+  return new MDCTextFieldHelperTextFoundation({
+    addClass: className => $el.classList.add(className),
+    removeClass: className => $el.classList.remove(className),
+    hasClass: className => $el.classList.contains(className),
+    setAttr: (attr, value) => $el.setAttribute(attr, value),
+    removeAttr: attr => $el.removeAttribute(attr),
+    setContent: content => {
+      $el.textContent = content;
+    }
+  });
 }
+function iconFactory($el, notifyIconAction) {
+  return new MDCTextFieldIconFoundation({
+    getAttr: attr => $el.getAttribute(attr),
+    setAttr: (attr, value) => $el.setAttribute(attr, value),
+    removeAttr: attr => $el.removeAttribute(attr),
+    registerInteractionHandler: (tvtType, handler) => $el.addEventListener(type, handler),
+    deregisterInteractionHandler: (type, handler) => $el.removeEventListener(type, handler),
+    notifyIconAction
+  });
+}
+
 // Creates a uuid for the labelFor attribute.
 function uuid() {
   return '_mdtf_' + Math.random().toString(36).substr(2);
@@ -85,21 +110,11 @@ export default {
     const styles = window.getComputedStyle($el);
     
     // Run each factory and save them into variables.
-    this._helperText = helperTextFactory(getHelperText(this.$el.nextElementSibling));
+    this._helperText = helperTextFactory(this.$el.nextElementSibling);
 
     if(this.$refs.icon && this.hasIconListener) {
       this._icon = iconFactory(this.$refs.icon, () => this.$emit('icon'));
     }
-
-    /*if(this.$refs.lineRipple) {
-      this._lineRipple = lineRippleFactory(this.$refs.lineRipple);
-    }
-    if(this.$refs.label) {
-      this._label = labelFactory(this.$refs.label);
-    }
-    if(this.$refs.outline) {
-      this._outline = outlineFactory(this.$refs.outline, this.$refs);
-    }*/
   
     this.foundation = new MDCTextFieldFoundation({
       addClass: className => $el.classList.add(className),
@@ -134,20 +149,6 @@ export default {
       hasOutline: () => !!notchedOutline,
       notchOutline: (labelWidth, isRtl) => notchedOutline.notch(labelWidth, isRtl),
       closeOutline: () => notchedOutline.closeNotch(),
-  
-      /* Line Ripple methods
-      activateLineRipple: () => this._lineRipple && this._lineRipple.activate(),
-      deactivateLineRipple: () => this._lineRipple && this._lineRipple.deactivate(),
-      setLineRippleTransformOrigin: normalizedX => this._lineRipple && this._lineRipple.setRippleCenter(normalizedX),
-      // Label methods
-      shakeLabel: shouldShake => this._label.shake(shouldShake),
-      floatLabel: shouldFloat => this._label.float(shouldFloat),
-      hasLabel: () => !!this._label,
-      getLabelWidth: () => this._label.getWidth(),
-      // Outline methods
-      hasOutline: () => !!this._outline,
-      notchOutline: (labelWidth, isRtl) => this._outline.notch(labelWidth, isRtl),
-      closeOutline: () => this._outline.closeNotch(),*/
     }, { helperText: this._helperText, icon: this._icon });
 
     this.foundation.init();

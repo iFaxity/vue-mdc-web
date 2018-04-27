@@ -18,24 +18,24 @@ export default {
     header: String
   },
   watch: {
-    open(value, oldValue) {
+    open(value) {
       const isOpen = this.foundation.isOpen();
       if(value && !isOpen) {
         this.foundation.open();
       } else if(!value && isOpen) {
         this.foundation.close();
       }
-    }
+    },
   },
 
   mounted() {
     const { $el } = this;
     const { drawer } = this.$refs;
 
-    const { FOCUSABLE_ELEMENTS, OPACITY_VAR_NAME } = Foundation.strings;
+    const { FOCUSABLE_ELEMENTS, OPACITY_VAR_NAME } = MDCTemporaryDrawerFoundation.strings;
     const styles = getComputedStyle($el);
 
-    this.foundation = new MDCPermanentDrawerFoundation({
+    this.foundation = new MDCTemporaryDrawerFoundation({
       addClass: className => $el.classList.add(className),
       removeClass: className => $el.classList.remove(className),
       hasClass: className => $el.classList.contains(className),

@@ -1,18 +1,19 @@
-<template functional, lang="pug">
+<template lang="pug">
 .mdc-notched-outline(ref="notchedOutline")
   svg
     path.mdc-notched-outline__path(ref="notchedOutlinePath")
-.mdc-notched-outline__idle(ref="notchedOutlineIdle")
 </template>
 
 <script>
 import { MDCNotchedOutlineFoundation } from '@material/notched-outline';
 
 export default {
-  name: "MDCNotchedOutline",
+  name: 'MDCNotchedOutline',
 
   mounted() {
-    const { notchedOutline, notchedOutlinePath, notchedOutlineIdle } = this.$refs;
+    const { notchedOutline, notchedOutlinePath } = this.$refs;
+    // The notched-outline-idle element directly precedes this element
+    const notchedOutlineIdle = this.$el.nextElementSibling;
     const styles = window.getComputedStyle(notchedOutlineIdle);
   
     this.foundation = new MDCNotchedOutlineFoundation({
@@ -29,10 +30,10 @@ export default {
     this.foundation.destroy();
   },
   methods: {
-    notchOutline(labelWidth, isRtl) {
+    notch(labelWidth, isRtl) {
       this.foundation.notch(labelWidth, isRtl);
     },
-    closeOutline() {
+    closeNotch() {
       this.foundation.closeNotch();
     },
   },

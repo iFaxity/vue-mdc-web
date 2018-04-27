@@ -6,7 +6,7 @@
 import { MDCLineRippleFoundation } from '@material/line-ripple';
 
 export default {
-  name: "MDCLineRipple",
+  name: 'MDCLineRipple',
 
   mounted() {
     const { $el } = this;
@@ -15,7 +15,7 @@ export default {
       addClass: className => $el.classList.add(className),
       removeClass: className => $el.classList.remove(className),
       hasClass: className => $el.classList.contains(className),
-      setStyle: (prop, value) => $el.style.setProperty(value),
+      setStyle: (prop, value) => $el.style.setProperty(prop, value),
       registerEventHandler: (type, handler) => $el.addEventListener(type, handler),
       deregisterEventHandler: (type, handler) => $el.removeEventListener(type, handler)
     });

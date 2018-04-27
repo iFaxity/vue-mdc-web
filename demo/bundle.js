@@ -14529,6 +14529,21 @@
              * limitations under the License.
              */
 
+            const cssClasses$5 = {
+              ROOT: 'mdc-drawer--temporary',
+              OPEN: 'mdc-drawer--open',
+              ANIMATING: 'mdc-drawer--animating',
+              SCROLL_LOCK: 'mdc-drawer-scroll-lock',
+            };
+
+            const strings$5 = {
+              DRAWER_SELECTOR: '.mdc-drawer--temporary .mdc-drawer__drawer',
+              OPACITY_VAR_NAME: '--mdc-temporary-drawer-opacity',
+              FOCUSABLE_ELEMENTS,
+              OPEN_EVENT: 'MDCTemporaryDrawer:open',
+              CLOSE_EVENT: 'MDCTemporaryDrawer:close',
+            };
+
             /**
              * Copyright 2016 Google Inc. All Rights Reserved.
              *
@@ -14544,6 +14559,103 @@
              * See the License for the specific language governing permissions and
              * limitations under the License.
              */
+
+            class MDCTemporaryDrawerFoundation extends MDCSlidableDrawerFoundation {
+              static get cssClasses() {
+                return cssClasses$5;
+              }
+
+              static get strings() {
+                return strings$5;
+              }
+
+              static get defaultAdapter() {
+                return Object.assign(MDCSlidableDrawerFoundation.defaultAdapter, {
+                  addBodyClass: (/* className: string */) => {},
+                  removeBodyClass: (/* className: string */) => {},
+                  isDrawer: () => false,
+                  updateCssVariable: (/* value: string */) => {},
+                  eventTargetHasClass: (/* target: EventTarget, className: string */) => /* boolean */ false,
+                });
+              }
+
+              constructor(adapter) {
+                super(
+                  Object.assign(MDCTemporaryDrawerFoundation.defaultAdapter, adapter),
+                  MDCTemporaryDrawerFoundation.cssClasses.ROOT,
+                  MDCTemporaryDrawerFoundation.cssClasses.ANIMATING,
+                  MDCTemporaryDrawerFoundation.cssClasses.OPEN);
+
+                this.componentClickHandler_ = (evt) => {
+                  if (this.adapter_.eventTargetHasClass(evt.target, cssClasses$5.ROOT)) {
+                    this.close(true);
+                  }
+                };
+              }
+
+              init() {
+                super.init();
+
+                // Make browser aware of custom property being used in this element.
+                // Workaround for certain types of hard-to-reproduce heisenbugs.
+                this.adapter_.updateCssVariable(0);
+                this.adapter_.registerInteractionHandler('click', this.componentClickHandler_);
+              }
+
+              destroy() {
+                super.destroy();
+
+                this.adapter_.deregisterInteractionHandler('click', this.componentClickHandler_);
+                this.enableScroll_();
+              }
+
+              open() {
+                this.disableScroll_();
+                // Make sure custom property values are cleared before starting.
+                this.adapter_.updateCssVariable('');
+
+                super.open();
+              }
+
+              close() {
+                // Make sure custom property values are cleared before making any changes.
+                this.adapter_.updateCssVariable('');
+
+                super.close();
+              }
+
+              prepareForTouchEnd_() {
+                super.prepareForTouchEnd_();
+
+                this.adapter_.updateCssVariable('');
+              }
+
+              updateDrawer_() {
+                super.updateDrawer_();
+
+                const newOpacity = Math.max(0, 1 + this.direction_ * (this.newPosition_ / this.drawerWidth_));
+                this.adapter_.updateCssVariable(newOpacity);
+              }
+
+              isRootTransitioningEventTarget_(el) {
+                return this.adapter_.isDrawer(el);
+              }
+
+              handleTransitionEnd_(evt) {
+                super.handleTransitionEnd_(evt);
+                if (!this.isOpen_) {
+                  this.enableScroll_();
+                }
+              };
+
+              disableScroll_() {
+                this.adapter_.addBodyClass(cssClasses$5.SCROLL_LOCK);
+              }
+
+              enableScroll_() {
+                this.adapter_.removeBodyClass(cssClasses$5.SCROLL_LOCK);
+              }
+            }
 
             /**
              * Copyright 2016 Google Inc. All Rights Reserved.
@@ -14744,24 +14856,24 @@
                 header: String
               },
               watch: {
-                open(value, oldValue) {
+                open(value) {
                   const isOpen = this.foundation.isOpen();
                   if(value && !isOpen) {
                     this.foundation.open();
                   } else if(!value && isOpen) {
                     this.foundation.close();
                   }
-                }
+                },
               },
 
               mounted() {
                 const { $el } = this;
                 const { drawer } = this.$refs;
 
-                const { FOCUSABLE_ELEMENTS, OPACITY_VAR_NAME } = Foundation.strings;
+                const { FOCUSABLE_ELEMENTS, OPACITY_VAR_NAME } = MDCTemporaryDrawerFoundation.strings;
                 const styles = getComputedStyle($el);
 
-                this.foundation = new MDCPermanentDrawerFoundation({
+                this.foundation = new MDCTemporaryDrawerFoundation({
                   addClass: className => $el.classList.add(className),
                   removeClass: className => $el.classList.remove(className),
                   hasClass: className => $el.classList.contains(className),
@@ -18810,71 +18922,6 @@
              * limitations under the License.
              */
 
-            /*vimport { MDCLineRippleFoundation } from '@material/line-ripple';
-            import { MDCFloatingLabelFoundation } from '@material/floating-label';
-            import { MDCNotchedOutlineFoundation } from '@material/notched-outline';*/
-
-            function helperTextFactory(helperText) {
-              // Check if helperText is really a helper text element
-              const $el = helperText && helperText.classList.contains('mdc-text-field-helper-text') ? helperText : null;
-              if(!$el) return; // return undefined if a valid helperText doesn't exist
-
-              return new MDCTextFieldHelperTextFoundation({
-                addClass: className => $el.classList.add(className),
-                removeClass: className => $el.classList.remove(className),
-                hasClass: className => $el.classList.contains(className),
-                setAttr: (attr, value) => $el.setAttribute(attr, value),
-                removeAttr: attr => $el.removeAttribute(attr),
-                setContent: content => {
-                  $el.textContent = content;
-                }
-              });
-            }
-            function iconFactory($el, notifyIconAction) {
-              return new MDCTextFieldIconFoundation({
-                getAttr: attr => $el.getAttribute(attr),
-                setAttr: (attr, value) => $el.setAttribute(attr, value),
-                removeAttr: attr => $el.removeAttribute(attr),
-                registerInteractionHandler: (tvtType, handler) => $el.addEventListener(type, handler),
-                deregisterInteractionHandler: (type, handler) => $el.removeEventListener(type, handler),
-                notifyIconAction
-              });
-            }
-
-            /*export function lineRippleFactory($el) {
-              return new MDCLineRippleFoundation({
-                addClass: className => $el.classList.add(className),
-                removeClass: className => $el.classList.remove(className),
-                hasClass: className => $el.classList.contains(className),
-                setStyle: (prop, value) => {
-                  $el.style[prop] = value;
-                },
-                registerEventHandler: (type, handler) => $el.addEventListener(type, handler),
-                deregisterEventHandler: (type, handler) => $el.removeEventListener(type, handler)
-              });
-            }
-            export function labelFactory($el) {
-              return new MDCFloatingLabelFoundation({
-                addClass: className => $el.classList.add(className),
-                removeClass: className => $el.classList.remove(className),
-                getWidth: () => $el.offsetWidth,
-                registerInteractionHandler: (evtType, handler) => $el.addEventListener(evtType, handler),
-                deregisterInteractionHandler: (evtType, handler) => $el.removeEventListener(evtType, handler)
-              });
-            }
-            export function outlineFactory($el, { outlinePath, idleOutline }) {
-              const styles = idleOutline && window.getComputedStyle(idleOutline);
-              
-              return new MDCNotchedOutlineFoundation({
-                getWidth: () => $el.offsetWidth,
-                getHeight: () => $el.offsetHeight,
-                addClass: className => $el.classList.add(className),
-                removeClass: className => $el.classList.remove(className),
-                setOutlinePathAttr: value => outlinePath.setAttribute('d', value),
-                getIdleOutlineStyleValue: prop => styles && styles.getPropertyValue(prop)
-              });
-            }*/
-
             var MDCFloatingLabel$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('label',{staticClass:"mdc-floating-label",attrs:{"for":_vm.labelFor}},[_vm._v(_vm._s(_vm.label))])},staticRenderFns: [],
               name: "MDCFloatingLabel",
               props: {
@@ -18915,7 +18962,7 @@
             };
 
             var MDCLineRipple$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-line-ripple"})},staticRenderFns: [],
-              name: "MDCLineRipple",
+              name: 'MDCLineRipple',
 
               mounted() {
                 const { $el } = this;
@@ -18924,7 +18971,7 @@
                   addClass: className => $el.classList.add(className),
                   removeClass: className => $el.classList.remove(className),
                   hasClass: className => $el.classList.contains(className),
-                  setStyle: (prop, value) => $el.style.setProperty(value),
+                  setStyle: (prop, value) => $el.style.setProperty(prop, value),
                   registerEventHandler: (type, handler) => $el.addEventListener(type, handler),
                   deregisterEventHandler: (type, handler) => $el.removeEventListener(type, handler)
                 });
@@ -18947,10 +18994,12 @@
             };
 
             var MDCNotchedOutline$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{ref:"notchedOutline",staticClass:"mdc-notched-outline"},[_c('svg',[_c('path',{ref:"notchedOutlinePath",staticClass:"mdc-notched-outline__path"})])])},staticRenderFns: [],
-              name: "MDCNotchedOutline",
+              name: 'MDCNotchedOutline',
 
               mounted() {
-                const { notchedOutline, notchedOutlinePath, notchedOutlineIdle } = this.$refs;
+                const { notchedOutline, notchedOutlinePath } = this.$refs;
+                // The notched-outline-idle element directly precedes this element
+                const notchedOutlineIdle = this.$el.nextElementSibling;
                 const styles = window.getComputedStyle(notchedOutlineIdle);
               
                 this.foundation = new MDCNotchedOutlineFoundation({
@@ -18967,18 +19016,42 @@
                 this.foundation.destroy();
               },
               methods: {
-                notchOutline(labelWidth, isRtl) {
+                notch(labelWidth, isRtl) {
                   this.foundation.notch(labelWidth, isRtl);
                 },
-                closeOutline() {
+                closeNotch() {
                   this.foundation.closeNotch();
                 },
               },
             };
 
-            function getHelperText(helperText) {
-              return helperText && helperText.classList.contains('mdc-text-field-helper-text') ? helperText : null;
+            function helperTextFactory(helperText) {
+              // Check if helperText is really a helper text element
+              const $el = helperText && helperText.classList.contains('mdc-text-field-helper-text') ? helperText : null;
+              if (!$el) return; // return undefined if a valid helperText doesn't exist
+
+              return new MDCTextFieldHelperTextFoundation({
+                addClass: className => $el.classList.add(className),
+                removeClass: className => $el.classList.remove(className),
+                hasClass: className => $el.classList.contains(className),
+                setAttr: (attr, value) => $el.setAttribute(attr, value),
+                removeAttr: attr => $el.removeAttribute(attr),
+                setContent: content => {
+                  $el.textContent = content;
+                }
+              });
             }
+            function iconFactory($el, notifyIconAction) {
+              return new MDCTextFieldIconFoundation({
+                getAttr: attr => $el.getAttribute(attr),
+                setAttr: (attr, value) => $el.setAttribute(attr, value),
+                removeAttr: attr => $el.removeAttribute(attr),
+                registerInteractionHandler: (tvtType, handler) => $el.addEventListener(type, handler),
+                deregisterInteractionHandler: (type, handler) => $el.removeEventListener(type, handler),
+                notifyIconAction
+              });
+            }
+
             // Creates a uuid for the labelFor attribute.
             function uuid() {
               return '_mdtf_' + Math.random().toString(36).substr(2);
@@ -19057,21 +19130,11 @@
                 const styles = window.getComputedStyle($el);
                 
                 // Run each factory and save them into variables.
-                this._helperText = helperTextFactory(getHelperText(this.$el.nextElementSibling));
+                this._helperText = helperTextFactory(this.$el.nextElementSibling);
 
                 if(this.$refs.icon && this.hasIconListener) {
                   this._icon = iconFactory(this.$refs.icon, () => this.$emit('icon'));
                 }
-
-                /*if(this.$refs.lineRipple) {
-                  this._lineRipple = lineRippleFactory(this.$refs.lineRipple);
-                }
-                if(this.$refs.label) {
-                  this._label = labelFactory(this.$refs.label);
-                }
-                if(this.$refs.outline) {
-                  this._outline = outlineFactory(this.$refs.outline, this.$refs);
-                }*/
               
                 this.foundation = new MDCTextFieldFoundation({
                   addClass: className => $el.classList.add(className),
@@ -19106,20 +19169,6 @@
                   hasOutline: () => !!notchedOutline,
                   notchOutline: (labelWidth, isRtl) => notchedOutline.notch(labelWidth, isRtl),
                   closeOutline: () => notchedOutline.closeNotch(),
-              
-                  /* Line Ripple methods
-                  activateLineRipple: () => this._lineRipple && this._lineRipple.activate(),
-                  deactivateLineRipple: () => this._lineRipple && this._lineRipple.deactivate(),
-                  setLineRippleTransformOrigin: normalizedX => this._lineRipple && this._lineRipple.setRippleCenter(normalizedX),
-                  // Label methods
-                  shakeLabel: shouldShake => this._label.shake(shouldShake),
-                  floatLabel: shouldFloat => this._label.float(shouldFloat),
-                  hasLabel: () => !!this._label,
-                  getLabelWidth: () => this._label.getWidth(),
-                  // Outline methods
-                  hasOutline: () => !!this._outline,
-                  notchOutline: (labelWidth, isRtl) => this._outline.notch(labelWidth, isRtl),
-                  closeOutline: () => this._outline.closeNotch(),*/
                 }, { helperText: this._helperText, icon: this._icon });
 
                 this.foundation.init();
@@ -19137,12 +19186,12 @@
               }
             };
 
-            var MDCTextfield = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-text-field",class:_vm.cssClasses},[(_vm.leadingIcon)?_c('mdc-icon',{ref:"icon",attrs:{"name":"text-field","icon":_vm.leadingIcon}}):_vm._e(),(((_vm.inputAttrs).type)==='checkbox')?_c('input',_vm._b({directives:[{name:"model",rawName:"v-model",value:(_vm.model),expression:"model"}],ref:"input",staticClass:"mdc-text-field__input",attrs:{"type":"checkbox"},domProps:{"checked":Array.isArray(_vm.model)?_vm._i(_vm.model,null)>-1:(_vm.model)},on:{"change":function($event){var $$a=_vm.model,$$el=$event.target,$$c=$$el.checked?(true):(false);if(Array.isArray($$a)){var $$v=null,$$i=_vm._i($$a,$$v);if($$el.checked){$$i<0&&(_vm.model=$$a.concat([$$v]));}else{$$i>-1&&(_vm.model=$$a.slice(0,$$i).concat($$a.slice($$i+1)));}}else{_vm.model=$$c;}}}},'input',_vm.inputAttrs,false)):(((_vm.inputAttrs).type)==='radio')?_c('input',_vm._b({directives:[{name:"model",rawName:"v-model",value:(_vm.model),expression:"model"}],ref:"input",staticClass:"mdc-text-field__input",attrs:{"type":"radio"},domProps:{"checked":_vm._q(_vm.model,null)},on:{"change":function($event){_vm.model=null;}}},'input',_vm.inputAttrs,false)):_c('input',_vm._b({directives:[{name:"model",rawName:"v-model",value:(_vm.model),expression:"model"}],ref:"input",staticClass:"mdc-text-field__input",attrs:{"type":(_vm.inputAttrs).type},domProps:{"value":(_vm.model)},on:{"input":function($event){if($event.target.composing){ return; }_vm.model=$event.target.value;}}},'input',_vm.inputAttrs,false)),(!_vm.fullwidth)?_c('mdc-floating-label',{ref:"floatingLabel",attrs:{"label":_vm.label,"label-for":_vm.uuid}}):_vm._e(),(!_vm.leadingIcon && _vm.trailingIcon)?_c('mdc-icon',{ref:"icon",attrs:{"name":"text-field","icon":_vm.trailingIcon}}):_vm._e(),(!_vm.outlined)?_c('mdc-notched-outline',{ref:"notchedOutline"}):_c('mdc-line-ripple',{ref:"lineRipple"})],1)},staticRenderFns: [],
+            var MDCTextfield = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-text-field",class:_vm.cssClasses},[(_vm.leadingIcon)?_c('mdc-icon',{ref:"icon",attrs:{"name":"text-field","icon":_vm.leadingIcon}}):_vm._e(),(((_vm.inputAttrs).type)==='checkbox')?_c('input',_vm._b({directives:[{name:"model",rawName:"v-model",value:(_vm.model),expression:"model"}],ref:"input",staticClass:"mdc-text-field__input",attrs:{"type":"checkbox"},domProps:{"checked":Array.isArray(_vm.model)?_vm._i(_vm.model,null)>-1:(_vm.model)},on:{"change":function($event){var $$a=_vm.model,$$el=$event.target,$$c=$$el.checked?(true):(false);if(Array.isArray($$a)){var $$v=null,$$i=_vm._i($$a,$$v);if($$el.checked){$$i<0&&(_vm.model=$$a.concat([$$v]));}else{$$i>-1&&(_vm.model=$$a.slice(0,$$i).concat($$a.slice($$i+1)));}}else{_vm.model=$$c;}}}},'input',_vm.inputAttrs,false)):(((_vm.inputAttrs).type)==='radio')?_c('input',_vm._b({directives:[{name:"model",rawName:"v-model",value:(_vm.model),expression:"model"}],ref:"input",staticClass:"mdc-text-field__input",attrs:{"type":"radio"},domProps:{"checked":_vm._q(_vm.model,null)},on:{"change":function($event){_vm.model=null;}}},'input',_vm.inputAttrs,false)):_c('input',_vm._b({directives:[{name:"model",rawName:"v-model",value:(_vm.model),expression:"model"}],ref:"input",staticClass:"mdc-text-field__input",attrs:{"type":(_vm.inputAttrs).type},domProps:{"value":(_vm.model)},on:{"input":function($event){if($event.target.composing){ return; }_vm.model=$event.target.value;}}},'input',_vm.inputAttrs,false)),(!_vm.fullwidth)?_c('mdc-floating-label',{ref:"floatingLabel",attrs:{"label":_vm.label,"label-for":_vm.uuid}}):_vm._e(),(!_vm.leadingIcon && _vm.trailingIcon)?_c('mdc-icon',{ref:"icon",attrs:{"name":"text-field","icon":_vm.trailingIcon}}):_vm._e(),(_vm.outlined)?[_c('mdc-notched-outline',{ref:"notchedOutline"}),_c('div',{staticClass:"mdc-notched-outline__idle"})]:_c('mdc-line-ripple',{ref:"lineRipple"})],2)},staticRenderFns: [],
               name: 'MDCTextfield',
               mixins: [ TextfieldMixin ],
               components: { MdcIcon: MDCIcon },
               props: {
-                box: Boolean,
+                boxed: Boolean,
                 outlined: Boolean,
                 trailingIcon: String,
                 leadingIcon: String,
@@ -19150,7 +19199,7 @@
               computed: {
                 cssClasses() {
                   return {
-                    'mdc-text-field--box': this.box,
+                    'mdc-text-field--box': this.boxed,
                     'mdc-text-field--outlined': this.outlined,
                     'mdc-text-field--fullwidth': this.fullwidth,
                     'mdc-text-field--dense': this.dense,
@@ -19212,6 +19261,7 @@
             };
             function install$20(Vue, register) {
               register(MDCTextfieldHelpertext);
+              
               // Register proxy component seperately
               Vue.component('mdc-textfield', MDCTextfieldProxy);
             }
@@ -20611,7 +20661,7 @@
               components: { DemoTemplate }
             };
 
-            var Textfield$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('demo-template',{attrs:{"link":"input-controls/text-field","stacked":""}},[_c('template',{slot:"hero"},[_c('mdc-textfield',{attrs:{"label":"Basic Textfield"}}),_c('mdc-textfield',{attrs:{"box":"","label":"Boxed Textfield"}}),_c('mdc-textfield',{attrs:{"outlined":"","label":"Outlined Textfield"}})],1),_c('template',{slot:"usage"},[_c('demo-code',{attrs:{"lang":"markup","code":"\n<mdc-textfield v-model=\"model\" label=\"My Textfield\"/>\n"}})],1),_c('template',{slot:"props"},[_c('tr',[_c('td',[_vm._v("name")]),_c('td',[_vm._v("type")]),_c('td',[_vm._v("default")]),_c('td',[_vm._v("desc")])])])],2)},staticRenderFns: [],
+            var Textfield$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('demo-template',{attrs:{"link":"input-controls/text-field","stacked":""}},[_c('template',{slot:"hero"},[_c('mdc-textfield',{attrs:{"label":"Basic Textfield"}}),_c('mdc-textfield',{attrs:{"boxed":"","label":"Boxed Textfield"}}),_c('mdc-textfield',{attrs:{"outlined":"","label":"Outlined Textfield"}})],1),_c('template',{slot:"usage"},[_c('demo-code',{attrs:{"lang":"markup","code":"\n<mdc-textfield v-model=\"model\" label=\"My Textfield\"/>\n"}})],1),_c('template',{slot:"props"},[_c('tr',[_c('th',{attrs:{"colspan":"4"}},[_vm._v("Shared props")])]),_c('tr',[_c('th',{attrs:{"colspan":"4"}},[_vm._v("MDCTextfield")])]),_c('tr',[_c('th',{attrs:{"colspan":"4"}},[_vm._v("MDCTextarea")])]),_c('tr',[_c('td',[_vm._v("name")]),_c('td',[_vm._v("type")]),_c('td',[_vm._v("default")]),_c('td',[_vm._v("desc")])])])],2)},staticRenderFns: [],
               name: 'DemoTextfield',
               components: { DemoTemplate }
             };
