@@ -12,9 +12,9 @@ aside.mdc-dialog(role="alertdialog")
 </template>
 
 <script>
-import { MDCButton } from '../button';
-import Foundation from '@material/dialog/foundation';
+import { MDCDialogFoundation } from '@material/dialog';
 import { createFocusTrapInstance } from '@material/dialog/util';
+import { MDCButton } from '../button';
 
 import { getCorrectEventName } from '@material/animation';
 const transitionEnd = getCorrectEventName(window, 'transitionend');
@@ -64,7 +64,7 @@ export default {
     const { accept, surface } = this.$refs;
     const focusTrap = createFocusTrapInstance(surface, accept);
 
-    this.foundation = new Foundation({
+    this.foundation = new MDCDialogFoundation({
       addClass: className => $el.classList.add(className),
       removeClass: className => $el.classList.remove(className),
       addBodyClass: className => document.body.classList.add(className),

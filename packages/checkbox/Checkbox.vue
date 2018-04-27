@@ -8,9 +8,10 @@
 </template>
 
 <script>
-import Foundation from '@material/checkbox/foundation';
+import { MDCCheckboxFoundation } from '@material/checkbox';
 import { getCorrectEventName } from '@material/animation';
 import { Ripple, matches } from '../ripple';
+import { handleModel } from '../util';
 
 const animationEnd = getCorrectEventName(window, 'animationend');
 const rippleAdapter = {
@@ -56,7 +57,7 @@ export default {
     const { input } = this.$refs;
 
     // Initialize the foundation
-    this.foundation = new Foundation({
+    this.foundation = new MDCCheckboxFoundation({
       addClass: className => $el.classList.add(className),
       removeClass: className => $el.classList.remove(className),
       setNativeControlAttr: (attr, value) => input.setAttribute(attr, value),
@@ -87,10 +88,13 @@ export default {
       this.foundation.setChecked(checked);
     },
     onChange(e) {
-      let { checked } = e.target;
+      const { value } = this;
       this.$emit('update:indeterminate', this.foundation.isIndeterminate());
 
-      if(Array.isArray(this.checked)) {
+      const newValue = handleModel($_vm.selected, value, { checked: e.target.checked, value });
+      $_vm.$emit('change', newValue);
+
+      /*if(Array.isArray(this.checked)) {
         checked = this.checked;
         if(checked) {
           checked.push(this.value);
@@ -101,7 +105,7 @@ export default {
         checked = this.value;
       }
 
-      this.$emit('change', checked);
+      this.$emit('change', checked);*/
     }
   }
 };

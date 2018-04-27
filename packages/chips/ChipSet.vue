@@ -7,6 +7,7 @@ transition-group.mdc-chip-set(v-if="input", :class="cssClasses", v-bind="$_trans
 
 <script>
 import { MDCChipSetFoundation } from '@material/chips';
+import { handleModel } from '../util';
 
 export default {
   name: 'MDCChipSet',
@@ -17,22 +18,25 @@ export default {
         filter: this.filter,
         choice: this.choice,
         select(value) {
-          if(Array.isArray($_vm.selected)) {
+          const newValue = handleModel($_vm.selected, value, { checked: false, value });
+          $_vm.$emit('select', newValue);
+          /*if(Array.isArray($_vm.selected)) {
             value = $_vm.selected.concat(value);
           }
-
-          $_vm.$emit('select', value);
+          $_vm.$emit('select', value);*/
         },
         deselect(value) {
-          if(Array.isArray($_vm.selected)) {
+          const newValue = handleModel($_vm.selected, '', { checked: true, value });
+          $_vm.$emit('select', newValue);
+
+          /*if(Array.isArray($_vm.selected)) {
             const index = $_vm.selected.indexOf(value);
             $_vm.selected.splice(index, 1);
             value = $_vm.selected;
           } else {
             value = '';
           }
-          
-          $_vm.$emit('select', value);
+          $_vm.$emit('select', value);*/
         }
       }
     }

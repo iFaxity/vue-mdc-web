@@ -3,7 +3,7 @@ i.mdc-icon-toggle.material-icons(role="button", tabindex="0")
 </template>
 
 <script>
-import Foundation from '@material/icon-toggle/foundation';
+import { MDCIconToggleFoundation } from '@material/icon-toggle';
 import { Ripple } from '../ripple';
 
 const rippleAdapter = {
@@ -52,7 +52,7 @@ export default {
       return selector ? $el.querySelector(selector) : $el; 
     };
 
-    this.foundation = new Foundation({
+    this.foundation = new MDCIconToggleFoundation({
       addClass: className => findIcon().classList.add(className),
       removeClass: className => findIcon().classList.remove(className),
       registerInteractionHandler: (type, handler) => $el.addEventListener(type, handler),

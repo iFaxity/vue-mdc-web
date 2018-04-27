@@ -9,8 +9,7 @@ aside.mdc-drawer.mdc-drawer--persistent
 </template>
 
 <script>
-import Foundation from '@material/drawer/persistent/foundation';
-import * as util from '@material/drawer/util';
+import { MDCPersistentDrawerFoundation, util } from '@material/drawer';
 
 export default {
   name: 'MDCPersistentDrawer',
@@ -34,10 +33,10 @@ export default {
     const { $el } = this;
     const { drawer } = this.$refs;
     
-    const { FOCUSABLE_ELEMENTS } = Foundation.strings;
+    const { FOCUSABLE_ELEMENTS } = MDCPersistentDrawerFoundation.strings;
     const styles = getComputedStyle($el);
 
-    this.foundation = new Foundation({
+    this.foundation = new MDCPersistentDrawerFoundation({
       addClass: className => $el.classList.add(className),
       removeClass: className => $el.classList.remove(className),
       hasClass: className => $el.classList.contains(className),
@@ -57,7 +56,7 @@ export default {
         const prop = util.getTransformPropertyName();
         drawer.style[prop] = value === null ? null : `translateX(${value}px)`;
       },
-      getFocusableElements: () => drawer.querySelectorAll(Foundation.strings.FOCUSABLE_ELEMENTS),
+      getFocusableElements: () => drawer.querySelectorAll(FOCUSABLE_ELEMENTS),
       saveElementTabState: el => util.saveElementTabState(el),
       restoreElementTabState: el => util.restoreElementTabState(el),
       makeElementUntabbable: el => el.setAttribute('tabindex', -1),

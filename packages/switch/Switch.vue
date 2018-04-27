@@ -1,6 +1,6 @@
 <template lang="pug">
 .mdc-switch(:class="cssClasses")
-  input.mdc-switch__native-control(type="checkbox", v-bind="$attrs", v-model="model", :disabled="disabled")
+  input.mdc-switch__native-control(type="checkbox", role="switch", v-bind="$attrs", v-model="model", :value="value", :disabled="disabled")
   .mdc-switch__background
     .mdc-switch__knob
 </template>
@@ -16,7 +16,8 @@ export default {
   
   props: {
     disabled: Boolean,
-    checked: [Boolean, Array]
+    value: String,
+    checked: [Boolean, Array, String]
   },
   computed: {
     model: {

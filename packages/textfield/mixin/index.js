@@ -1,7 +1,11 @@
-import { lineRippleFactory, labelFactory, outlineFactory, iconFactory, helperTextFactory } from './foundations';
+import { MDCTextFieldFoundation } from '@material/textfield';
+import { iconFactory, helperTextFactory } from './foundations';
+import { MDCFloatingLabel } from '../../floating-label';
+import { MDCLineRipple } from '../../line-ripple';
+import { MDCNotchedOutline } from '../../notched-outline';
 
 function getHelperText(helperText) {
-  return helperText.classList.contains('mdc-text-field-helper-text') ? helperText : null;
+  return helperText && helperText.classList.contains('mdc-text-field-helper-text') ? helperText : null;
 }
 // Creates a uuid for the labelFor attribute.
 function uuid() {
@@ -9,6 +13,11 @@ function uuid() {
 }
 
 export default {
+  components: {
+    MdcFloatingLabel: MDCFloatingLabel,
+    MdcLineRipple: MDCLineRipple,
+    MdcNotchedOutline: MDCNotchedOutline,
+  },
   props: {
     fullwidth: Boolean,
     dense: Boolean,
@@ -71,14 +80,18 @@ export default {
   },
   
   mounted() {
-    const { $el } = this.$el;
-    const { input } = this.$refs;
-    const styles = getComputedStyle($el);
+    const { $el } = this;
+    const { input, lineRipple, notchedOutline, floatingLabel } = this.$refs;
+    const styles = window.getComputedStyle($el);
     
     // Run each factory and save them into variables.
     this._helperText = helperTextFactory(getHelperText(this.$el.nextElementSibling));
 
-    if(this.$refs.lineRipple) {
+    if(this.$refs.icon && this.hasIconListener) {
+      this._icon = iconFactory(this.$refs.icon, () => this.$emit('icon'));
+    }
+
+    /*if(this.$refs.lineRipple) {
       this._lineRipple = lineRippleFactory(this.$refs.lineRipple);
     }
     if(this.$refs.label) {
@@ -86,10 +99,7 @@ export default {
     }
     if(this.$refs.outline) {
       this._outline = outlineFactory(this.$refs.outline, this.$refs);
-    }
-    if(this.$refs.icon && this.hasIconListener) {
-      this._icon = iconFactory(this.$refs.icon, () => this.$emit('icon'));
-    }
+    }*/
   
     this.foundation = new MDCTextFieldFoundation({
       addClass: className => $el.classList.add(className),
@@ -110,8 +120,22 @@ export default {
       getNativeInput: () => input,
       isFocused: () => document.activeElement === input,
       isRtl: () => styles.direction === 'rtl',
+      
+      // MDCLineRipple
+      activateLineRipple: () => lineRipple && lineRipple.activate(),
+      deactivateLineRipple: () => lineRipple && lineRipple.deactivate(),
+      setLineRippleTransformOrigin: normalizedX => lineRipple && lineRipple.setRippleCenter(normalizedX),
+      // MDCFloatingLabel
+      shakeLabel: shouldShake => floatingLabel.shake(shouldShake),
+      floatLabel: shouldFloat => floatingLabel.float(shouldFloat),
+      hasLabel: () => !!floatingLabel,
+      getLabelWidth: () => floatingLabel.getWidth(),
+      // MDCNotchedOutline
+      hasOutline: () => !!notchedOutline,
+      notchOutline: (labelWidth, isRtl) => notchedOutline.notch(labelWidth, isRtl),
+      closeOutline: () => notchedOutline.closeNotch(),
   
-      // Line Ripple methods
+      /* Line Ripple methods
       activateLineRipple: () => this._lineRipple && this._lineRipple.activate(),
       deactivateLineRipple: () => this._lineRipple && this._lineRipple.deactivate(),
       setLineRippleTransformOrigin: normalizedX => this._lineRipple && this._lineRipple.setRippleCenter(normalizedX),
@@ -123,13 +147,20 @@ export default {
       // Outline methods
       hasOutline: () => !!this._outline,
       notchOutline: (labelWidth, isRtl) => this._outline.notch(labelWidth, isRtl),
-      closeOutline: () => this._outline.closeNotch(),
+      closeOutline: () => this._outline.closeNotch(),*/
     }, { helperText: this._helperText, icon: this._icon });
 
     this.foundation.init();
     this.foundation.setDisabled(this.disabled);
   },
   beforeDestroy() {
+    if(this._helperText) {
+      this._helperText.destroy();
+    }
+    if(this._icon) {
+      this._icon.destroy();
+    }
+
     this.foundation.destroy();
   }
 };

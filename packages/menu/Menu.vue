@@ -5,8 +5,7 @@
 </template>
 
 <script>
-import { MDCMenuFoundation as Foundation } from '@material/menu/foundation';
-import { Corner } from '@material/menu/constants';
+import { MDCMenuFoundation, Corner } from '@material/menu';
 import { getTransformPropertyName } from '@material/menu/util';
 
 export default {
@@ -51,7 +50,7 @@ export default {
       $anchor.classList.add('mdc-menu-anchor');
     }
 
-    this.foundation = new Foundation({
+    this.foundation = new MDCMenuFoundation({
       addClass: className => $el.classList.add(className),
       removeClass: className => $el.classList.remove(className),
       hasClass: className => $el.classList.contains(className),

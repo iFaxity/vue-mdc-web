@@ -8,8 +8,7 @@ aside.mdc-drawer.mdc-drawer--temporary
 </template>
 
 <script>
-import Foundation from '@material/drawer/temporary/foundation';
-import * as util from '@material/drawer/util';
+import { MDCTemporaryDrawerFoundation, util } from '@material/drawer';
 
 export default {
   name: 'MDCTemporaryDrawer',
@@ -36,7 +35,7 @@ export default {
     const { FOCUSABLE_ELEMENTS, OPACITY_VAR_NAME } = Foundation.strings;
     const styles = getComputedStyle($el);
 
-    this.foundation = new Foundation({
+    this.foundation = new MDCPermanentDrawerFoundation({
       addClass: className => $el.classList.add(className),
       removeClass: className => $el.classList.remove(className),
       hasClass: className => $el.classList.contains(className),

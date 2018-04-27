@@ -10,7 +10,7 @@ const MDCTextfieldProxy = {
     textarea: Boolean
   },
   render(h, ctx) {
-    const tag = ctx.props.textarea ? Textarea : Textfield;
+    const tag = ctx.props.textarea ? MDCTextarea : MDCTextfield;
     return h(tag, ctx.data, ctx.children);
   }
 };
@@ -19,5 +19,5 @@ export { MDCTextfieldProxy as MDCTextfield, MDCTextfieldHelpertext };
 export function install(Vue, register) {
   register(MDCTextfieldHelpertext);
   // Register proxy component seperately
-  Vue.component('mdc-textfield', MDCTextFieldProxy);
+  Vue.component('mdc-textfield', MDCTextfieldProxy);
 }

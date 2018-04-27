@@ -5,7 +5,7 @@
 </template>
 
 <script>
-import Foundation from '@material/grid-list/foundation';
+import { MDCGridListFoundation } from '@material/grid-list';
 const RATIOS = ['1x1', '16x9', '2x3', '3x2', '4x3', '3x4'];
 
 export default {
@@ -25,7 +25,7 @@ export default {
     const { $el } = this;
     const { tiles } = this.$refs;
 
-    this.foundation = new Foundation({
+    this.foundation = new MDCGridListFoundation({
       getOffsetWidth: () => $el.offsetWidth,
       getNumberOfTiles: () => tiles.children.length,
       getOffsetWidthForTileAtIndex: index => tiles.children[index].offsetWidth,

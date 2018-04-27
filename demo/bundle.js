@@ -10879,7 +10879,7 @@
             }
 
             var MDCApp = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-app mdc-typography",class:_vm.cssClasses},[_vm._t(_vm.headerSlot),_c('div',{staticClass:"mdc-app__content",class:_vm.contentCssClasses},[_vm._t(_vm.contentSlot),_vm._t("default")],2)],2)},staticRenderFns: [],
-              name: "MDCApp",
+              name: 'MDCApp',
               props: {
                 flip: Boolean, // flips the drawer & toolbar slot
                 drawerHideMobile: Boolean,
@@ -10887,20 +10887,20 @@
               },
               computed: {
                 headerSlot() {
-                  return this.flip ? "drawer" : "toolbar";
+                  return this.flip ? 'drawer' : 'toolbar';
                 },
                 contentSlot() {
-                  return this.flip ? "toolbar" : "drawer";
+                  return this.flip ? 'toolbar' : 'drawer';
                 },
                 cssClasses() {
                   return {
-                    "mdc-app--flipped": this.flip,
-                    "mdc-app--align-start": this.alignStart,
-                    "mdc-app--drawer-hide-mobile": this.drawerHideMobile
+                    'mdc-app--flipped': this.flip,
+                    'mdc-app--align-start': this.alignStart,
+                    'mdc-app--drawer-hide-mobile': this.drawerHideMobile
                   };
                 },
                 contentCssClasses() {
-                  return this.alignStart && "mdc-app__content--align-start";
+                  return this.alignStart && 'mdc-app__content--align-start';
                 }
               },
               methods: {}
@@ -11742,7 +11742,7 @@
               const { $el } = vm;
               const { documentElement } = document;
 
-              let rippleAdapter = {
+              const rippleAdapter = {
                 browserSupportsCssVars() {
                   return supportsCssVars;
                 },
@@ -11753,7 +11753,7 @@
                   return { x: window.pageXOffset, y: window.pageYOffset };
                 },
                 isSurfaceActive() {
-                  return $el[matches$1](":active");
+                  return $el[matches$1](':active');
                 },
                 isSurfaceDisabled() {
                   return !!this.disabled;
@@ -11785,14 +11785,14 @@
                   documentElement.removeEventListener(evtType, handler, applyPassive());
                 },
                 registerResizeHandler(handler) {
-                  window.addEventListener("resize", handler);
+                  window.addEventListener('resize', handler);
                 },
                 deregisterResizeHandler(handler) {
-                  window.removeEventListener("resize", handler);
+                  window.removeEventListener('resize', handler);
                 }
               };
 
-              if(adapter != null && typeof adapter === "object") {
+              if(adapter != null && typeof adapter === 'object') {
                 Object.assign(rippleAdapter, adapter);
               }
 
@@ -11819,9 +11819,9 @@
                 beforeMount() {
                   if(opts.surface) {
                     if(this.$vnode.data.staticClass) {
-                      this.$vnode.data.staticClass += " mdc-ripple-surface";
+                      this.$vnode.data.staticClass += ' mdc-ripple-surface';
                     } else {
-                      this.$vnode.data.staticClass = "mdc-ripple-surface";
+                      this.$vnode.data.staticClass = 'mdc-ripple-surface';
                     }
                     
                     // Add unbounded attribute to element
@@ -11829,7 +11829,7 @@
                       if(this.$vnode.data.attrs) {
                         this.$vnode.data.attrs = {};
                       }
-                      this.$vnode.data.attrs["data-mdc-ripple-is-unbounded"] = true;
+                      this.$vnode.data.attrs['data-mdc-ripple-is-unbounded'] = true;
                     }
                   }
                 },
@@ -11855,7 +11855,7 @@
             }
 
             var MDCButton = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c(_vm.link ? 'a' : 'button',_vm._g({tag:"component",staticClass:"mdc-button",class:_vm.cssClasses,attrs:{"href":_vm.link,"disabled":_vm.disabled}},_vm.$listeners),[(_vm.icon)?_c('i',{staticClass:"material-icons mdc-button__icon"},[_vm._v(_vm._s(_vm.icon))]):_vm._e(),_vm._t("default")],2)},staticRenderFns: [],
-              name: "MDCButton",
+              name: 'MDCButton',
               mixins: [ Ripple() ],
               props: {
                 icon: String,
@@ -11871,11 +11871,11 @@
               computed: {
                 cssClasses() {
                   return {
-                    "mdc-button--raised": this.raised,
-                    "mdc-button--unelevated": this.unelevated,
-                    "mdc-button--stroked": this.stroked,
-                    "mdc-button--dense": this.dense,
-                    "mdc-button--compact": this.compact
+                    'mdc-button--raised': this.raised,
+                    'mdc-button--unelevated': this.unelevated,
+                    'mdc-button--stroked': this.stroked,
+                    'mdc-button--dense': this.dense,
+                    'mdc-button--compact': this.compact
                   };
                 }
               }
@@ -11891,25 +11891,25 @@
             });
 
             var MDCCard = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-card",class:_vm.cssClasses},[_vm._t("default")],2)},staticRenderFns: [],
-              name: "MDCCard",
+              name: 'MDCCard',
               props: {
                 stroked: Boolean
               },
               computed: {
                 cssClasses() {
-                  return this.stroked && "mdc-card--stroked";
+                  return this.stroked && 'mdc-card--stroked';
                 }
               }
             };
 
             var MDCCardActions = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-card__actions",class:_vm.cssClasses},[_vm._t("default"),(_vm.hasButtons)?_c('div',{staticClass:"mdc-card__action-buttons"},[_vm._t("button")],2):_vm._e(),(_vm.hasIcons)?_c('div',{staticClass:"mdc-card__action-icons"},[_vm._t("icon")],2):_vm._e()],2)},staticRenderFns: [],
-              name: "MDCCardActions",
+              name: 'MDCCardActions',
               props: {
                 fullBleed: Boolean
               },
               computed: {
                 cssClasses() {
-                  return this.fullBleed && "mdc-card__actions--full-bleed";
+                  return this.fullBleed && 'mdc-card__actions--full-bleed';
                 },
                 hasButtons() {
                   return !!this.$slots.button;
@@ -11926,13 +11926,13 @@
                     data.staticClass = className;
                   }
                 };
-                this.$slots.button && this.$slots.button.forEach(button => addClass(button, "mdc-card__action mdc-card__action--button"));
-                this.$slots.icon && this.$slots.icon.forEach(icon => addClass(icon, "mdc-card__action mdc-card__action--icon"));
+                this.$slots.button && this.$slots.button.forEach(button => addClass(button, 'mdc-card__action mdc-card__action--button'));
+                this.$slots.icon && this.$slots.icon.forEach(icon => addClass(icon, 'mdc-card__action mdc-card__action--icon'));
               }
             };
 
-            var MdcIcon = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c(_vm.tag,{tag:"component",staticClass:"material-icons",class:_vm.cssClasses,attrs:{"tabindex":_vm.action && '0',"role":_vm.action && 'button',"aria-hidden":!_vm.action && 'true',"aria-label":_vm.label,"title":"label"}},[_vm._v(_vm._s(_vm.icon))])},staticRenderFns: [],
-              name: "MDCIcon",
+            var MDCIcon = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c(_vm.tag,{tag:"component",staticClass:"material-icons",class:_vm.cssClasses,attrs:{"tabindex":_vm.action && '0',"role":_vm.action && 'button',"aria-hidden":!_vm.action && 'true',"aria-label":_vm.label,"title":"label"}},[_vm._v(_vm._s(_vm.icon))])},staticRenderFns: [],
+              name: 'MDCIcon',
               mixins: [ Ripple(null, { unbounded: true, surface: true }) ],
               props: {
                 icon: {
@@ -11943,7 +11943,7 @@
                 label: String,
                 tag: {
                   type: String,
-                  default: "i"
+                  default: 'i'
                 },
                 
                 ripple: Boolean,
@@ -11962,8 +11962,8 @@
             };
 
             var MDCCardIcon = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('mdc-icon',{attrs:{"action":"","icon":_vm.icon,"label":_vm.label}},[_vm._v(_vm._s(_vm.icon))])},staticRenderFns: [],
-              name: "MDCCardIcon",
-              components: { MdcIcon },
+              name: 'MDCCardIcon',
+              components: { MdcIcon: MDCIcon },
               props: {
                 icon: {
                   type: String,
@@ -11974,7 +11974,7 @@
             };
 
             var MDCCardMedia = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-card__media",class:_vm.cssClasses,style:(_vm.cssStyles)},[(_vm.hasContent)?_c('div',{staticClass:"mdc-card__media-content"},[_vm._t("default")],2):_vm._e()])},staticRenderFns: [],
-              name: "MDCCardMedia",
+              name: 'MDCCardMedia',
               props: {
                 square: Boolean,
                 image: String
@@ -11984,7 +11984,7 @@
                   return this.image && `background-image: url(${this.image});`;
                 },
                 cssClasses() {
-                  return this.square ? "mdc-card__media--square" : "mdc-card__media--16-9";
+                  return this.square ? 'mdc-card__media--square' : 'mdc-card__media--16-9';
                 },
                 hasContent() {
                   return !!this.$slots.default;
@@ -12003,6 +12003,130 @@
                         MDCCardMedia: MDCCardMedia,
                         install: install$3
             });
+
+            /**
+             * @license
+             * Copyright 2016 Google Inc. All Rights Reserved.
+             *
+             * Licensed under the Apache License, Version 2.0 (the "License");
+             * you may not use this file except in compliance with the License.
+             * You may obtain a copy of the License at
+             *
+             *      http://www.apache.org/licenses/LICENSE-2.0
+             *
+             * Unless required by applicable law or agreed to in writing, software
+             * distributed under the License is distributed on an "AS IS" BASIS,
+             * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+             * See the License for the specific language governing permissions and
+             * limitations under the License.
+             */
+
+            /** @const {Object<string, !VendorPropertyMapType>} */
+            const eventTypeMap = {
+              'animationstart': {
+                noPrefix: 'animationstart',
+                webkitPrefix: 'webkitAnimationStart',
+                styleProperty: 'animation',
+              },
+              'animationend': {
+                noPrefix: 'animationend',
+                webkitPrefix: 'webkitAnimationEnd',
+                styleProperty: 'animation',
+              },
+              'animationiteration': {
+                noPrefix: 'animationiteration',
+                webkitPrefix: 'webkitAnimationIteration',
+                styleProperty: 'animation',
+              },
+              'transitionend': {
+                noPrefix: 'transitionend',
+                webkitPrefix: 'webkitTransitionEnd',
+                styleProperty: 'transition',
+              },
+            };
+
+            /** @const {Object<string, !VendorPropertyMapType>} */
+            const cssPropertyMap = {
+              'animation': {
+                noPrefix: 'animation',
+                webkitPrefix: '-webkit-animation',
+              },
+              'transform': {
+                noPrefix: 'transform',
+                webkitPrefix: '-webkit-transform',
+              },
+              'transition': {
+                noPrefix: 'transition',
+                webkitPrefix: '-webkit-transition',
+              },
+            };
+
+            /**
+             * @param {!Object} windowObj
+             * @return {boolean}
+             */
+            function hasProperShape(windowObj) {
+              return (windowObj['document'] !== undefined && typeof windowObj['document']['createElement'] === 'function');
+            }
+
+            /**
+             * @param {string} eventType
+             * @return {boolean}
+             */
+            function eventFoundInMaps(eventType) {
+              return (eventType in eventTypeMap || eventType in cssPropertyMap);
+            }
+
+            /**
+             * @param {string} eventType
+             * @param {!Object<string, !VendorPropertyMapType>} map
+             * @param {!Element} el
+             * @return {string}
+             */
+            function getJavaScriptEventName(eventType, map, el) {
+              return map[eventType].styleProperty in el.style ? map[eventType].noPrefix : map[eventType].webkitPrefix;
+            }
+
+            /**
+             * Helper function to determine browser prefix for CSS3 animation events
+             * and property names.
+             * @param {!Object} windowObj
+             * @param {string} eventType
+             * @return {string}
+             */
+            function getAnimationName(windowObj, eventType) {
+              if (!hasProperShape(windowObj) || !eventFoundInMaps(eventType)) {
+                return eventType;
+              }
+
+              const map = /** @type {!Object<string, !VendorPropertyMapType>} */ (
+                eventType in eventTypeMap ? eventTypeMap : cssPropertyMap
+              );
+              const el = windowObj['document']['createElement']('div');
+              let eventName = '';
+
+              if (map === eventTypeMap) {
+                eventName = getJavaScriptEventName(eventType, map, el);
+              } else {
+                eventName = map[eventType].noPrefix in el.style ? map[eventType].noPrefix : map[eventType].webkitPrefix;
+              }
+
+              return eventName;
+            }
+
+            // Public functions to access getAnimationName() for JavaScript events or CSS
+            // property names.
+
+            const transformStyleProperties = ['transform', 'WebkitTransform', 'MozTransform', 'OTransform', 'MSTransform'];
+
+            /**
+             * @param {!Object} windowObj
+             * @param {string} eventType
+             * @return {string}
+             */
+            function getCorrectEventName(windowObj, eventType) {
+              return getAnimationName(windowObj, eventType);
+            }
 
             /**
              * @license
@@ -12471,117 +12595,50 @@
              * limitations under the License.
              */
 
-            /** @const {Object<string, !VendorPropertyMapType>} */
-            const eventTypeMap = {
-              'animationstart': {
-                noPrefix: 'animationstart',
-                webkitPrefix: 'webkitAnimationStart',
-                styleProperty: 'animation',
-              },
-              'animationend': {
-                noPrefix: 'animationend',
-                webkitPrefix: 'webkitAnimationEnd',
-                styleProperty: 'animation',
-              },
-              'animationiteration': {
-                noPrefix: 'animationiteration',
-                webkitPrefix: 'webkitAnimationIteration',
-                styleProperty: 'animation',
-              },
-              'transitionend': {
-                noPrefix: 'transitionend',
-                webkitPrefix: 'webkitTransitionEnd',
-                styleProperty: 'transition',
-              },
-            };
-
-            /** @const {Object<string, !VendorPropertyMapType>} */
-            const cssPropertyMap = {
-              'animation': {
-                noPrefix: 'animation',
-                webkitPrefix: '-webkit-animation',
-              },
-              'transform': {
-                noPrefix: 'transform',
-                webkitPrefix: '-webkit-transform',
-              },
-              'transition': {
-                noPrefix: 'transition',
-                webkitPrefix: '-webkit-transition',
-              },
-            };
-
             /**
-             * @param {!Object} windowObj
-             * @return {boolean}
+             * Handles v-model values from type [Array, String, Boolean, Number]
+             * @param {Array | String | Boolean | Number} model - Model value from v-model.
+             * @param {String | Boolean | Number} primitivevalue - Value used in model to check if it is needed to be set or not.
              */
-            function hasProperShape(windowObj) {
-              return (windowObj['document'] !== undefined && typeof windowObj['document']['createElement'] === 'function');
-            }
+            function handleModel(model, primitiveValue, { checked, value }) {
+              let newModel = model;
 
-            /**
-             * @param {string} eventType
-             * @return {boolean}
-             */
-            function eventFoundInMaps(eventType) {
-              return (eventType in eventTypeMap || eventType in cssPropertyMap);
-            }
+              if(Array.isArray(model)) {
+                const index = model.indexOf(value);
+                // Used to force a value if not an array. Used in only ChipSet v-model.
+                const isChecked = typeof checked === "boolean" ? checked : index >= 0;
 
-            /**
-             * @param {string} eventType
-             * @param {!Object<string, !VendorPropertyMapType>} map
-             * @param {!Element} el
-             * @return {string}
-             */
-            function getJavaScriptEventName(eventType, map, el) {
-              return map[eventType].styleProperty in el.style ? map[eventType].noPrefix : map[eventType].webkitPrefix;
-            }
-
-            /**
-             * Helper function to determine browser prefix for CSS3 animation events
-             * and property names.
-             * @param {!Object} windowObj
-             * @param {string} eventType
-             * @return {string}
-             */
-            function getAnimationName(windowObj, eventType) {
-              if (!hasProperShape(windowObj) || !eventFoundInMaps(eventType)) {
-                return eventType;
-              }
-
-              const map = /** @type {!Object<string, !VendorPropertyMapType>} */ (
-                eventType in eventTypeMap ? eventTypeMap : cssPropertyMap
-              );
-              const el = windowObj['document']['createElement']('div');
-              let eventName = '';
-
-              if (map === eventTypeMap) {
-                eventName = getJavaScriptEventName(eventType, map, el);
+                if(isChecked) {
+                  newModel.splice(index, 1);
+                } else {
+                  newModel.push(value);
+                }
               } else {
-                eventName = map[eventType].noPrefix in el.style ? map[eventType].noPrefix : map[eventType].webkitPrefix;
+                newModel = primitiveValue;
               }
 
-              return eventName;
+              return newModel;
+            }
+            // Basically taken from material-components-web repo under component.js
+            function emitCustomEvent(el, type, data, shouldBubble = false) {
+              let evt;
+              if (typeof CustomEvent === 'function') {
+                evt = new CustomEvent(type, {
+                  detail: data,
+                  bubbles: shouldBubble,
+                });
+              } else {
+                evt = document.createEvent('CustomEvent');
+                evt.initCustomEvent(type, shouldBubble, false, data);
+              }
+
+              el.dispatchEvent(evt);
             }
 
-            // Public functions to access getAnimationName() for JavaScript events or CSS
-            // property names.
-
-            const transformStyleProperties = ['transform', 'WebkitTransform', 'MozTransform', 'OTransform', 'MSTransform'];
-
-            /**
-             * @param {!Object} windowObj
-             * @param {string} eventType
-             * @return {string}
-             */
-            function getCorrectEventName(windowObj, eventType) {
-              return getAnimationName(windowObj, eventType);
-            }
-
-            const animationEnd = getCorrectEventName(window, "animationend");
+            const animationEnd = getCorrectEventName(window, 'animationend');
             const rippleAdapter = {
               isSurfaceActive() {
-                return this.$refs.input[matches$1](":active");
+                return this.$refs.input[matches$1](':active');
               },
               registerInteractionHandler(typeName, handler) {
                 this.$refs.input.addEventListener(typeName, handler);
@@ -12591,13 +12648,13 @@
               }
             };
 
-            var MDCCheckbox = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-checkbox"},[_c('input',_vm._b({ref:"input",staticClass:"mdc-checkbox__native-control",attrs:{"type":"checkbox"},domProps:{"value":_vm.value},on:{"change":_vm.onChange}},'input',_vm.$attrs,false)),_c('div',{staticClass:"mdc-checkbox__background"},[_c('svg',{staticClass:"mdc-checkbox__checkmark",attrs:{"viewBox":"0 0 24 24"}},[_c('path',{staticClass:"mdc-checkbox__checkmark-path",attrs:{"fill":"none","stroke":"white","d":"M1.73,12.91 8.1,19.28 22.79,4.59"}})]),_c('div',{staticClass:"mdc-checkbox__mixedmark"})])])},staticRenderFns: [],
-              name: "MDCCheckbox",
+            var MDCCheckbox$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-checkbox"},[_c('input',_vm._b({ref:"input",staticClass:"mdc-checkbox__native-control",attrs:{"type":"checkbox"},domProps:{"value":_vm.value},on:{"change":_vm.onChange}},'input',_vm.$attrs,false)),_c('div',{staticClass:"mdc-checkbox__background"},[_c('svg',{staticClass:"mdc-checkbox__checkmark",attrs:{"viewBox":"0 0 24 24"}},[_c('path',{staticClass:"mdc-checkbox__checkmark-path",attrs:{"fill":"none","stroke":"white","d":"M1.73,12.91 8.1,19.28 22.79,4.59"}})]),_c('div',{staticClass:"mdc-checkbox__mixedmark"})])])},staticRenderFns: [],
+              name: 'MDCCheckbox',
               mixins: [ Ripple(rippleAdapter, { unbounded: true }) ],
               inheritAttrs: false,
               model: {
-                prop: "checked",
-                event: "change"
+                prop: 'checked',
+                event: 'change'
               },
               props: {
                 checked: [Boolean, Array],
@@ -12629,8 +12686,8 @@
                   removeNativeControlAttr: attr => input.removeAttribute(attr),
                   registerAnimationEndHandler: handler => $el.removeEventListener(animationEnd, handler),
                   deregisterAnimationEndHandler: handler => $el.removeEventListener(animationEnd, handler),
-                  registerChangeHandler: handler => input.addEventListener("change", handler),
-                  deregisterChangeHandler: handler => input.removeEventListener("change", handler),
+                  registerChangeHandler: handler => input.addEventListener('change', handler),
+                  deregisterChangeHandler: handler => input.removeEventListener('change', handler),
                   getNativeControl: () => input,
                   forceLayout: () => this.$forceUpdate(),
                   isAttachedToDOM: () => !!$el.parentNode,
@@ -12653,10 +12710,13 @@
                   this.foundation.setChecked(checked);
                 },
                 onChange(e) {
-                  let { checked } = e.target;
-                  this.$emit("update:indeterminate", this.foundation.isIndeterminate());
+                  const { value } = this;
+                  this.$emit('update:indeterminate', this.foundation.isIndeterminate());
 
-                  if(Array.isArray(this.checked)) {
+                  const newValue = handleModel($_vm.selected, value, { checked: e.target.checked, value });
+                  $_vm.$emit('change', newValue);
+
+                  /*if(Array.isArray(this.checked)) {
                     checked = this.checked;
                     if(checked) {
                       checked.push(this.value);
@@ -12667,17 +12727,17 @@
                     checked = this.value;
                   }
 
-                  this.$emit("change", checked);
+                  this.$emit('change', checked);*/
                 }
               }
             };
 
             function install$4(Vue, register) {
-              register(MDCCheckbox);
+              register(MDCCheckbox$1);
             }
 
             var Checkbox = /*#__PURE__*/Object.freeze({
-                        MDCCheckbox: MDCCheckbox,
+                        MDCCheckbox: MDCCheckbox$1,
                         install: install$4
             });
 
@@ -13163,26 +13223,10 @@
              * limitations under the License.
              */
 
-            // Basically taken from material-components-web repo under component.js
-            function emitCustomEvent(el, type, data, shouldBubble = false) {
-              let evt;
-              if (typeof CustomEvent === 'function') {
-                evt = new CustomEvent(type, {
-                  detail: data,
-                  bubbles: shouldBubble,
-                });
-              } else {
-                evt = document.createEvent('CustomEvent');
-                evt.initCustomEvent(type, shouldBubble, false, data);
-              }
-
-              el.dispatchEvent(evt);
-            }
-
             var MDCChip$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-chip",attrs:{"tabindex":"0"}},[(_vm.leadingIcon)?_c('mdc-icon',{ref:"leadingIcon",staticClass:"mdc-chip__icon--leading",attrs:{"icon":_vm.leadingIcon}}):_vm._e(),(_vm.filter)?_c('div',{staticClass:"mdc-chip__checkmark"},[_c('svg',{staticClass:"mdc-chip__checkmark-svg",attrs:{"viewBox":"-2 -3 30 30"}},[_c('path',{staticClass:"mdc-chip__checkmark-path",attrs:{"fill":"none","stroke":"black","d":"M1.73,12.91 8.1,19.28 22.79,4.59"}})])]):_vm._e(),_c('div',{staticClass:"mdc-chip__text"},[_vm._v(_vm._s(_vm.text))]),(_vm.trailingIcon)?_c('mdc-icon',{staticClass:"mdc-chip__icon--trailing",attrs:{"icon":_vm.trailingIcon,"action":""}}):_vm._e()],1)},staticRenderFns: [],
               name: 'MDCChip',
               mixins: [ Ripple() ],
-              components: { MdcIcon: MdcIcon },
+              components: { MdcIcon: MDCIcon },
               inject: [ 'MDCChipSet' ],
               
               props: {
@@ -13259,7 +13303,7 @@
             };
 
             var MDCChipSet$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return (_vm.input)?_c('transition-group',_vm._b({staticClass:"mdc-chip-set",class:_vm.cssClasses},'transition-group',_vm.$_transition,false),[_vm._t("default")],2):_c('div',{staticClass:"mdc-chip-set",class:_vm.cssClasses},[_vm._t("default")],2)},staticRenderFns: [],
-              name: "MDCChipSet",
+              name: 'MDCChipSet',
               provide() {
                 const $_vm = this;
                 return {
@@ -13267,22 +13311,25 @@
                     filter: this.filter,
                     choice: this.choice,
                     select(value) {
-                      if(Array.isArray($_vm.selected)) {
+                      const newValue = handleModel($_vm.selected, value, { checked: false, value });
+                      $_vm.$emit('select', newValue);
+                      /*if(Array.isArray($_vm.selected)) {
                         value = $_vm.selected.concat(value);
                       }
-
-                      $_vm.$emit('select', value);
+                      $_vm.$emit('select', value);*/
                     },
                     deselect(value) {
-                      if(Array.isArray($_vm.selected)) {
+                      const newValue = handleModel($_vm.selected, '', { checked: true, value });
+                      $_vm.$emit('select', newValue);
+
+                      /*if(Array.isArray($_vm.selected)) {
                         const index = $_vm.selected.indexOf(value);
                         $_vm.selected.splice(index, 1);
                         value = $_vm.selected;
                       } else {
                         value = '';
                       }
-                      
-                      $_vm.$emit('select', value);
+                      $_vm.$emit('select', value);*/
                     }
                   }
                 }
@@ -13328,10 +13375,7 @@
                   registerInteractionHandler: (type, handler) => $el.addEventListener(type, handler),
                   deregisterInteractionHandler: (type, handler) => $el.removeEventListener(type, handler),
                   appendChip: () => {},
-                  removeChip: () => {},
-                  /*removeChip: chip => {
-                    this.$emit('remove', this.$_getIndexOfChip(chip));
-                  },*/
+                  removeChip: () => {}
                 });
 
                 this.foundation.init();
@@ -13339,12 +13383,6 @@
               beforeDestroy() {
                 this.foundation.destroy();
               },
-              methods: {
-                $_getIndexOfChip(chip) {
-                  const chips = this.$slots.default.filter(vnode => !!vnode.tag);
-                  return chips.findIndex(vnode => vnode.componentInstance === chip);
-                }
-              }
             };
 
             function install$5 (Vue, register) {
@@ -13951,10 +13989,26 @@
               });
             }
 
-            const transitionEnd = getCorrectEventName(window, "transitionend");
+            /**
+             * Copyright 2017 Google Inc. All Rights Reserved.
+             *
+             * Licensed under the Apache License, Version 2.0 (the "License");
+             * you may not use this file except in compliance with the License.
+             * You may obtain a copy of the License at
+             *
+             *      http://www.apache.org/licenses/LICENSE-2.0
+             *
+             * Unless required by applicable law or agreed to in writing, software
+             * distributed under the License is distributed on an "AS IS" BASIS,
+             * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+             * See the License for the specific language governing permissions and
+             * limitations under the License.
+             */
 
-            var MDCDialog = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('aside',{staticClass:"mdc-dialog",attrs:{"role":"alertdialog"}},[_c('div',{ref:"surface",staticClass:"mdc-dialog__surface"},[(_vm.header)?_c('header',{staticClass:"mdc-dialog__header"},[_c('h2',{staticClass:"mdc-dialog__header__title"},[_vm._v(_vm._s(_vm.header))])]):_vm._e(),(_vm.hasContent)?_c('section',{staticClass:"mdc-dialog__body",class:_vm.cssBodyClasses},[_vm._t("default")],2):_vm._e(),_c('footer',{staticClass:"mdc-dialog__footer"},[_c('mdc-button',{staticClass:"mdc-dialog__footer__button mdc-dialog__footer__button--cancel"},[_vm._v(_vm._s(_vm.cancelText))]),_c('mdc-button',{ref:"accept",staticClass:"mdc-dialog__footer__button mdc-dialog__footer__button--accept",attrs:{"disabled":!_vm.valid}},[_vm._v(_vm._s(_vm.acceptText))])],1)]),_c('div',{staticClass:"mdc-dialog__backdrop"})])},staticRenderFns: [],
-              name: "MDCDialog",
+            const transitionEnd = getCorrectEventName(window, 'transitionend');
+
+            var MDCDialog$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('aside',{staticClass:"mdc-dialog",attrs:{"role":"alertdialog"}},[_c('div',{ref:"surface",staticClass:"mdc-dialog__surface"},[(_vm.header)?_c('header',{staticClass:"mdc-dialog__header"},[_c('h2',{staticClass:"mdc-dialog__header__title"},[_vm._v(_vm._s(_vm.header))])]):_vm._e(),(_vm.hasContent)?_c('section',{staticClass:"mdc-dialog__body",class:_vm.cssBodyClasses},[_vm._t("default")],2):_vm._e(),_c('footer',{staticClass:"mdc-dialog__footer"},[_c('mdc-button',{staticClass:"mdc-dialog__footer__button mdc-dialog__footer__button--cancel"},[_vm._v(_vm._s(_vm.cancelText))]),_c('mdc-button',{ref:"accept",staticClass:"mdc-dialog__footer__button mdc-dialog__footer__button--accept",attrs:{"disabled":!_vm.valid}},[_vm._v(_vm._s(_vm.acceptText))])],1)]),_c('div',{staticClass:"mdc-dialog__backdrop"})])},staticRenderFns: [],
+              name: 'MDCDialog',
               components: { MdcButton: MDCButton },
               props: {
                 header: String,
@@ -13966,11 +14020,11 @@
                 },
                 acceptText: {
                   type: String,
-                  default: "Ok"
+                  default: 'Ok'
                 },
                 cancelText: {
                   type: String,
-                  default: "Cancel"
+                  default: 'Cancel'
                 }
               },
 
@@ -13986,7 +14040,7 @@
               },
               computed: {
                 cssBodyClasses() {
-                  return this.scroll && "mdc-dialog__body--scrollable";
+                  return this.scroll && 'mdc-dialog__body--scrollable';
                 },
                 hasContent() {
                   return !!this.$slots.default;
@@ -14009,18 +14063,18 @@
                   deregisterInteractionHandler: (evt, handler) => $el.removeEventListener(evt, handler),
                   registerSurfaceInteractionHandler: (evt, handler) => surface.addEventListener(evt, handler),
                   deregisterSurfaceInteractionHandler: (evt, handler) => surface.removeEventListener(evt, handler),
-                  registerDocumentKeydownHandler: handler => document.addEventListener("keydown", handler),
-                  deregisterDocumentKeydownHandler: handler => document.removeEventListener("keydown", handler),
+                  registerDocumentKeydownHandler: handler => document.addEventListener('keydown', handler),
+                  deregisterDocumentKeydownHandler: handler => document.removeEventListener('keydown', handler),
                   registerTransitionEndHandler: handler => surface.addEventListener(transitionEnd, handler),
                   deregisterTransitionEndHandler: handler => surface.removeEventListener(transitionEnd, handler),
 
                   notifyAccept: () => {
-                    this.$emit("action", "accept");
-                    this.$emit("accept");
+                    this.$emit('action', 'accept');
+                    this.$emit('accept');
                   },
                   notifyCancel: () => {
-                    this.$emit("action", "cancel");
-                    this.$emit("cancel");
+                    this.$emit('action', 'cancel');
+                    this.$emit('cancel');
                   },
                   trapFocusOnSurface: () => focusTrap.activate(),
                   untrapFocusOnSurface: () => focusTrap.deactivate(),
@@ -14044,25 +14098,25 @@
             };
 
             function install$6(Vue, register) {
-              register(MDCDialog);
+              register(MDCDialog$1);
             }
 
             var Dialog = /*#__PURE__*/Object.freeze({
-                        MDCDialog: MDCDialog,
+                        MDCDialog: MDCDialog$1,
                         install: install$6
             });
 
-            const TYPES = ["permanent", "persistent", "temporary"];
+            const TYPES = [ 'permanent', 'persistent', 'temporary' ];
 
             var MDCDrawer = {
-              name: "MDCDrawer",
+              name: 'MDCDrawer',
               functional: true,
               inheritAttrs: true,
 
               props: {
                 type: {
                   type: String,
-                  default: "permanent"
+                  default: 'permanent'
                 },
                 temporary: Boolean,
                 permanent: Boolean,
@@ -14074,18 +14128,115 @@
                 let type = props.type || TYPES.find(n => props[n] === true);
 
                 if(!TYPES.includes(type)) {
-                  throw new Error("MDC Drawer: a valid type was not specified");
+                  throw new Error('MDC Drawer: a valid type was not specified');
                 }
                 return h(`mdc-${type}-drawer`, ctx.data, ctx.children)
               }
             }
 
             var MDCPermanentDrawer = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('nav',{staticClass:"mdc-drawer mdc-drawer--permanent mdc-typography"},[(_vm.spacer)?_c('div',{staticClass:"mdc-drawer__toolbar-spacer"}):_vm._e(),_c('div',{staticClass:"mdc-drawer__content"},[_c('nav',{staticClass:"mdc-list"},[_vm._t("default")],2)])])},staticRenderFns: [],
-              name: "MDCPermanentDrawer",
+              name: 'MDCPermanentDrawer',
               props: {
                 spacer: Boolean
               }
             };
+
+            /**
+             * Copyright 2016 Google Inc. All Rights Reserved.
+             *
+             * Licensed under the Apache License, Version 2.0 (the "License");
+             * you may not use this file except in compliance with the License.
+             * You may obtain a copy of the License at
+             *
+             *      http://www.apache.org/licenses/LICENSE-2.0
+             *
+             * Unless required by applicable law or agreed to in writing, software
+             * distributed under the License is distributed on an "AS IS" BASIS,
+             * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+             * See the License for the specific language governing permissions and
+             * limitations under the License.
+             */
+
+            const TAB_DATA = 'data-mdc-tabindex';
+            const TAB_DATA_HANDLED = 'data-mdc-tabindex-handled';
+
+            let storedTransformPropertyName_;
+            let supportsPassive_$1;
+
+            // Remap touch events to pointer events, if the browser doesn't support touch events.
+            function remapEvent(eventName, globalObj = window) {
+              if (!('ontouchstart' in globalObj.document)) {
+                switch (eventName) {
+                case 'touchstart':
+                  return 'pointerdown';
+                case 'touchmove':
+                  return 'pointermove';
+                case 'touchend':
+                  return 'pointerup';
+                default:
+                  return eventName;
+                }
+              }
+
+              return eventName;
+            }
+
+            // Choose the correct transform property to use on the current browser.
+            function getTransformPropertyName(globalObj = window, forceRefresh = false) {
+              if (storedTransformPropertyName_ === undefined || forceRefresh) {
+                const el = globalObj.document.createElement('div');
+                const transformPropertyName = ('transform' in el.style ? 'transform' : '-webkit-transform');
+                storedTransformPropertyName_ = transformPropertyName;
+              }
+
+              return storedTransformPropertyName_;
+            }
+
+            // Determine whether the current browser supports CSS properties.
+            function supportsCssCustomProperties(globalObj = window) {
+              if ('CSS' in globalObj) {
+                return globalObj.CSS.supports('(--color: red)');
+              }
+              return false;
+            }
+
+            // Determine whether the current browser supports passive event listeners, and if so, use them.
+            function applyPassive$1(globalObj = window, forceRefresh = false) {
+              if (supportsPassive_$1 === undefined || forceRefresh) {
+                let isSupported = false;
+                try {
+                  globalObj.document.addEventListener('test', null, {get passive() {
+                    isSupported = true;
+                  }});
+                } catch (e) { }
+
+                supportsPassive_$1 = isSupported;
+              }
+
+              return supportsPassive_$1 ? {passive: true} : false;
+            }
+
+            // Save the tab state for an element.
+            function saveElementTabState(el) {
+              if (el.hasAttribute('tabindex')) {
+                el.setAttribute(TAB_DATA, el.getAttribute('tabindex'));
+              }
+              el.setAttribute(TAB_DATA_HANDLED, true);
+            }
+
+            // Restore the tab state for an element, if it was saved.
+            function restoreElementTabState(el) {
+              // Only modify elements we've already handled, in case anything was dynamically added since we saved state.
+              if (el.hasAttribute(TAB_DATA_HANDLED)) {
+                if (el.hasAttribute(TAB_DATA)) {
+                  el.setAttribute('tabindex', el.getAttribute(TAB_DATA));
+                  el.removeAttribute(TAB_DATA);
+                } else {
+                  el.removeAttribute('tabindex');
+                }
+                el.removeAttribute(TAB_DATA_HANDLED);
+              }
+            }
 
             /**
              * Copyright 2016 Google Inc. All Rights Reserved.
@@ -14378,13 +14529,61 @@
              * limitations under the License.
              */
 
-            const cssClasses$5 = {
+            /**
+             * Copyright 2016 Google Inc. All Rights Reserved.
+             *
+             * Licensed under the Apache License, Version 2.0 (the "License");
+             * you may not use this file except in compliance with the License.
+             * You may obtain a copy of the License at
+             *
+             *      http://www.apache.org/licenses/LICENSE-2.0
+             *
+             * Unless required by applicable law or agreed to in writing, software
+             * distributed under the License is distributed on an "AS IS" BASIS,
+             * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+             * See the License for the specific language governing permissions and
+             * limitations under the License.
+             */
+
+            /**
+             * Copyright 2016 Google Inc. All Rights Reserved.
+             *
+             * Licensed under the Apache License, Version 2.0 (the "License");
+             * you may not use this file except in compliance with the License.
+             * You may obtain a copy of the License at
+             *
+             *      http://www.apache.org/licenses/LICENSE-2.0
+             *
+             * Unless required by applicable law or agreed to in writing, software
+             * distributed under the License is distributed on an "AS IS" BASIS,
+             * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+             * See the License for the specific language governing permissions and
+             * limitations under the License.
+             */
+
+            /**
+             * Copyright 2016 Google Inc. All Rights Reserved.
+             *
+             * Licensed under the Apache License, Version 2.0 (the "License");
+             * you may not use this file except in compliance with the License.
+             * You may obtain a copy of the License at
+             *
+             *      http://www.apache.org/licenses/LICENSE-2.0
+             *
+             * Unless required by applicable law or agreed to in writing, software
+             * distributed under the License is distributed on an "AS IS" BASIS,
+             * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+             * See the License for the specific language governing permissions and
+             * limitations under the License.
+             */
+
+            const cssClasses$6 = {
               ROOT: 'mdc-drawer--persistent',
               OPEN: 'mdc-drawer--open',
               ANIMATING: 'mdc-drawer--animating',
             };
 
-            const strings$5 = {
+            const strings$6 = {
               DRAWER_SELECTOR: '.mdc-drawer--persistent .mdc-drawer__drawer',
               FOCUSABLE_ELEMENTS,
               OPEN_EVENT: 'MDCPersistentDrawer:open',
@@ -14409,11 +14608,11 @@
 
             class MDCPersistentDrawerFoundation extends MDCSlidableDrawerFoundation {
               static get cssClasses() {
-                return cssClasses$5;
+                return cssClasses$6;
               }
 
               static get strings() {
-                return strings$5;
+                return strings$6;
               }
 
               static get defaultAdapter() {
@@ -14451,89 +14650,24 @@
              * limitations under the License.
              */
 
-            const TAB_DATA = 'data-mdc-tabindex';
-            const TAB_DATA_HANDLED = 'data-mdc-tabindex-handled';
+            /**
+             * Copyright 2016 Google Inc. All Rights Reserved.
+             *
+             * Licensed under the Apache License, Version 2.0 (the "License");
+             * you may not use this file except in compliance with the License.
+             * You may obtain a copy of the License at
+             *
+             *      http://www.apache.org/licenses/LICENSE-2.0
+             *
+             * Unless required by applicable law or agreed to in writing, software
+             * distributed under the License is distributed on an "AS IS" BASIS,
+             * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+             * See the License for the specific language governing permissions and
+             * limitations under the License.
+             */
 
-            let storedTransformPropertyName_;
-            let supportsPassive_$1;
-
-            // Remap touch events to pointer events, if the browser doesn't support touch events.
-            function remapEvent(eventName, globalObj = window) {
-              if (!('ontouchstart' in globalObj.document)) {
-                switch (eventName) {
-                case 'touchstart':
-                  return 'pointerdown';
-                case 'touchmove':
-                  return 'pointermove';
-                case 'touchend':
-                  return 'pointerup';
-                default:
-                  return eventName;
-                }
-              }
-
-              return eventName;
-            }
-
-            // Choose the correct transform property to use on the current browser.
-            function getTransformPropertyName(globalObj = window, forceRefresh = false) {
-              if (storedTransformPropertyName_ === undefined || forceRefresh) {
-                const el = globalObj.document.createElement('div');
-                const transformPropertyName = ('transform' in el.style ? 'transform' : '-webkit-transform');
-                storedTransformPropertyName_ = transformPropertyName;
-              }
-
-              return storedTransformPropertyName_;
-            }
-
-            // Determine whether the current browser supports CSS properties.
-            function supportsCssCustomProperties(globalObj = window) {
-              if ('CSS' in globalObj) {
-                return globalObj.CSS.supports('(--color: red)');
-              }
-              return false;
-            }
-
-            // Determine whether the current browser supports passive event listeners, and if so, use them.
-            function applyPassive$1(globalObj = window, forceRefresh = false) {
-              if (supportsPassive_$1 === undefined || forceRefresh) {
-                let isSupported = false;
-                try {
-                  globalObj.document.addEventListener('test', null, {get passive() {
-                    isSupported = true;
-                  }});
-                } catch (e) { }
-
-                supportsPassive_$1 = isSupported;
-              }
-
-              return supportsPassive_$1 ? {passive: true} : false;
-            }
-
-            // Save the tab state for an element.
-            function saveElementTabState(el) {
-              if (el.hasAttribute('tabindex')) {
-                el.setAttribute(TAB_DATA, el.getAttribute('tabindex'));
-              }
-              el.setAttribute(TAB_DATA_HANDLED, true);
-            }
-
-            // Restore the tab state for an element, if it was saved.
-            function restoreElementTabState(el) {
-              // Only modify elements we've already handled, in case anything was dynamically added since we saved state.
-              if (el.hasAttribute(TAB_DATA_HANDLED)) {
-                if (el.hasAttribute(TAB_DATA)) {
-                  el.setAttribute('tabindex', el.getAttribute(TAB_DATA));
-                  el.removeAttribute(TAB_DATA);
-                } else {
-                  el.removeAttribute('tabindex');
-                }
-                el.removeAttribute(TAB_DATA_HANDLED);
-              }
-            }
-
-            var MDCPersistentDrawer = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('aside',{staticClass:"mdc-drawer mdc-drawer--persistent"},[_c('nav',{ref:"drawer",staticClass:"mdc-drawer__drawer"},[(_vm.spacer)?_c('div',{staticClass:"mdc-drawer__toolbar-spacer"}):_vm._e(),(_vm.header)?_c('header',{staticClass:"mdc-drawer__header"},[_c('div',{staticClass:"mdc-drawer__header-content"},[_vm._v(_vm._s(_vm.header))])]):_vm._e(),_c('nav',{staticClass:"mdc-drawer__content mdc-list"},[_vm._t("default")],2)])])},staticRenderFns: [],
-              name: "MDCPersistentDrawer",
+            var MDCPersistentDrawer$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('aside',{staticClass:"mdc-drawer mdc-drawer--persistent"},[_c('nav',{ref:"drawer",staticClass:"mdc-drawer__drawer"},[(_vm.spacer)?_c('div',{staticClass:"mdc-drawer__toolbar-spacer"}):_vm._e(),(_vm.header)?_c('header',{staticClass:"mdc-drawer__header"},[_c('div',{staticClass:"mdc-drawer__header-content"},[_vm._v(_vm._s(_vm.header))])]):_vm._e(),_c('nav',{staticClass:"mdc-drawer__content mdc-list"},[_vm._t("default")],2)])])},staticRenderFns: [],
+              name: 'MDCPersistentDrawer',
               props: {
                 open: Boolean,
                 spacer: Boolean,
@@ -14553,6 +14687,8 @@
               mounted() {
                 const { $el } = this;
                 const { drawer } = this.$refs;
+                
+                const { FOCUSABLE_ELEMENTS } = MDCPersistentDrawerFoundation.strings;
                 const styles = getComputedStyle($el);
 
                 this.foundation = new MDCPersistentDrawerFoundation({
@@ -14565,23 +14701,23 @@
                   deregisterInteractionHandler: (evt, handler) => $el.removeEventListener(remapEvent(evt), handler, applyPassive$1()),
                   registerDrawerInteractionHandler: (evt, handler) => drawer.addEventListener(remapEvent(evt), handler),
                   deregisterDrawerInteractionHandler: (evt, handler) => drawer.removeEventListener(remapEvent(evt), handler),
-                  registerTransitionEndHandler: handler => $el.addEventListener("transitionend", handler),
-                  deregisterTransitionEndHandler: handler => $el.removeEventListener("transitionend", handler),
-                  registerDocumentKeydownHandler: handler => document.addEventListener("keydown", handler),
-                  deregisterDocumentKeydownHandler: handler => document.removeEventListener("keydown", handler),
+                  registerTransitionEndHandler: handler => $el.addEventListener('transitionend', handler),
+                  deregisterTransitionEndHandler: handler => $el.removeEventListener('transitionend', handler),
+                  registerDocumentKeydownHandler: handler => document.addEventListener('keydown', handler),
+                  deregisterDocumentKeydownHandler: handler => document.removeEventListener('keydown', handler),
 
                   getDrawerWidth: () => drawer.offsetWidth,
                   setTranslateX: value => {
                     const prop = getTransformPropertyName();
                     drawer.style[prop] = value === null ? null : `translateX(${value}px)`;
                   },
-                  getFocusableElements: () => drawer.querySelectorAll(MDCPersistentDrawerFoundation.strings.FOCUSABLE_ELEMENTS),
+                  getFocusableElements: () => drawer.querySelectorAll(FOCUSABLE_ELEMENTS),
                   saveElementTabState: el => saveElementTabState(el),
                   restoreElementTabState: el => restoreElementTabState(el),
-                  makeElementUntabbable: el => el.setAttribute("tabindex", -1),
-                  notifyOpen: () => this.$emit("open"),
-                  notifyClose: () => this.$emit("close"),
-                  isRtl: () => styles.direction === "rtl",
+                  makeElementUntabbable: el => el.setAttribute('tabindex', -1),
+                  notifyOpen: () => this.$emit('open'),
+                  notifyClose: () => this.$emit('close'),
+                  isRtl: () => styles.direction === 'rtl',
                   isDrawer: el => el === drawer
                 });
                 this.foundation.init();
@@ -14600,152 +14736,8 @@
               }
             };
 
-            /**
-             * Copyright 2016 Google Inc. All Rights Reserved.
-             *
-             * Licensed under the Apache License, Version 2.0 (the "License");
-             * you may not use this file except in compliance with the License.
-             * You may obtain a copy of the License at
-             *
-             *      http://www.apache.org/licenses/LICENSE-2.0
-             *
-             * Unless required by applicable law or agreed to in writing, software
-             * distributed under the License is distributed on an "AS IS" BASIS,
-             * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-             * See the License for the specific language governing permissions and
-             * limitations under the License.
-             */
-
-            const cssClasses$6 = {
-              ROOT: 'mdc-drawer--temporary',
-              OPEN: 'mdc-drawer--open',
-              ANIMATING: 'mdc-drawer--animating',
-              SCROLL_LOCK: 'mdc-drawer-scroll-lock',
-            };
-
-            const strings$6 = {
-              DRAWER_SELECTOR: '.mdc-drawer--temporary .mdc-drawer__drawer',
-              OPACITY_VAR_NAME: '--mdc-temporary-drawer-opacity',
-              FOCUSABLE_ELEMENTS,
-              OPEN_EVENT: 'MDCTemporaryDrawer:open',
-              CLOSE_EVENT: 'MDCTemporaryDrawer:close',
-            };
-
-            /**
-             * Copyright 2016 Google Inc. All Rights Reserved.
-             *
-             * Licensed under the Apache License, Version 2.0 (the "License");
-             * you may not use this file except in compliance with the License.
-             * You may obtain a copy of the License at
-             *
-             *      http://www.apache.org/licenses/LICENSE-2.0
-             *
-             * Unless required by applicable law or agreed to in writing, software
-             * distributed under the License is distributed on an "AS IS" BASIS,
-             * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-             * See the License for the specific language governing permissions and
-             * limitations under the License.
-             */
-
-            class MDCTemporaryDrawerFoundation extends MDCSlidableDrawerFoundation {
-              static get cssClasses() {
-                return cssClasses$6;
-              }
-
-              static get strings() {
-                return strings$6;
-              }
-
-              static get defaultAdapter() {
-                return Object.assign(MDCSlidableDrawerFoundation.defaultAdapter, {
-                  addBodyClass: (/* className: string */) => {},
-                  removeBodyClass: (/* className: string */) => {},
-                  isDrawer: () => false,
-                  updateCssVariable: (/* value: string */) => {},
-                  eventTargetHasClass: (/* target: EventTarget, className: string */) => /* boolean */ false,
-                });
-              }
-
-              constructor(adapter) {
-                super(
-                  Object.assign(MDCTemporaryDrawerFoundation.defaultAdapter, adapter),
-                  MDCTemporaryDrawerFoundation.cssClasses.ROOT,
-                  MDCTemporaryDrawerFoundation.cssClasses.ANIMATING,
-                  MDCTemporaryDrawerFoundation.cssClasses.OPEN);
-
-                this.componentClickHandler_ = (evt) => {
-                  if (this.adapter_.eventTargetHasClass(evt.target, cssClasses$6.ROOT)) {
-                    this.close(true);
-                  }
-                };
-              }
-
-              init() {
-                super.init();
-
-                // Make browser aware of custom property being used in this element.
-                // Workaround for certain types of hard-to-reproduce heisenbugs.
-                this.adapter_.updateCssVariable(0);
-                this.adapter_.registerInteractionHandler('click', this.componentClickHandler_);
-              }
-
-              destroy() {
-                super.destroy();
-
-                this.adapter_.deregisterInteractionHandler('click', this.componentClickHandler_);
-                this.enableScroll_();
-              }
-
-              open() {
-                this.disableScroll_();
-                // Make sure custom property values are cleared before starting.
-                this.adapter_.updateCssVariable('');
-
-                super.open();
-              }
-
-              close() {
-                // Make sure custom property values are cleared before making any changes.
-                this.adapter_.updateCssVariable('');
-
-                super.close();
-              }
-
-              prepareForTouchEnd_() {
-                super.prepareForTouchEnd_();
-
-                this.adapter_.updateCssVariable('');
-              }
-
-              updateDrawer_() {
-                super.updateDrawer_();
-
-                const newOpacity = Math.max(0, 1 + this.direction_ * (this.newPosition_ / this.drawerWidth_));
-                this.adapter_.updateCssVariable(newOpacity);
-              }
-
-              isRootTransitioningEventTarget_(el) {
-                return this.adapter_.isDrawer(el);
-              }
-
-              handleTransitionEnd_(evt) {
-                super.handleTransitionEnd_(evt);
-                if (!this.isOpen_) {
-                  this.enableScroll_();
-                }
-              };
-
-              disableScroll_() {
-                this.adapter_.addBodyClass(cssClasses$6.SCROLL_LOCK);
-              }
-
-              enableScroll_() {
-                this.adapter_.removeBodyClass(cssClasses$6.SCROLL_LOCK);
-              }
-            }
-
-            var MDCTemporaryDrawer = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('aside',{staticClass:"mdc-drawer mdc-drawer--temporary"},[_c('nav',{ref:"drawer",staticClass:"mdc-drawer__drawer"},[(_vm.header)?_c('header',{staticClass:"mdc-drawer__header"},[_c('div',{staticClass:"mdc-drawer__header-content"},[_vm._v(_vm._s(_vm.header))])]):_vm._e(),_c('nav',{staticClass:"mdc-drawer__content mdc-list"},[_vm._t("default")],2)])])},staticRenderFns: [],
-              name: "MDCTemporaryDrawer",
+            var MDCTemporaryDrawer$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('aside',{staticClass:"mdc-drawer mdc-drawer--temporary"},[_c('nav',{ref:"drawer",staticClass:"mdc-drawer__drawer"},[(_vm.header)?_c('header',{staticClass:"mdc-drawer__header"},[_c('div',{staticClass:"mdc-drawer__header-content"},[_vm._v(_vm._s(_vm.header))])]):_vm._e(),_c('nav',{staticClass:"mdc-drawer__content mdc-list"},[_vm._t("default")],2)])])},staticRenderFns: [],
+              name: 'MDCTemporaryDrawer',
               props: {
                 open: Boolean,
                 spacer: Boolean,
@@ -14766,10 +14758,10 @@
                 const { $el } = this;
                 const { drawer } = this.$refs;
 
-                const { FOCUSABLE_ELEMENTS, OPACITY_VAR_NAME } = MDCTemporaryDrawerFoundation.strings;
+                const { FOCUSABLE_ELEMENTS, OPACITY_VAR_NAME } = Foundation.strings;
                 const styles = getComputedStyle($el);
 
-                this.foundation = new MDCTemporaryDrawerFoundation({
+                this.foundation = new MDCPermanentDrawerFoundation({
                   addClass: className => $el.classList.add(className),
                   removeClass: className => $el.classList.remove(className),
                   hasClass: className => $el.classList.contains(className),
@@ -14782,10 +14774,10 @@
                   deregisterInteractionHandler: (evt, handler) => $el.removeEventListener(remapEvent(evt), handler, applyPassive$1()),
                   registerDrawerInteractionHandler: (evt, handler) => drawer.addEventListener(remapEvent(evt), handler),
                   deregisterDrawerInteractionHandler: (evt, handler) => drawer.removeEventListener(remapEvent(evt), handler),
-                  registerTransitionEndHandler: handler => drawer.addEventListener("transitionend", handler),
-                  deregisterTransitionEndHandler: handler => drawer.removeEventListener("transitionend", handler),
-                  registerDocumentKeydownHandler: handler => document.addEventListener("keydown", handler),
-                  deregisterDocumentKeydownHandler: handler => document.removeEventListener("keydown", handler),
+                  registerTransitionEndHandler: handler => drawer.addEventListener('transitionend', handler),
+                  deregisterTransitionEndHandler: handler => drawer.removeEventListener('transitionend', handler),
+                  registerDocumentKeydownHandler: handler => document.addEventListener('keydown', handler),
+                  deregisterDocumentKeydownHandler: handler => document.removeEventListener('keydown', handler),
 
                   getDrawerWidth: () => drawer.offsetWidth,
                   setTranslateX: (value) => {
@@ -14800,10 +14792,10 @@
                   getFocusableElements: () => drawer.querySelectorAll(FOCUSABLE_ELEMENTS),
                   saveElementTabState: el => saveElementTabState(el),
                   restoreElementTabState: el => restoreElementTabState(el),
-                  makeElementUntabbable: el => el.setAttribute("tabindex", -1),
-                  notifyOpen: () => this.$emit("open"),
-                  notifyClose: () => this.$emit("close"),
-                  isRtl: () => styles.direction === "rtl",
+                  makeElementUntabbable: el => el.setAttribute('tabindex', -1),
+                  notifyOpen: () => this.$emit('open'),
+                  notifyClose: () => this.$emit('close'),
+                  isRtl: () => styles.direction === 'rtl',
                   isDrawer: (el) => el === drawer
                 });
                 this.foundation.init();
@@ -14822,12 +14814,12 @@
               }
             };
 
-            const MdcLink = {
+            const MDCLink = {
               functional: true,
               props: {
                 tag: {
                   type: String,
-                  default: "a"
+                  default: 'a'
                 },
                 link: String,
                 to: String,
@@ -14840,11 +14832,11 @@
                 let tag = props.tag;
 
                 if(props.to) {
-                  tag = "router-link";
+                  tag = 'router-link';
                   // remove the link
                   data.props = Object.assign({}, props, { link: undefined });
                 } else {
-                  if(tag === "a") {
+                  if(tag === 'a') {
                     data.attrs.href = props.link;
                   }
                 }
@@ -14855,7 +14847,7 @@
 
             function install$7(activeClass, exactActiveClass) {
               return {
-                components: { MdcLink: MdcLink },
+                components: { MdcLink: MDCLink },
                 props: {
                   to: String,
                   replace: Boolean,
@@ -14877,8 +14869,8 @@
             }
 
             var MDCDrawerItem = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('mdc-link',_vm._g(_vm._b({staticClass:"mdc-list-item",attrs:{"tag":"a","link":_vm.link}},'mdc-link',_vm.$_link,false),_vm.$listeners),[_vm._t("graphic"),_vm._v(_vm._s(_vm.text))],2)},staticRenderFns: [],
-              name: "MDCDrawerItem",
-              mixins: [ Ripple(), install$7("mdc-list-item--activated") ],
+              name: 'MDCDrawerItem',
+              mixins: [ Ripple(), install$7('mdc-list-item--activated') ],
               props: {
                 link: String,
                 text: {
@@ -14889,25 +14881,25 @@
             };
 
             var MDCDrawerDivider = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('hr',{staticClass:"mdc-list-divider"})},staticRenderFns: [],
-              name: "MDCDrawerDivider"
+              name: 'MDCDrawerDivider'
             };
 
             function install$8(Vue, register) {
-              register(MDCDrawer, MDCPermanentDrawer, MDCPersistentDrawer,
-                MDCTemporaryDrawer, MDCDrawerItem, MDCDrawerDivider);
+              register(MDCDrawer, MDCPermanentDrawer, MDCPersistentDrawer$1,
+                MDCTemporaryDrawer$1, MDCDrawerItem, MDCDrawerDivider);
             }
 
             var Drawer = /*#__PURE__*/Object.freeze({
                         MDCPermanentDrawer: MDCPermanentDrawer,
-                        MDCPersistentDrawer: MDCPersistentDrawer,
-                        MDCTemporaryDrawer: MDCTemporaryDrawer,
+                        MDCPersistentDrawer: MDCPersistentDrawer$1,
+                        MDCTemporaryDrawer: MDCTemporaryDrawer$1,
                         MDCDrawerItem: MDCDrawerItem,
                         MDCDrawerDivider: MDCDrawerDivider,
                         install: install$8
             });
 
             var MDCFab = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('button',{staticClass:"mdc-fab material-icons",class:_vm.cssClasses,attrs:{"aria-label":_vm.label,"title":_vm.label}},[_c('span',{staticClass:"mdc-fab__icon"},[_vm._v(_vm._s(_vm.icon))])])},staticRenderFns: [],
-              name: "MDCFab",
+              name: 'MDCFab',
               mixins: [ Ripple() ],
               props: {
                 mini: Boolean,
@@ -14925,8 +14917,8 @@
               computed: {
                 cssClasses() {
                   return {
-                    "mdc-fab--mini": this.mini,
-                    "mdc-fab--exited": this.exited
+                    'mdc-fab--mini': this.mini,
+                    'mdc-fab--exited': this.exited
                   };
                 }
               }
@@ -14942,7 +14934,7 @@
             });
 
             var MDCFormField = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-form-field",class:_vm.cssClasses},[_vm._t("default"),_c('label',[_vm._v(_vm._s(_vm.label))])],2)},staticRenderFns: [],
-              name: "MDCFormField",
+              name: 'MDCFormField',
               props: {
                 label: {
                   type: String,
@@ -14953,7 +14945,7 @@
               },
               computed: {
                 cssClasses() {
-                  return this.alignEnd && "mdc-form-field--align-end";
+                  return this.alignEnd && 'mdc-form-field--align-end';
                 }
               }
             };
@@ -15050,10 +15042,26 @@
               }
             }
 
-            const RATIOS = ["1x1", "16x9", "2x3", "3x2", "4x3", "3x4"];
+            /**
+             * Copyright 2016 Google Inc. All Rights Reserved.
+             *
+             * Licensed under the Apache License, Version 2.0 (the "License");
+             * you may not use this file except in compliance with the License.
+             * You may obtain a copy of the License at
+             *
+             *      http://www.apache.org/licenses/LICENSE-2.0
+             *
+             * Unless required by applicable law or agreed to in writing, software
+             * distributed under the License is distributed on an "AS IS" BASIS,
+             * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+             * See the License for the specific language governing permissions and
+             * limitations under the License.
+             */
 
-            var MDCGridList = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-grid-list"},[_c('ul',{ref:"tiles",staticClass:"mdc-grid-list__tiles"},[_vm._t("default")],2)])},staticRenderFns: [],
-              name: "MDCGridList",
+            const RATIOS = ['1x1', '16x9', '2x3', '3x2', '4x3', '3x4'];
+
+            var MDCGridList$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-grid-list"},[_c('ul',{ref:"tiles",staticClass:"mdc-grid-list__tiles"},[_vm._t("default")],2)])},staticRenderFns: [],
+              name: 'MDCGridList',
               props: {
                 headerCaption: Boolean,
                 twoline: Boolean,
@@ -15074,8 +15082,8 @@
                   getNumberOfTiles: () => tiles.children.length,
                   getOffsetWidthForTileAtIndex: index => tiles.children[index].offsetWidth,
                   setStyleForTilesElement: (prop, value) => tiles.style[prop] = value,
-                  registerResizeHandler: handler => window.addEventListener("resize", handler),
-                  deregisterResizeHandler: handler => window.removeEventListener("resize", handler)
+                  registerResizeHandler: handler => window.addEventListener('resize', handler),
+                  deregisterResizeHandler: handler => window.removeEventListener('resize', handler)
                 });
                 this.foundation.init();
               },
@@ -15085,11 +15093,11 @@
               computed: {
                 cssClasses() {
                   const classes = {
-                    "mdc-grid-list--tile-gutter-1": this.thinGutter,
-                    "mdc-grid-list--header-caption": this.captions,
-                    "mdc-grid-list--twoline-caption": this.twoline,
-                    "mdc-grid-list--with-icon-align-start": this.iconAlignStart,
-                    "mdc-grid-list--with-icon-align-end": this.iconAlignEnd
+                    'mdc-grid-list--tile-gutter-1': this.thinGutter,
+                    'mdc-grid-list--header-caption': this.captions,
+                    'mdc-grid-list--twoline-caption': this.twoline,
+                    'mdc-grid-list--with-icon-align-start': this.iconAlignStart,
+                    'mdc-grid-list--with-icon-align-end': this.iconAlignEnd
                   };
 
                   if(this.aspect) {
@@ -15101,8 +15109,8 @@
             };
 
             var MDCGridTile = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('li',{staticClass:"mdc-grid-tile"},[_c('div',{staticClass:"mdc-grid-tile__primary"},[(_vm.cover)?_c('div',{staticClass:"mdc-grid-tile__primary-content",style:(_vm.coverStyle)}):_c('img',{staticClass:"mdc-grid-tile__primary-content",attrs:{"src":_vm.src}})]),(_vm.hasSecondary)?_c('span',{staticClass:"mdc-grid-tile__secondary"},[(_vm.icon)?_c('mdc-icon',{attrs:{"name":"grid-tile","icon":_vm.icon}}):_vm._e(),(_vm.title)?_c('span',{staticClass:"mdc-grid-tile__title"},[_vm._v(_vm._s(_vm.title))]):_vm._e(),(_vm.text)?_c('span',{staticClass:"mdc-grid-tile__support-text"},[_vm._v(_vm._s(_vm.text))]):_vm._e()],1):_vm._e()])},staticRenderFns: [],
-              name: "MDCGridTile",
-              components: { MdcIcon },
+              name: 'MDCGridTile',
+              components: { MdcIcon: MDCIcon },
               props: {
                 cover: Boolean,
                 title: String,
@@ -15124,11 +15132,11 @@
             };
 
             function install$11(Vue, register) {
-              register(MDCGridList, MDCGridTile);
+              register(MDCGridList$1, MDCGridTile);
             }
 
             var GridList = /*#__PURE__*/Object.freeze({
-                        MDCGridList: MDCGridList,
+                        MDCGridList: MDCGridList$1,
                         MDCGridTile: MDCGridTile,
                         install: install$11
             });
@@ -15403,14 +15411,31 @@
              */
             IconToggleState.prototype.cssClass;
 
+            /**
+             * @license
+             * Copyright 2016 Google Inc. All Rights Reserved.
+             *
+             * Licensed under the Apache License, Version 2.0 (the "License");
+             * you may not use this file except in compliance with the License.
+             * You may obtain a copy of the License at
+             *
+             *      http://www.apache.org/licenses/LICENSE-2.0
+             *
+             * Unless required by applicable law or agreed to in writing, software
+             * distributed under the License is distributed on an "AS IS" BASIS,
+             * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+             * See the License for the specific language governing permissions and
+             * limitations under the License.
+             */
+
             const rippleAdapter$1 = {
               isSurfaceActive() {
                 return this.foundation.isKeyboardActivated();
               }
             };
 
-            var MDCIconToggle = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('i',{staticClass:"mdc-icon-toggle material-icons",attrs:{"role":"button","tabindex":"0"}})},staticRenderFns: [],
-              name: "MDCIconToggle",
+            var MDCIconToggle$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('i',{staticClass:"mdc-icon-toggle material-icons",attrs:{"role":"button","tabindex":"0"}})},staticRenderFns: [],
+              name: 'MDCIconToggle',
               mixins: [ Ripple(rippleAdapter$1, { unbounded: true }) ],
               props: {
                 active: Boolean,
@@ -15425,8 +15450,8 @@
                 }
               },
               model: {
-                prop: "active",
-                event: "change"
+                prop: 'active',
+                event: 'change'
               },
               watch: {
                 active(value) {
@@ -15460,7 +15485,7 @@
                   getAttr: (name, value) => $el.getAttribute(name, value),
                   setAttr: (name, value) => $el.setAttribute(name, value),
                   rmAttr: name => $el.removeAttribute(name),
-                  notifyChange: data => this.$emit("change", data),
+                  notifyChange: data => this.$emit('change', data),
                 });
                 this.foundation.init();
 
@@ -15477,16 +15502,16 @@
             };
 
             function install$12(Vue, register) {
-              register(MDCIconToggle);
+              register(MDCIconToggle$1);
             }
 
             var IconToggle = /*#__PURE__*/Object.freeze({
-                        MDCIconToggle: MDCIconToggle,
+                        MDCIconToggle: MDCIconToggle$1,
                         install: install$12
             });
 
             var MDCLayoutGrid = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-layout-grid",class:_vm.cssClasses},[_c('div',{staticClass:"mdc-layout-grid__inner"},[_vm._t("default")],2)])},staticRenderFns: [],
-              name: "MDCLayoutGrid",
+              name: 'MDCLayoutGrid',
               props: {
                 fixedColumnWidth: Boolean,
                 alignLeft: Boolean,
@@ -15495,19 +15520,19 @@
               computed: {
                 cssClasses() {
                   return {
-                    "mdc-layout-grid--fixed-column-width": this.fixedColumnWidth,
-                    "mdc-layout-grid--align-left": this.alignLeft,
-                    "mdc-layout-grid--align-right": this.alignRight
+                    'mdc-layout-grid--fixed-column-width': this.fixedColumnWidth,
+                    'mdc-layout-grid--align-left': this.alignLeft,
+                    'mdc-layout-grid--align-right': this.alignRight
                   };
                 }
               }
             };
 
-            const ALIGNMENTS = [ "top", "bottom", "middle" ];
+            const ALIGNMENTS = [ 'top', 'bottom', 'middle' ];
             const spanValidator = value => value >= 1 && value <= 12;
 
             var MDCLayoutCell = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-layout-grid__cell",class:_vm.cssClasses},[_vm._t("default")],2)},staticRenderFns: [],
-              name: "MDCLayoutCell",
+              name: 'MDCLayoutCell',
               props: {
                 span: {
                   type: [Number, String],
@@ -15549,7 +15574,7 @@
             };
 
             var MDCLayoutInner = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-layout-grid__inner"},[_vm._t("default")],2)},staticRenderFns: [],
-              name: "MDCLayoutInner"
+              name: 'MDCLayoutInner'
             };
 
             function install$13(Vue, register) {
@@ -15686,20 +15711,36 @@
               }
             }
 
+            /**
+             * Copyright 2017 Google Inc. All Rights Reserved.
+             *
+             * Licensed under the Apache License, Version 2.0 (the "License");
+             * you may not use this file except in compliance with the License.
+             * You may obtain a copy of the License at
+             *
+             *      http://www.apache.org/licenses/LICENSE-2.0
+             *
+             * Unless required by applicable law or agreed to in writing, software
+             * distributed under the License is distributed on an "AS IS" BASIS,
+             * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+             * See the License for the specific language governing permissions and
+             * limitations under the License.
+             */
+
             function assertNumber(value, fn) {
-              if(typeof value === "string") {
+              if(typeof value === 'string') {
                 value = parseFloat(value);
-                if(isNaN(value)) throw new Error("LinearProgress: value invalid!");
+                if(isNaN(value)) throw new Error('LinearProgress: value invalid!');
               }
               
               fn(value);
             }
 
-            var MDCLinearProgress = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-linear-progress",attrs:{"role":"progressbar"}},[_c('div',{staticClass:"mdc-linear-progress__buffering-dots"}),_c('div',{ref:"buffer",staticClass:"mdc-linear-progress__buffer"}),_c('div',{ref:"primary",staticClass:"mdc-linear-progress__bar mdc-linear-progress__primary-bar"},[_c('span',{staticClass:"mdc-linear-progress__bar-inner"})]),_vm._m(0)])},staticRenderFns: [function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-linear-progress__bar mdc-linear-progress__secondary-bar"},[_c('span',{staticClass:"mdc-linear-progress__bar-inner"})])}],
-              name: "MDCLinearProgress",
+            var MDCLinearProgress$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-linear-progress",attrs:{"role":"progressbar"}},[_c('div',{staticClass:"mdc-linear-progress__buffering-dots"}),_c('div',{ref:"buffer",staticClass:"mdc-linear-progress__buffer"}),_c('div',{ref:"primary",staticClass:"mdc-linear-progress__bar mdc-linear-progress__primary-bar"},[_c('span',{staticClass:"mdc-linear-progress__bar-inner"})]),_vm._m(0)])},staticRenderFns: [function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-linear-progress__bar mdc-linear-progress__secondary-bar"},[_c('span',{staticClass:"mdc-linear-progress__bar-inner"})])}],
+              name: 'MDCLinearProgress',
               model: {
-                prop: "value",
-                event: "change"
+                prop: 'value',
+                event: 'change'
               },
               props: {
                 indeterminate: Boolean,
@@ -15756,16 +15797,16 @@
             };
 
             function install$14(Vue, register) {
-              register(MDCLinearProgress);
+              register(MDCLinearProgress$1);
             }
 
             var LinearProgress = /*#__PURE__*/Object.freeze({
-                        MDCLinearProgress: MDCLinearProgress,
+                        MDCLinearProgress: MDCLinearProgress$1,
                         install: install$14
             });
 
             var MDCList = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('ul',{staticClass:"mdc-list",class:_vm.cssClasses},[_vm._t("default")],2)},staticRenderFns: [],
-              name: "MDCList",
+              name: 'MDCList',
               props: {
                 dense: Boolean,
                 avatar: Boolean,
@@ -15774,18 +15815,16 @@
               computed: {
                 cssClasses() {
                   return {
-                    "mdc-list--dense": this.dense,
-                    "mdc-list--avatar-list": this.avatar,
-                    "mdc-list--two-line": this.twoLine
+                    'mdc-list--dense': this.dense,
+                    'mdc-list--avatar-list': this.avatar,
+                    'mdc-list--two-line': this.twoLine
                   };
                 }
               }
             };
 
-            //TODO: support router links?
-
             var MDCListItem = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('li',{staticClass:"mdc-list-item"},[_vm._t("graphic"),_c('span',{staticClass:"mdc-list-item__text"},[_vm._v(_vm._s(_vm.text)),(_vm.secondary)?_c('span',{staticClass:"mdc-list-item__secondary"},[_vm._v(_vm._s(_vm.secondary))]):_vm._e()]),_vm._t("meta")],2)},staticRenderFns: [],
-              name: "MDCListItem",
+              name: 'MDCListItem',
               mixins: [ Ripple() ],
               props: {
                 text: {
@@ -15797,21 +15836,19 @@
             };
 
             var MDCListDivider = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('li',{staticClass:"mdc-list-divider",class:_vm.cssClasses,attrs:{"role":"separator"}})},staticRenderFns: [],
-              name: "MDCListDivider",
+              name: 'MDCListDivider',
               props: {
                 inset: Boolean
               },
               computed: {
                 cssClasses() {
-                  return {
-                    "mdc-list-divider--inset": this.inset
-                  };
+                  return this.inset && 'mdc-list-divider--inset';
                 }
               }
             };
 
             var MDCListItemGraphic = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c(_vm.tag,{tag:"component",staticClass:"mdc-list-item__graphic",class:_vm.cssClasses,attrs:{"aria-label":_vm.icon && _vm.label,"aria-hidden":_vm.icon && 'true',"src":_vm.src,"title":_vm.title}},[_vm._v(_vm._s(_vm.icon))])},staticRenderFns: [],
-              name: "MDCListItemGraphic",
+              name: 'MDCListItemGraphic',
               props: {
                 icon: String,
                 label: String,
@@ -15819,18 +15856,16 @@
               },
               computed: {
                 cssClasses() {
-                  return {
-                    "material-icons": this.icon
-                  };
+                  return this.icon && 'material-icons';
                 },
                 tag() {
-                  return this.src ? "img" : "i";
+                  return this.src ? 'img' : 'i';
                 }
               }
             };
 
             var MDCListItemMeta = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c(_vm.tag,{tag:"mdc-link",staticClass:"mdc-list-item__meta",class:_vm.cssClasses,attrs:{"aria-label":_vm.icon && _vm.label,"aria-hidden":_vm.icon && 'true',"href":_vm.link}},[_vm._v(_vm._s(_vm.content))])},staticRenderFns: [],
-              name: "MDCListItemMeta",
+              name: 'MDCListItemMeta',
               props: {
                 icon: String,
                 label: String,
@@ -15838,42 +15873,38 @@
               },
               computed: {
                 cssClasses() {
-                  return {
-                    "material-icons": this.icon
-                  };
+                  return this.icon && 'material-icons';
                 },
                 content() {
                   return this.icon || this.label;
                 },
                 tag() {
                   if(this.link) {
-                    return "a";
+                    return 'a';
                   }
-                  return this.icon ? "i" : "span";
+                  return this.icon ? 'i' : 'span';
                 }
               }
             };
 
             var MDCListGroup = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-list-group"},[_vm._t("default")],2)},staticRenderFns: [],
-              name: "MDCListGroup"
+              name: 'MDCListGroup'
             };
 
             var MDCListGroupDivider = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('hr',{staticClass:"mdc-list-divider",class:_vm.cssClasses})},staticRenderFns: [],
-              name: "MDCListGroupDivider",
+              name: 'MDCListGroupDivider',
               props: {
                 inset: Boolean
               },
               computed: {
                 cssClasses() {
-                  return {
-                    "mdc-list-divider--inset": this.inset
-                  };
+                  return this.inset && 'mdc-list-divider--inset';
                 }
               }
             };
 
             var MDCListGroupSubheader = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('h3',{staticClass:"mdc-list-group__subheader"},[_vm._v(_vm._s(_vm.text))])},staticRenderFns: [],
-              name: "MDCListGroupSubheader",
+              name: 'MDCListGroupSubheader',
               props: {
                 text: {
                   type: String,
@@ -15898,6 +15929,41 @@
                         MDCListGroupSubheader: MDCListGroupSubheader,
                         install: install$15
             });
+
+            /**
+             * Copyright 2016 Google Inc. All Rights Reserved.
+             *
+             * Licensed under the Apache License, Version 2.0 (the "License");
+             * you may not use this file except in compliance with the License.
+             * You may obtain a copy of the License at
+             *
+             *      http://www.apache.org/licenses/LICENSE-2.0
+             *
+             * Unless required by applicable law or agreed to in writing, software
+             * distributed under the License is distributed on an "AS IS" BASIS,
+             * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+             * See the License for the specific language governing permissions and
+             * limitations under the License.
+             */
+
+            /** @type {string|undefined} */
+            let storedTransformPropertyName_$1;
+
+            /**
+             * Returns the name of the correct transform property to use on the current browser.
+             * @param {!Window} globalObj
+             * @param {boolean=} forceRefresh
+             * @return {string}
+             */
+            function getTransformPropertyName$1(globalObj, forceRefresh = false) {
+              if (storedTransformPropertyName_$1 === undefined || forceRefresh) {
+                const el = globalObj.document.createElement('div');
+                const transformPropertyName = ('transform' in el.style ? 'transform' : 'webkitTransform');
+                storedTransformPropertyName_$1 = transformPropertyName;
+              }
+
+              return storedTransformPropertyName_$1;
+            }
 
             /**
              * @license
@@ -16620,6 +16686,7 @@
             }
 
             /**
+             * @license
              * Copyright 2016 Google Inc. All Rights Reserved.
              *
              * Licensed under the Apache License, Version 2.0 (the "License");
@@ -16635,27 +16702,8 @@
              * limitations under the License.
              */
 
-            /** @type {string|undefined} */
-            let storedTransformPropertyName_$1;
-
-            /**
-             * Returns the name of the correct transform property to use on the current browser.
-             * @param {!Window} globalObj
-             * @param {boolean=} forceRefresh
-             * @return {string}
-             */
-            function getTransformPropertyName$1(globalObj, forceRefresh = false) {
-              if (storedTransformPropertyName_$1 === undefined || forceRefresh) {
-                const el = globalObj.document.createElement('div');
-                const transformPropertyName = ('transform' in el.style ? 'transform' : 'webkitTransform');
-                storedTransformPropertyName_$1 = transformPropertyName;
-              }
-
-              return storedTransformPropertyName_$1;
-            }
-
-            var MDCMenu = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-menu",class:_vm.cssClasses,attrs:{"tabindex":"-1"}},[_c('div',{ref:"itemsContainer",staticClass:"mdc-list mdc-menu__items",attrs:{"role":"menu"}},[_vm._t("default")],2)])},staticRenderFns: [],
-              name: "MDCMenu",
+            var MDCMenu$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-menu",class:_vm.cssClasses,attrs:{"tabindex":"-1"}},[_c('div',{ref:"itemsContainer",staticClass:"mdc-list mdc-menu__items",attrs:{"role":"menu"}},[_vm._t("default")],2)])},staticRenderFns: [],
+              name: 'MDCMenu',
               props: {
                 anchor: Boolean,
 
@@ -16667,10 +16715,10 @@
                 },
                 corner: {
                   type: String,
-                  default: "top_left",
+                  default: 'top_left',
                   validator: value => {
                     let prop = value.toUpperCase();
-                    return typeof Corner[prop] !== "undefined";
+                    return typeof Corner[prop] !== 'undefined';
                   }
                 }
               },
@@ -16693,7 +16741,7 @@
                 
                 if(this.anchor) {
                   $anchor = $el.parentElement;
-                  $anchor.classList.add("mdc-menu-anchor");
+                  $anchor.classList.add('mdc-menu-anchor');
                 }
 
                 this.foundation = new MDCMenuFoundation({
@@ -16710,11 +16758,11 @@
                   getNumberOfItems: () => this.items.length,
                   registerInteractionHandler: (type, handler) => $el.addEventListener(type, handler),
                   deregisterInteractionHandler: (type, handler) => $el.removeEventListener(type, handler),
-                  registerBodyClickHandler: handler => document.body.addEventListener("click", handler),
-                  deregisterBodyClickHandler: handler => document.body.removeEventListener("click", handler),
+                  registerBodyClickHandler: handler => document.body.addEventListener('click', handler),
+                  deregisterBodyClickHandler: handler => document.body.removeEventListener('click', handler),
                   getIndexForEventTarget: target => this.items.indexOf(target),
-                  notifySelected: data => this.$emit("selected", data.index, this.items[data.index]),
-                  notifyCancel: () => this.$emit("cancel"),
+                  notifySelected: data => this.$emit('selected', data.index, this.items[data.index]),
+                  notifyCancel: () => this.$emit('cancel'),
                   saveFocus: () => {
                     prevFocus = document.activeElement;
                   },
@@ -16723,16 +16771,16 @@
                   focus: () => $el.focus(),
                   getFocusedItemIndex: () => this.items.indexOf(document.activeElement),
                   focusItemAtIndex: index => this.items[index].focus(),
-                  isRtl: () => $styles.direction === "rtl",
+                  isRtl: () => $styles.direction === 'rtl',
                   setTransformOrigin: origin => {
                     const prop = getTransformPropertyName$1(window);
                     $el.style[`${prop}-origin`] = origin;
                   },
                   setPosition: pos => {
-                    $el.style.left = "left" in pos ? pos.left : null;
-                    $el.style.right = "right" in pos ? pos.right : null;
-                    $el.style.top = "top" in pos ? pos.top : null;
-                    $el.style.bottom = "bottom" in pos ? pos.bottom : null;
+                    $el.style.left = 'left' in pos ? pos.left : null;
+                    $el.style.right = 'right' in pos ? pos.right : null;
+                    $el.style.top = 'top' in pos ? pos.top : null;
+                    $el.style.bottom = 'bottom' in pos ? pos.bottom : null;
                   },
                   setMaxHeight: height => $el.style.maxHeight = height,
                   setAttrForOptionAtIndex: (index, attr, value) => this.items[index].setAttribute(attr, value),
@@ -16762,13 +16810,13 @@
                   this.foundation.close();
                 },
                 $_findItems() {
-                  return Array.prototype.slice.call(this.$refs.itemsContainer.querySelectorAll(".mdc-list-item[role]"));
+                  return Array.prototype.slice.call(this.$refs.itemsContainer.querySelectorAll('.mdc-list-item[role]'));
                 }
               }
             };
 
             var MDCMenuItem = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('li',{staticClass:"mdc-list-item",attrs:{"role":"menuitem","tabindex":"0"}},[_vm._v(_vm._s(_vm.text))])},staticRenderFns: [],
-              name: "MDCMenuItem",
+              name: 'MDCMenuItem',
               props: {
                 text: {
                   type: String,
@@ -16778,11 +16826,11 @@
             };
 
             function install$16(Vue, register) {
-              register(MDCMenu, MDCMenuItem);
+              register(MDCMenu$1, MDCMenuItem);
             }
 
             var Menu = /*#__PURE__*/Object.freeze({
-                        MDCMenu: MDCMenu,
+                        MDCMenu: MDCMenu$1,
                         MDCMenuItem: MDCMenuItem,
                         install: install$16
             });
@@ -16921,6 +16969,23 @@
               }
             }
 
+            /**
+             * @license
+             * Copyright 2016 Google Inc. All Rights Reserved.
+             *
+             * Licensed under the Apache License, Version 2.0 (the "License");
+             * you may not use this file except in compliance with the License.
+             * You may obtain a copy of the License at
+             *
+             *      http://www.apache.org/licenses/LICENSE-2.0
+             *
+             * Unless required by applicable law or agreed to in writing, software
+             * distributed under the License is distributed on an "AS IS" BASIS,
+             * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+             * See the License for the specific language governing permissions and
+             * limitations under the License.
+             */
+
             const rippleAdapter$2 = {
               isSurfaceActive() {
                 return false;
@@ -16933,13 +16998,13 @@
               }
             };
 
-            var MDCRadio = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-radio",class:_vm.cssClasses},[_c('input',_vm._b({directives:[{name:"model",rawName:"v-model",value:(_vm.model),expression:"model"}],ref:"input",staticClass:"mdc-radio__native-control",attrs:{"type":"radio"},domProps:{"value":_vm.value,"checked":_vm._q(_vm.model,_vm.value)},on:{"change":function($event){_vm.model=_vm.value;}}},'input',_vm.$attrs,false)),_vm._m(0)])},staticRenderFns: [function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-radio__background"},[_c('div',{staticClass:"mdc-radio__outer-circle"}),_c('div',{staticClass:"mdc-radio__inner-circle"})])}],
-              name: "MDCRadio",
+            var MDCRadio$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-radio",class:_vm.cssClasses},[_c('input',_vm._b({directives:[{name:"model",rawName:"v-model",value:(_vm.model),expression:"model"}],ref:"input",staticClass:"mdc-radio__native-control",attrs:{"type":"radio","disabled":_vm.disabled},domProps:{"value":_vm.value,"checked":_vm._q(_vm.model,_vm.value)},on:{"change":function($event){_vm.model=_vm.value;}}},'input',_vm.$attrs,false)),_vm._m(0)])},staticRenderFns: [function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-radio__background"},[_c('div',{staticClass:"mdc-radio__outer-circle"}),_c('div',{staticClass:"mdc-radio__inner-circle"})])}],
+              name: 'MDCRadio',
               mixins: [ Ripple(rippleAdapter$2, { unbounded: true }) ],
               inheritAttrs: false,
               model: {
-                prop: "checked",
-                event: "change",
+                prop: 'checked',
+                event: 'change',
               },
 
               props: {
@@ -16956,16 +17021,8 @@
                     return this.checked;
                   },
                   set(value) {
-                    this.$emit("change", value);
+                    this.$emit('change', value);
                   }
-                }
-              },
-              watch: {
-                disabled(value) {
-                  this.foundation.setDisabled(value);
-                },
-                value(value) {
-                  this.foundation.setValue(value);
                 }
               },
               mounted() {
@@ -16977,9 +17034,6 @@
                   getNativeControl: () => this.$refs.input
                 });
                 this.foundation.init();
-
-                this.foundation.setDisabled(this.disabled);
-                this.foundation.setValue(this.value);
               },
               beforeDestroy() {
                 this.foundation.destroy();
@@ -16987,11 +17041,11 @@
             };
 
             function install$17(Vue, register) {
-              register(MDCRadio);
+              register(MDCRadio$1);
             }
 
             var Radio = /*#__PURE__*/Object.freeze({
-                        MDCRadio: MDCRadio,
+                        MDCRadio: MDCRadio$1,
                         install: install$17
             });
 
@@ -17276,9 +17330,25 @@
               }
             }
 
-            const transitionend = getCorrectEventName(window, "transitionend");
-            var MDCSnackbar = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-snackbar",class:_vm.cssClasses,attrs:{"aria-live":"assertive","aria-atomic":"true","aria-hidden":_vm.hidden && 'true'}},[_c('div',{staticClass:"mdc-snackbar__text"},[_vm._v(_vm._s(_vm.messageText))]),_c('div',{staticClass:"mdc-snackbar__action__wrapper"},[_c('button',{ref:"actionButton",staticClass:"mdc-snackbar__action-button",attrs:{"type":"button","aria-hidden":_vm.actionHidden && 'true'}},[_vm._v(_vm._s(_vm.actionText))])])])},staticRenderFns: [],
-              name: "MDCSnackbar",
+            /**
+             * Copyright 2016 Google Inc. All Rights Reserved.
+             *
+             * Licensed under the Apache License, Version 2.0 (the "License");
+             * you may not use this file except in compliance with the License.
+             * You may obtain a copy of the License at
+             *
+             *      http://www.apache.org/licenses/LICENSE-2.0
+             *
+             * Unless required by applicable law or agreed to in writing, software
+             * distributed under the License is distributed on an "AS IS" BASIS,
+             * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+             * See the License for the specific language governing permissions and
+             * limitations under the License.
+             */
+
+            const transitionend = getCorrectEventName(window, 'transitionend');
+            var MDCSnackbar$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-snackbar",class:_vm.cssClasses,attrs:{"aria-live":"assertive","aria-atomic":"true","aria-hidden":_vm.hidden && 'true'}},[_c('div',{staticClass:"mdc-snackbar__text"},[_vm._v(_vm._s(_vm.messageText))]),_c('div',{staticClass:"mdc-snackbar__action__wrapper"},[_c('button',{ref:"actionButton",staticClass:"mdc-snackbar__action-button",attrs:{"type":"button","aria-hidden":_vm.actionHidden && 'true'}},[_vm._v(_vm._s(_vm.actionText))])])])},staticRenderFns: [],
+              name: 'MDCSnackbar',
               props: {
                 alignStart: Boolean,
                 dismissesOnAction: {
@@ -17322,19 +17392,19 @@
                   setFocus: () => actionButton.focus(),
                   visibilityIsHidden: () => document.hidden,
                   // Interactions
-                  registerCapturedBlurHandler: handler => actionButton.addEventListener("blur", handler, true),
-                  deregisterCapturedBlurHandler: handler => actionButton.removeEventListener("blur", handler, true),
-                  registerVisibilityChangeHandler: handler => document.addEventListener("visibilitychange", handler),
-                  deregisterVisibilityChangeHandler: handler => document.removeEventListener("visibilitychange", handler),
+                  registerCapturedBlurHandler: handler => actionButton.addEventListener('blur', handler, true),
+                  deregisterCapturedBlurHandler: handler => actionButton.removeEventListener('blur', handler, true),
+                  registerVisibilityChangeHandler: handler => document.addEventListener('visibilitychange', handler),
+                  deregisterVisibilityChangeHandler: handler => document.removeEventListener('visibilitychange', handler),
                   registerCapturedInteractionHandler: (evt, handler) => document.body.addEventListener(evt, handler, true),
                   deregisterCapturedInteractionHandler: (evt, handler) => document.body.removeEventListener(evt, handler, true),
-                  registerActionClickHandler: handler => actionButton.addEventListener("click", handler),
-                  deregisterActionClickHandler: handler => actionButton.removeEventListener("click", handler),
+                  registerActionClickHandler: handler => actionButton.addEventListener('click', handler),
+                  deregisterActionClickHandler: handler => actionButton.removeEventListener('click', handler),
                   registerTransitionEndHandler: handler => $el.addEventListener(transitionend, handler),
                   deregisterTransitionEndHandler: handler => $el.removeEventListener(transitionend, handler),
                   // Events
-                  notifyShow: () => this.$emit("show"),
-                  notifyHide: () => this.$emit("hide"),
+                  notifyShow: () => this.$emit('show'),
+                  notifyHide: () => this.$emit('hide'),
                 });
                 this.foundation.init();
 
@@ -17345,9 +17415,7 @@
               },
               computed: {
                 cssClasses() {
-                  return {
-                    "mdc-snackbar--align-start": this.alignStart
-                  };
+                  return this.alignStart && 'mdc-snackbar--align-start';
                 }
               },
               methods: {
@@ -17358,25 +17426,26 @@
             };
 
             function install$18(Vue, register) {
-              register(MDCSnackbar);
+              register(MDCSnackbar$1);
             }
 
             var Snackbar = /*#__PURE__*/Object.freeze({
-                        MDCSnackbar: MDCSnackbar,
+                        MDCSnackbar: MDCSnackbar$1,
                         install: install$18
             });
 
-            var MDCSwitch = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-switch",class:_vm.cssClasses},[_c('input',_vm._b({directives:[{name:"model",rawName:"v-model",value:(_vm.model),expression:"model"}],staticClass:"mdc-switch__native-control",attrs:{"type":"checkbox","disabled":_vm.disabled},domProps:{"checked":Array.isArray(_vm.model)?_vm._i(_vm.model,null)>-1:(_vm.model)},on:{"change":function($event){var $$a=_vm.model,$$el=$event.target,$$c=$$el.checked?(true):(false);if(Array.isArray($$a)){var $$v=null,$$i=_vm._i($$a,$$v);if($$el.checked){$$i<0&&(_vm.model=$$a.concat([$$v]));}else{$$i>-1&&(_vm.model=$$a.slice(0,$$i).concat($$a.slice($$i+1)));}}else{_vm.model=$$c;}}}},'input',_vm.$attrs,false)),_vm._m(0)])},staticRenderFns: [function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-switch__background"},[_c('div',{staticClass:"mdc-switch__knob"})])}],
-              name: "MDCSwitch",
+            var MDCSwitch = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-switch",class:_vm.cssClasses},[_c('input',_vm._b({directives:[{name:"model",rawName:"v-model",value:(_vm.model),expression:"model"}],staticClass:"mdc-switch__native-control",attrs:{"type":"checkbox","role":"switch","disabled":_vm.disabled},domProps:{"value":_vm.value,"checked":Array.isArray(_vm.model)?_vm._i(_vm.model,_vm.value)>-1:(_vm.model)},on:{"change":function($event){var $$a=_vm.model,$$el=$event.target,$$c=$$el.checked?(true):(false);if(Array.isArray($$a)){var $$v=_vm.value,$$i=_vm._i($$a,$$v);if($$el.checked){$$i<0&&(_vm.model=$$a.concat([$$v]));}else{$$i>-1&&(_vm.model=$$a.slice(0,$$i).concat($$a.slice($$i+1)));}}else{_vm.model=$$c;}}}},'input',_vm.$attrs,false)),_vm._m(0)])},staticRenderFns: [function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-switch__background"},[_c('div',{staticClass:"mdc-switch__knob"})])}],
+              name: 'MDCSwitch',
               inheritAttrs: false,
               model: {
-                prop: "checked",
-                event: "change"
+                prop: 'checked',
+                event: 'change'
               },
               
               props: {
                 disabled: Boolean,
-                checked: [Boolean, Array]
+                value: String,
+                checked: [Boolean, Array, String]
               },
               computed: {
                 model: {
@@ -17384,13 +17453,11 @@
                     return this.checked;
                   },
                   set(value) {
-                    this.$emit("change", value);
+                    this.$emit('change', value);
                   }
                 },
                 cssClasses() {
-                  return {
-                    "mdc-switch--disabled": this.disabled
-                  };
+                  return this.disabled && 'mdc-switch--disabled';
                 }
               }
             };
@@ -17403,6 +17470,790 @@
                         MDCSwitch: MDCSwitch,
                         install: install$19
             });
+
+            /**
+             * @license
+             * Copyright 2016 Google Inc. All Rights Reserved.
+             *
+             * Licensed under the Apache License, Version 2.0 (the "License");
+             * you may not use this file except in compliance with the License.
+             * You may obtain a copy of the License at
+             *
+             *      http://www.apache.org/licenses/LICENSE-2.0
+             *
+             * Unless required by applicable law or agreed to in writing, software
+             * distributed under the License is distributed on an "AS IS" BASIS,
+             * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+             * See the License for the specific language governing permissions and
+             * limitations under the License.
+             */
+
+            /** @enum {string} */
+            const strings$13 = {
+              ARIA_CONTROLS: 'aria-controls',
+              INPUT_SELECTOR: '.mdc-text-field__input',
+              LABEL_SELECTOR: '.mdc-floating-label',
+              ICON_SELECTOR: '.mdc-text-field__icon',
+              OUTLINE_SELECTOR: '.mdc-notched-outline',
+              LINE_RIPPLE_SELECTOR: '.mdc-line-ripple',
+            };
+
+            /** @enum {string} */
+            const cssClasses$12 = {
+              ROOT: 'mdc-text-field',
+              UPGRADED: 'mdc-text-field--upgraded',
+              DISABLED: 'mdc-text-field--disabled',
+              DENSE: 'mdc-text-field--dense',
+              FOCUSED: 'mdc-text-field--focused',
+              INVALID: 'mdc-text-field--invalid',
+              BOX: 'mdc-text-field--box',
+              OUTLINED: 'mdc-text-field--outlined',
+            };
+
+            /** @enum {number} */
+            const numbers$4 = {
+              LABEL_SCALE: 0.75,
+              DENSE_LABEL_SCALE: 0.923,
+            };
+
+            /**
+             * @license
+             * Copyright 2017 Google Inc. All Rights Reserved.
+             *
+             * Licensed under the Apache License, Version 2.0 (the "License");
+             * you may not use this file except in compliance with the License.
+             * You may obtain a copy of the License at
+             *
+             *      http://www.apache.org/licenses/LICENSE-2.0
+             *
+             * Unless required by applicable law or agreed to in writing, software
+             * distributed under the License is distributed on an "AS IS" BASIS,
+             * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+             * See the License for the specific language governing permissions and
+             * limitations under the License.
+             */
+
+            /**
+             * @license
+             * Copyright 2016 Google Inc. All Rights Reserved.
+             *
+             * Licensed under the Apache License, Version 2.0 (the "License");
+             * you may not use this file except in compliance with the License.
+             * You may obtain a copy of the License at
+             *
+             *      http://www.apache.org/licenses/LICENSE-2.0
+             *
+             * Unless required by applicable law or agreed to in writing, software
+             * distributed under the License is distributed on an "AS IS" BASIS,
+             * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+             * See the License for the specific language governing permissions and
+             * limitations under the License.
+             */
+
+            /** @enum {string} */
+            const strings$14 = {
+              ARIA_HIDDEN: 'aria-hidden',
+              ROLE: 'role',
+            };
+
+            /** @enum {string} */
+            const cssClasses$13 = {
+              HELPER_TEXT_PERSISTENT: 'mdc-text-field-helper-text--persistent',
+              HELPER_TEXT_VALIDATION_MSG: 'mdc-text-field-helper-text--validation-msg',
+            };
+
+            /**
+             * @license
+             * Copyright 2017 Google Inc. All Rights Reserved.
+             *
+             * Licensed under the Apache License, Version 2.0 (the "License");
+             * you may not use this file except in compliance with the License.
+             * You may obtain a copy of the License at
+             *
+             *      http://www.apache.org/licenses/LICENSE-2.0
+             *
+             * Unless required by applicable law or agreed to in writing, software
+             * distributed under the License is distributed on an "AS IS" BASIS,
+             * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+             * See the License for the specific language governing permissions and
+             * limitations under the License.
+             */
+
+
+            /**
+             * @extends {MDCFoundation<!MDCTextFieldHelperTextAdapter>}
+             * @final
+             */
+            class MDCTextFieldHelperTextFoundation extends MDCFoundation {
+              /** @return enum {string} */
+              static get cssClasses() {
+                return cssClasses$13;
+              }
+
+              /** @return enum {string} */
+              static get strings() {
+                return strings$14;
+              }
+
+              /**
+               * {@see MDCTextFieldHelperTextAdapter} for typing information on parameters and return
+               * types.
+               * @return {!MDCTextFieldHelperTextAdapter}
+               */
+              static get defaultAdapter() {
+                return /** @type {!MDCTextFieldHelperTextAdapter} */ ({
+                  addClass: () => {},
+                  removeClass: () => {},
+                  hasClass: () => {},
+                  setAttr: () => {},
+                  removeAttr: () => {},
+                  setContent: () => {},
+                });
+              }
+
+              /**
+               * @param {!MDCTextFieldHelperTextAdapter} adapter
+               */
+              constructor(adapter) {
+                super(Object.assign(MDCTextFieldHelperTextFoundation.defaultAdapter, adapter));
+              }
+
+              /**
+               * Sets the content of the helper text field.
+               * @param {string} content
+               */
+              setContent(content) {
+                this.adapter_.setContent(content);
+              }
+
+              /** @param {boolean} isPersistent Sets the persistency of the helper text. */
+              setPersistent(isPersistent) {
+                if (isPersistent) {
+                  this.adapter_.addClass(cssClasses$13.HELPER_TEXT_PERSISTENT);
+                } else {
+                  this.adapter_.removeClass(cssClasses$13.HELPER_TEXT_PERSISTENT);
+                }
+              }
+
+              /**
+               * @param {boolean} isValidation True to make the helper text act as an
+               *   error validation message.
+               */
+              setValidation(isValidation) {
+                if (isValidation) {
+                  this.adapter_.addClass(cssClasses$13.HELPER_TEXT_VALIDATION_MSG);
+                } else {
+                  this.adapter_.removeClass(cssClasses$13.HELPER_TEXT_VALIDATION_MSG);
+                }
+              }
+
+              /** Makes the helper text visible to the screen reader. */
+              showToScreenReader() {
+                this.adapter_.removeAttr(strings$14.ARIA_HIDDEN);
+              }
+
+              /**
+               * Sets the validity of the helper text based on the input validity.
+               * @param {boolean} inputIsValid
+               */
+              setValidity(inputIsValid) {
+                const helperTextIsPersistent = this.adapter_.hasClass(cssClasses$13.HELPER_TEXT_PERSISTENT);
+                const helperTextIsValidationMsg = this.adapter_.hasClass(cssClasses$13.HELPER_TEXT_VALIDATION_MSG);
+                const validationMsgNeedsDisplay = helperTextIsValidationMsg && !inputIsValid;
+
+                if (validationMsgNeedsDisplay) {
+                  this.adapter_.setAttr(strings$14.ROLE, 'alert');
+                } else {
+                  this.adapter_.removeAttr(strings$14.ROLE);
+                }
+
+                if (!helperTextIsPersistent && !validationMsgNeedsDisplay) {
+                  this.hide_();
+                }
+              }
+
+              /**
+               * Hides the help text from screen readers.
+               * @private
+               */
+              hide_() {
+                this.adapter_.setAttr(strings$14.ARIA_HIDDEN, 'true');
+              }
+            }
+
+            /**
+             * @license
+             * Copyright 2017 Google Inc. All Rights Reserved.
+             *
+             * Licensed under the Apache License, Version 2.0 (the "License");
+             * you may not use this file except in compliance with the License.
+             * You may obtain a copy of the License at
+             *
+             *      http://www.apache.org/licenses/LICENSE-2.0
+             *
+             * Unless required by applicable law or agreed to in writing, software
+             * distributed under the License is distributed on an "AS IS" BASIS,
+             * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+             * See the License for the specific language governing permissions and
+             * limitations under the License.
+             */
+
+            /**
+             * @license
+             * Copyright 2016 Google Inc. All Rights Reserved.
+             *
+             * Licensed under the Apache License, Version 2.0 (the "License");
+             * you may not use this file except in compliance with the License.
+             * You may obtain a copy of the License at
+             *
+             *      http://www.apache.org/licenses/LICENSE-2.0
+             *
+             * Unless required by applicable law or agreed to in writing, software
+             * distributed under the License is distributed on an "AS IS" BASIS,
+             * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+             * See the License for the specific language governing permissions and
+             * limitations under the License.
+             */
+
+            /** @enum {string} */
+            const strings$15 = {
+              ICON_EVENT: 'MDCTextField:icon',
+              ICON_ROLE: 'button',
+            };
+
+            /**
+             * @license
+             * Copyright 2017 Google Inc. All Rights Reserved.
+             *
+             * Licensed under the Apache License, Version 2.0 (the "License");
+             * you may not use this file except in compliance with the License.
+             * You may obtain a copy of the License at
+             *
+             *      http://www.apache.org/licenses/LICENSE-2.0
+             *
+             * Unless required by applicable law or agreed to in writing, software
+             * distributed under the License is distributed on an "AS IS" BASIS,
+             * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+             * See the License for the specific language governing permissions and
+             * limitations under the License.
+             */
+
+
+            /**
+             * @extends {MDCFoundation<!MDCTextFieldIconAdapter>}
+             * @final
+             */
+            class MDCTextFieldIconFoundation extends MDCFoundation {
+              /** @return enum {string} */
+              static get strings() {
+                return strings$15;
+              }
+
+              /**
+               * {@see MDCTextFieldIconAdapter} for typing information on parameters and return
+               * types.
+               * @return {!MDCTextFieldIconAdapter}
+               */
+              static get defaultAdapter() {
+                return /** @type {!MDCTextFieldIconAdapter} */ ({
+                  getAttr: () => {},
+                  setAttr: () => {},
+                  removeAttr: () => {},
+                  registerInteractionHandler: () => {},
+                  deregisterInteractionHandler: () => {},
+                  notifyIconAction: () => {},
+                });
+              }
+
+              /**
+               * @param {!MDCTextFieldIconAdapter} adapter
+               */
+              constructor(adapter) {
+                super(Object.assign(MDCTextFieldIconFoundation.defaultAdapter, adapter));
+
+                /** @private {string?} */
+                this.savedTabIndex_ = null;
+
+                /** @private {function(!Event): undefined} */
+                this.interactionHandler_ = (evt) => this.handleInteraction(evt);
+              }
+
+              init() {
+                this.savedTabIndex_ = this.adapter_.getAttr('tabindex');
+
+                ['click', 'keydown'].forEach((evtType) => {
+                  this.adapter_.registerInteractionHandler(evtType, this.interactionHandler_);
+                });
+              }
+
+              destroy() {
+                ['click', 'keydown'].forEach((evtType) => {
+                  this.adapter_.deregisterInteractionHandler(evtType, this.interactionHandler_);
+                });
+              }
+
+              /**
+               * Sets the content of the helper text field.
+               * @param {boolean} disabled
+               */
+              setDisabled(disabled) {
+                if (!this.savedTabIndex_) {
+                  return;
+                }
+
+                if (disabled) {
+                  this.adapter_.setAttr('tabindex', '-1');
+                  this.adapter_.removeAttr('role');
+                } else {
+                  this.adapter_.setAttr('tabindex', this.savedTabIndex_);
+                  this.adapter_.setAttr('role', strings$15.ICON_ROLE);
+                }
+              }
+
+              /**
+               * Handles an interaction event
+               * @param {!Event} evt
+               */
+              handleInteraction(evt) {
+                if (evt.type === 'click' || evt.key === 'Enter' || evt.keyCode === 13) {
+                  this.adapter_.notifyIconAction();
+                }
+              }
+            }
+
+            /**
+             * @license
+             * Copyright 2017 Google Inc. All Rights Reserved.
+             *
+             * Licensed under the Apache License, Version 2.0 (the "License");
+             * you may not use this file except in compliance with the License.
+             * You may obtain a copy of the License at
+             *
+             *      http://www.apache.org/licenses/LICENSE-2.0
+             *
+             * Unless required by applicable law or agreed to in writing, software
+             * distributed under the License is distributed on an "AS IS" BASIS,
+             * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+             * See the License for the specific language governing permissions and
+             * limitations under the License.
+             */
+
+            /**
+             * @license
+             * Copyright 2016 Google Inc. All Rights Reserved.
+             *
+             * Licensed under the Apache License, Version 2.0 (the "License");
+             * you may not use this file except in compliance with the License.
+             * You may obtain a copy of the License at
+             *
+             *      http://www.apache.org/licenses/LICENSE-2.0
+             *
+             * Unless required by applicable law or agreed to in writing, software
+             * distributed under the License is distributed on an "AS IS" BASIS,
+             * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+             * See the License for the specific language governing permissions and
+             * limitations under the License.
+             */
+
+
+            // whitelist based off of https://developer.mozilla.org/en-US/docs/Web/Guide/HTML/HTML5/Constraint_validation
+            // under section: `Validation-related attributes`
+            const VALIDATION_ATTR_WHITELIST = [
+              'pattern', 'min', 'max', 'required', 'step', 'minlength', 'maxlength',
+            ];
+
+            /**
+             * @extends {MDCFoundation<!MDCTextFieldAdapter>}
+             * @final
+             */
+            class MDCTextFieldFoundation extends MDCFoundation {
+              /** @return enum {string} */
+              static get cssClasses() {
+                return cssClasses$12;
+              }
+
+              /** @return enum {string} */
+              static get strings() {
+                return strings$13;
+              }
+
+              /** @return enum {string} */
+              static get numbers() {
+                return numbers$4;
+              }
+
+              /** @return {boolean} */
+              get shouldShake() {
+                return !this.isValid() && !this.isFocused_;
+              }
+
+              /** @return {boolean} */
+              get shouldFloat() {
+                return !this.isBadInput_() && (!!this.getValue() || this.isFocused_);
+              }
+
+              /**
+               * {@see MDCTextFieldAdapter} for typing information on parameters and return
+               * types.
+               * @return {!MDCTextFieldAdapter}
+               */
+              static get defaultAdapter() {
+                return /** @type {!MDCTextFieldAdapter} */ ({
+                  addClass: () => {},
+                  removeClass: () => {},
+                  hasClass: () => {},
+                  registerTextFieldInteractionHandler: () => {},
+                  deregisterTextFieldInteractionHandler: () => {},
+                  registerInputInteractionHandler: () => {},
+                  deregisterInputInteractionHandler: () => {},
+                  registerValidationAttributeChangeHandler: () => {},
+                  deregisterValidationAttributeChangeHandler: () => {},
+                  getNativeInput: () => {},
+                  isFocused: () => {},
+                  isRtl: () => {},
+                  activateLineRipple: () => {},
+                  deactivateLineRipple: () => {},
+                  setLineRippleTransformOrigin: () => {},
+                  shakeLabel: () => {},
+                  floatLabel: () => {},
+                  hasLabel: () => {},
+                  getLabelWidth: () => {},
+                  hasOutline: () => {},
+                  notchOutline: () => {},
+                  closeOutline: () => {},
+                });
+              }
+
+              /**
+               * @param {!MDCTextFieldAdapter} adapter
+               * @param {!FoundationMapType=} foundationMap Map from subcomponent names to their subfoundations.
+               */
+              constructor(adapter, foundationMap = /** @type {!FoundationMapType} */ ({})) {
+                super(Object.assign(MDCTextFieldFoundation.defaultAdapter, adapter));
+
+                /** @type {!MDCTextFieldHelperTextFoundation|undefined} */
+                this.helperText_ = foundationMap.helperText;
+                /** @type {!MDCTextFieldIconFoundation|undefined} */
+                this.icon_ = foundationMap.icon;
+
+                /** @private {boolean} */
+                this.isFocused_ = false;
+                /** @private {boolean} */
+                this.receivedUserInput_ = false;
+                /** @private {boolean} */
+                this.useCustomValidityChecking_ = false;
+                /** @private {boolean} */
+                this.isValid_ = true;
+                /** @private {function(): undefined} */
+                this.inputFocusHandler_ = () => this.activateFocus();
+                /** @private {function(): undefined} */
+                this.inputBlurHandler_ = () => this.deactivateFocus();
+                /** @private {function(): undefined} */
+                this.inputInputHandler_ = () => this.autoCompleteFocus();
+                /** @private {function(!Event): undefined} */
+                this.setPointerXOffset_ = (evt) => this.setTransformOrigin(evt);
+                /** @private {function(!Event): undefined} */
+                this.textFieldInteractionHandler_ = () => this.handleTextFieldInteraction();
+                /** @private {function(!Array): undefined} */
+                this.validationAttributeChangeHandler_ = (mutations) => this.handleValidationAttributeMutation_(mutations);
+                /** @private {!MutationObserver} */
+                this.validationObserver_;
+              }
+
+              init() {
+                this.adapter_.addClass(MDCTextFieldFoundation.cssClasses.UPGRADED);
+                // Ensure label does not collide with any pre-filled value.
+                if (this.adapter_.hasLabel() && this.getValue()) {
+                  this.adapter_.floatLabel(this.shouldFloat);
+                  this.notchOutline(this.shouldFloat);
+                }
+
+                if (this.adapter_.isFocused()) {
+                  this.inputFocusHandler_();
+                }
+
+                this.adapter_.registerInputInteractionHandler('focus', this.inputFocusHandler_);
+                this.adapter_.registerInputInteractionHandler('blur', this.inputBlurHandler_);
+                this.adapter_.registerInputInteractionHandler('input', this.inputInputHandler_);
+                ['mousedown', 'touchstart'].forEach((evtType) => {
+                  this.adapter_.registerInputInteractionHandler(evtType, this.setPointerXOffset_);
+                });
+                ['click', 'keydown'].forEach((evtType) => {
+                  this.adapter_.registerTextFieldInteractionHandler(evtType, this.textFieldInteractionHandler_);
+                });
+                this.validationObserver_ = this.adapter_.registerValidationAttributeChangeHandler(
+                  this.validationAttributeChangeHandler_);
+              }
+
+              destroy() {
+                this.adapter_.removeClass(MDCTextFieldFoundation.cssClasses.UPGRADED);
+                this.adapter_.deregisterInputInteractionHandler('focus', this.inputFocusHandler_);
+                this.adapter_.deregisterInputInteractionHandler('blur', this.inputBlurHandler_);
+                this.adapter_.deregisterInputInteractionHandler('input', this.inputInputHandler_);
+                ['mousedown', 'touchstart'].forEach((evtType) => {
+                  this.adapter_.deregisterInputInteractionHandler(evtType, this.setPointerXOffset_);
+                });
+                ['click', 'keydown'].forEach((evtType) => {
+                  this.adapter_.deregisterTextFieldInteractionHandler(evtType, this.textFieldInteractionHandler_);
+                });
+                this.adapter_.deregisterValidationAttributeChangeHandler(this.validationObserver_);
+              }
+
+              /**
+               * Handles user interactions with the Text Field.
+               */
+              handleTextFieldInteraction() {
+                if (this.adapter_.getNativeInput().disabled) {
+                  return;
+                }
+                this.receivedUserInput_ = true;
+              }
+
+              /**
+               * Handles validation attribute changes
+               * @param {Array<MutationRecord>} mutationsList
+               * @private
+               */
+              handleValidationAttributeMutation_(mutationsList) {
+                mutationsList.some((mutation) => {
+                  if (VALIDATION_ATTR_WHITELIST.indexOf(mutation.attributeName) > -1) {
+                    this.styleValidity_(true);
+                    return true;
+                  }
+                });
+              }
+
+              /**
+               * Opens/closes the notched outline.
+               * @param {boolean} openNotch
+               */
+              notchOutline(openNotch) {
+                if (!this.adapter_.hasOutline() || !this.adapter_.hasLabel()) {
+                  return;
+                }
+
+                if (openNotch) {
+                  const isDense = this.adapter_.hasClass(cssClasses$12.DENSE);
+                  const labelScale = isDense ? numbers$4.DENSE_LABEL_SCALE : numbers$4.LABEL_SCALE;
+                  const labelWidth = this.adapter_.getLabelWidth() * labelScale;
+                  const isRtl = this.adapter_.isRtl();
+                  this.adapter_.notchOutline(labelWidth, isRtl);
+                } else {
+                  this.adapter_.closeOutline();
+                }
+              }
+
+              /**
+               * Activates the text field focus state.
+               */
+              activateFocus() {
+                this.isFocused_ = true;
+                this.styleFocused_(this.isFocused_);
+                this.adapter_.activateLineRipple();
+                this.notchOutline(this.shouldFloat);
+                if (this.adapter_.hasLabel()) {
+                  this.adapter_.shakeLabel(this.shouldShake);
+                  this.adapter_.floatLabel(this.shouldFloat);
+                }
+                if (this.helperText_) {
+                  this.helperText_.showToScreenReader();
+                }
+              }
+
+              /**
+               * Sets the line ripple's transform origin, so that the line ripple activate
+               * animation will animate out from the user's click location.
+               * @param {!Event} evt
+               */
+              setTransformOrigin(evt) {
+                const targetClientRect = evt.target.getBoundingClientRect();
+                const evtCoords = {x: evt.clientX, y: evt.clientY};
+                const normalizedX = evtCoords.x - targetClientRect.left;
+                this.adapter_.setLineRippleTransformOrigin(normalizedX);
+              }
+
+              /**
+               * Activates the Text Field's focus state in cases when the input value
+               * changes without user input (e.g. programatically).
+               */
+              autoCompleteFocus() {
+                if (!this.receivedUserInput_) {
+                  this.activateFocus();
+                }
+              }
+
+              /**
+               * Deactivates the Text Field's focus state.
+               */
+              deactivateFocus() {
+                this.isFocused_ = false;
+                this.adapter_.deactivateLineRipple();
+                const input = this.getNativeInput_();
+                const shouldRemoveLabelFloat = !input.value && !this.isBadInput_();
+                const isValid = this.isValid();
+                this.styleValidity_(isValid);
+                this.styleFocused_(this.isFocused_);
+                if (this.adapter_.hasLabel()) {
+                  this.adapter_.shakeLabel(this.shouldShake);
+                  this.adapter_.floatLabel(this.shouldFloat);
+                  this.notchOutline(this.shouldFloat);
+                }
+                if (shouldRemoveLabelFloat) {
+                  this.receivedUserInput_ = false;
+                }
+              }
+
+              /**
+               * @return {string} The value of the input Element.
+               */
+              getValue() {
+                return this.getNativeInput_().value;
+              }
+
+              /**
+               * @param {string} value The value to set on the input Element.
+               */
+              setValue(value) {
+                this.getNativeInput_().value = value;
+                const isValid = this.isValid();
+                this.styleValidity_(isValid);
+                if (this.adapter_.hasLabel()) {
+                  this.adapter_.shakeLabel(this.shouldShake);
+                  this.adapter_.floatLabel(this.shouldFloat);
+                  this.notchOutline(this.shouldFloat);
+                }
+              }
+
+              /**
+               * @return {boolean} If a custom validity is set, returns that value.
+               *     Otherwise, returns the result of native validity checks.
+               */
+              isValid() {
+                return this.useCustomValidityChecking_
+                  ? this.isValid_ : this.isNativeInputValid_();
+              }
+
+              /**
+               * @param {boolean} isValid Sets the validity state of the Text Field.
+               */
+              setValid(isValid) {
+                this.useCustomValidityChecking_ = true;
+                this.isValid_ = isValid;
+                // Retrieve from the getter to ensure correct logic is applied.
+                isValid = this.isValid();
+                this.styleValidity_(isValid);
+                if (this.adapter_.hasLabel()) {
+                  this.adapter_.shakeLabel(this.shouldShake);
+                }
+              }
+
+              /**
+               * @return {boolean} True if the Text Field is disabled.
+               */
+              isDisabled() {
+                return this.getNativeInput_().disabled;
+              }
+
+              /**
+               * @param {boolean} disabled Sets the text-field disabled or enabled.
+               */
+              setDisabled(disabled) {
+                this.getNativeInput_().disabled = disabled;
+                this.styleDisabled_(disabled);
+              }
+
+              /**
+               * @param {string} content Sets the content of the helper text.
+               */
+              setHelperTextContent(content) {
+                if (this.helperText_) {
+                  this.helperText_.setContent(content);
+                }
+              }
+
+              /**
+               * @return {boolean} True if the Text Field input fails in converting the
+               *     user-supplied value.
+               * @private
+               */
+              isBadInput_() {
+                return this.getNativeInput_().validity.badInput;
+              }
+
+              /**
+               * @return {boolean} The result of native validity checking
+               *     (ValidityState.valid).
+               */
+              isNativeInputValid_() {
+                return this.getNativeInput_().validity.valid;
+              }
+
+              /**
+               * Styles the component based on the validity state.
+               * @param {boolean} isValid
+               * @private
+               */
+              styleValidity_(isValid) {
+                const {INVALID} = MDCTextFieldFoundation.cssClasses;
+                if (isValid) {
+                  this.adapter_.removeClass(INVALID);
+                } else {
+                  this.adapter_.addClass(INVALID);
+                }
+                if (this.helperText_) {
+                  this.helperText_.setValidity(isValid);
+                }
+              }
+
+              /**
+               * Styles the component based on the focused state.
+               * @param {boolean} isFocused
+               * @private
+               */
+              styleFocused_(isFocused) {
+                const {FOCUSED} = MDCTextFieldFoundation.cssClasses;
+                if (isFocused) {
+                  this.adapter_.addClass(FOCUSED);
+                } else {
+                  this.adapter_.removeClass(FOCUSED);
+                }
+              }
+
+              /**
+               * Styles the component based on the disabled state.
+               * @param {boolean} isDisabled
+               * @private
+               */
+              styleDisabled_(isDisabled) {
+                const {DISABLED, INVALID} = MDCTextFieldFoundation.cssClasses;
+                if (isDisabled) {
+                  this.adapter_.addClass(DISABLED);
+                  this.adapter_.removeClass(INVALID);
+                } else {
+                  this.adapter_.removeClass(DISABLED);
+                }
+                if (this.icon_) {
+                  this.icon_.setDisabled(isDisabled);
+                }
+              }
+
+              /**
+               * @return {!Element|!NativeInputType} The native text input from the
+               * host environment, or a dummy if none exists.
+               * @private
+               */
+              getNativeInput_() {
+                return this.adapter_.getNativeInput() ||
+                /** @type {!NativeInputType} */ ({
+                  value: '',
+                  disabled: false,
+                  validity: {
+                    badInput: false,
+                    valid: true,
+                  },
+                });
+              }
+            }
 
             /**
              * @license
@@ -17439,7 +18290,7 @@
              */
 
             /** @enum {string} */
-            const cssClasses$12 = {
+            const cssClasses$14 = {
               LINE_RIPPLE_ACTIVE: 'mdc-line-ripple--active',
               LINE_RIPPLE_DEACTIVATING: 'mdc-line-ripple--deactivating',
             };
@@ -17469,7 +18320,7 @@
             class MDCLineRippleFoundation extends MDCFoundation {
               /** @return enum {string} */
               static get cssClasses() {
-                return cssClasses$12;
+                return cssClasses$14;
               }
 
               /**
@@ -17510,8 +18361,8 @@
                * Activates the line ripple
                */
               activate() {
-                this.adapter_.removeClass(cssClasses$12.LINE_RIPPLE_DEACTIVATING);
-                this.adapter_.addClass(cssClasses$12.LINE_RIPPLE_ACTIVE);
+                this.adapter_.removeClass(cssClasses$14.LINE_RIPPLE_DEACTIVATING);
+                this.adapter_.addClass(cssClasses$14.LINE_RIPPLE_ACTIVE);
               }
 
               /**
@@ -17526,7 +18377,7 @@
                * Deactivates the line ripple
                */
               deactivate() {
-                this.adapter_.addClass(cssClasses$12.LINE_RIPPLE_DEACTIVATING);
+                this.adapter_.addClass(cssClasses$14.LINE_RIPPLE_DEACTIVATING);
               }
 
               /**
@@ -17536,12 +18387,12 @@
               handleTransitionEnd(evt) {
                 // Wait for the line ripple to be either transparent or opaque
                 // before emitting the animation end event
-                const isDeactivating = this.adapter_.hasClass(cssClasses$12.LINE_RIPPLE_DEACTIVATING);
+                const isDeactivating = this.adapter_.hasClass(cssClasses$14.LINE_RIPPLE_DEACTIVATING);
 
                 if (evt.propertyName === 'opacity') {
                   if (isDeactivating) {
-                    this.adapter_.removeClass(cssClasses$12.LINE_RIPPLE_ACTIVE);
-                    this.adapter_.removeClass(cssClasses$12.LINE_RIPPLE_DEACTIVATING);
+                    this.adapter_.removeClass(cssClasses$14.LINE_RIPPLE_ACTIVE);
+                    this.adapter_.removeClass(cssClasses$14.LINE_RIPPLE_DEACTIVATING);
                   }
                 }
               }
@@ -17550,6 +18401,40 @@
             /**
              * @license
              * Copyright 2018 Google Inc. All Rights Reserved.
+             *
+             * Licensed under the Apache License, Version 2.0 (the "License");
+             * you may not use this file except in compliance with the License.
+             * You may obtain a copy of the License at
+             *
+             *      http://www.apache.org/licenses/LICENSE-2.0
+             *
+             * Unless required by applicable law or agreed to in writing, software
+             * distributed under the License is distributed on an "AS IS" BASIS,
+             * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+             * See the License for the specific language governing permissions and
+             * limitations under the License.
+             */
+
+            /**
+             * @license
+             * Copyright 2017 Google Inc. All Rights Reserved.
+             *
+             * Licensed under the Apache License, Version 2.0 (the "License");
+             * you may not use this file except in compliance with the License.
+             * You may obtain a copy of the License at
+             *
+             *      http://www.apache.org/licenses/LICENSE-2.0
+             *
+             * Unless required by applicable law or agreed to in writing, software
+             * distributed under the License is distributed on an "AS IS" BASIS,
+             * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+             * See the License for the specific language governing permissions and
+             * limitations under the License.
+             */
+
+            /**
+             * @license
+             * Copyright 2017 Google Inc. All Rights Reserved.
              *
              * Licensed under the Apache License, Version 2.0 (the "License");
              * you may not use this file except in compliance with the License.
@@ -17599,7 +18484,7 @@
              */
 
             /** @enum {string} */
-            const cssClasses$13 = {
+            const cssClasses$15 = {
               LABEL_FLOAT_ABOVE: 'mdc-floating-label--float-above',
               LABEL_SHAKE: 'mdc-floating-label--shake',
             };
@@ -17628,7 +18513,7 @@
             class MDCFloatingLabelFoundation extends MDCFoundation {
               /** @return enum {string} */
               static get cssClasses() {
-                return cssClasses$13;
+                return cssClasses$15;
               }
 
               /**
@@ -17762,13 +18647,13 @@
              */
 
             /** @enum {string} */
-            const strings$13 = {
+            const strings$16 = {
               PATH_SELECTOR: '.mdc-notched-outline__path',
               IDLE_OUTLINE_SELECTOR: '.mdc-notched-outline__idle',
             };
 
             /** @enum {string} */
-            const cssClasses$14 = {
+            const cssClasses$16 = {
               OUTLINE_NOTCHED: 'mdc-notched-outline--notched',
             };
 
@@ -17796,12 +18681,12 @@
             class MDCNotchedOutlineFoundation extends MDCFoundation {
               /** @return enum {string} */
               static get strings() {
-                return strings$13;
+                return strings$16;
               }
 
               /** @return enum {string} */
               static get cssClasses() {
-                return cssClasses$14;
+                return cssClasses$16;
               }
 
               /**
@@ -17925,411 +18810,13 @@
              * limitations under the License.
              */
 
-            /**
-             * @license
-             * Copyright 2017 Google Inc. All Rights Reserved.
-             *
-             * Licensed under the Apache License, Version 2.0 (the "License");
-             * you may not use this file except in compliance with the License.
-             * You may obtain a copy of the License at
-             *
-             *      http://www.apache.org/licenses/LICENSE-2.0
-             *
-             * Unless required by applicable law or agreed to in writing, software
-             * distributed under the License is distributed on an "AS IS" BASIS,
-             * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-             * See the License for the specific language governing permissions and
-             * limitations under the License.
-             */
+            /*vimport { MDCLineRippleFoundation } from '@material/line-ripple';
+            import { MDCFloatingLabelFoundation } from '@material/floating-label';
+            import { MDCNotchedOutlineFoundation } from '@material/notched-outline';*/
 
-            /**
-             * @license
-             * Copyright 2016 Google Inc. All Rights Reserved.
-             *
-             * Licensed under the Apache License, Version 2.0 (the "License");
-             * you may not use this file except in compliance with the License.
-             * You may obtain a copy of the License at
-             *
-             *      http://www.apache.org/licenses/LICENSE-2.0
-             *
-             * Unless required by applicable law or agreed to in writing, software
-             * distributed under the License is distributed on an "AS IS" BASIS,
-             * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-             * See the License for the specific language governing permissions and
-             * limitations under the License.
-             */
-
-            /** @enum {string} */
-            const strings$15 = {
-              ARIA_HIDDEN: 'aria-hidden',
-              ROLE: 'role',
-            };
-
-            /** @enum {string} */
-            const cssClasses$16 = {
-              HELPER_TEXT_PERSISTENT: 'mdc-text-field-helper-text--persistent',
-              HELPER_TEXT_VALIDATION_MSG: 'mdc-text-field-helper-text--validation-msg',
-            };
-
-            /**
-             * @license
-             * Copyright 2017 Google Inc. All Rights Reserved.
-             *
-             * Licensed under the Apache License, Version 2.0 (the "License");
-             * you may not use this file except in compliance with the License.
-             * You may obtain a copy of the License at
-             *
-             *      http://www.apache.org/licenses/LICENSE-2.0
-             *
-             * Unless required by applicable law or agreed to in writing, software
-             * distributed under the License is distributed on an "AS IS" BASIS,
-             * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-             * See the License for the specific language governing permissions and
-             * limitations under the License.
-             */
-
-
-            /**
-             * @extends {MDCFoundation<!MDCTextFieldHelperTextAdapter>}
-             * @final
-             */
-            class MDCTextFieldHelperTextFoundation extends MDCFoundation {
-              /** @return enum {string} */
-              static get cssClasses() {
-                return cssClasses$16;
-              }
-
-              /** @return enum {string} */
-              static get strings() {
-                return strings$15;
-              }
-
-              /**
-               * {@see MDCTextFieldHelperTextAdapter} for typing information on parameters and return
-               * types.
-               * @return {!MDCTextFieldHelperTextAdapter}
-               */
-              static get defaultAdapter() {
-                return /** @type {!MDCTextFieldHelperTextAdapter} */ ({
-                  addClass: () => {},
-                  removeClass: () => {},
-                  hasClass: () => {},
-                  setAttr: () => {},
-                  removeAttr: () => {},
-                  setContent: () => {},
-                });
-              }
-
-              /**
-               * @param {!MDCTextFieldHelperTextAdapter} adapter
-               */
-              constructor(adapter) {
-                super(Object.assign(MDCTextFieldHelperTextFoundation.defaultAdapter, adapter));
-              }
-
-              /**
-               * Sets the content of the helper text field.
-               * @param {string} content
-               */
-              setContent(content) {
-                this.adapter_.setContent(content);
-              }
-
-              /** @param {boolean} isPersistent Sets the persistency of the helper text. */
-              setPersistent(isPersistent) {
-                if (isPersistent) {
-                  this.adapter_.addClass(cssClasses$16.HELPER_TEXT_PERSISTENT);
-                } else {
-                  this.adapter_.removeClass(cssClasses$16.HELPER_TEXT_PERSISTENT);
-                }
-              }
-
-              /**
-               * @param {boolean} isValidation True to make the helper text act as an
-               *   error validation message.
-               */
-              setValidation(isValidation) {
-                if (isValidation) {
-                  this.adapter_.addClass(cssClasses$16.HELPER_TEXT_VALIDATION_MSG);
-                } else {
-                  this.adapter_.removeClass(cssClasses$16.HELPER_TEXT_VALIDATION_MSG);
-                }
-              }
-
-              /** Makes the helper text visible to the screen reader. */
-              showToScreenReader() {
-                this.adapter_.removeAttr(strings$15.ARIA_HIDDEN);
-              }
-
-              /**
-               * Sets the validity of the helper text based on the input validity.
-               * @param {boolean} inputIsValid
-               */
-              setValidity(inputIsValid) {
-                const helperTextIsPersistent = this.adapter_.hasClass(cssClasses$16.HELPER_TEXT_PERSISTENT);
-                const helperTextIsValidationMsg = this.adapter_.hasClass(cssClasses$16.HELPER_TEXT_VALIDATION_MSG);
-                const validationMsgNeedsDisplay = helperTextIsValidationMsg && !inputIsValid;
-
-                if (validationMsgNeedsDisplay) {
-                  this.adapter_.setAttr(strings$15.ROLE, 'alert');
-                } else {
-                  this.adapter_.removeAttr(strings$15.ROLE);
-                }
-
-                if (!helperTextIsPersistent && !validationMsgNeedsDisplay) {
-                  this.hide_();
-                }
-              }
-
-              /**
-               * Hides the help text from screen readers.
-               * @private
-               */
-              hide_() {
-                this.adapter_.setAttr(strings$15.ARIA_HIDDEN, 'true');
-              }
-            }
-
-            /**
-             * @license
-             * Copyright 2017 Google Inc. All Rights Reserved.
-             *
-             * Licensed under the Apache License, Version 2.0 (the "License");
-             * you may not use this file except in compliance with the License.
-             * You may obtain a copy of the License at
-             *
-             *      http://www.apache.org/licenses/LICENSE-2.0
-             *
-             * Unless required by applicable law or agreed to in writing, software
-             * distributed under the License is distributed on an "AS IS" BASIS,
-             * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-             * See the License for the specific language governing permissions and
-             * limitations under the License.
-             */
-
-            /**
-             * @license
-             * Copyright 2016 Google Inc. All Rights Reserved.
-             *
-             * Licensed under the Apache License, Version 2.0 (the "License");
-             * you may not use this file except in compliance with the License.
-             * You may obtain a copy of the License at
-             *
-             *      http://www.apache.org/licenses/LICENSE-2.0
-             *
-             * Unless required by applicable law or agreed to in writing, software
-             * distributed under the License is distributed on an "AS IS" BASIS,
-             * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-             * See the License for the specific language governing permissions and
-             * limitations under the License.
-             */
-
-            /** @enum {string} */
-            const strings$16 = {
-              ICON_EVENT: 'MDCTextField:icon',
-              ICON_ROLE: 'button',
-            };
-
-            /**
-             * @license
-             * Copyright 2017 Google Inc. All Rights Reserved.
-             *
-             * Licensed under the Apache License, Version 2.0 (the "License");
-             * you may not use this file except in compliance with the License.
-             * You may obtain a copy of the License at
-             *
-             *      http://www.apache.org/licenses/LICENSE-2.0
-             *
-             * Unless required by applicable law or agreed to in writing, software
-             * distributed under the License is distributed on an "AS IS" BASIS,
-             * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-             * See the License for the specific language governing permissions and
-             * limitations under the License.
-             */
-
-
-            /**
-             * @extends {MDCFoundation<!MDCTextFieldIconAdapter>}
-             * @final
-             */
-            class MDCTextFieldIconFoundation extends MDCFoundation {
-              /** @return enum {string} */
-              static get strings() {
-                return strings$16;
-              }
-
-              /**
-               * {@see MDCTextFieldIconAdapter} for typing information on parameters and return
-               * types.
-               * @return {!MDCTextFieldIconAdapter}
-               */
-              static get defaultAdapter() {
-                return /** @type {!MDCTextFieldIconAdapter} */ ({
-                  getAttr: () => {},
-                  setAttr: () => {},
-                  removeAttr: () => {},
-                  registerInteractionHandler: () => {},
-                  deregisterInteractionHandler: () => {},
-                  notifyIconAction: () => {},
-                });
-              }
-
-              /**
-               * @param {!MDCTextFieldIconAdapter} adapter
-               */
-              constructor(adapter) {
-                super(Object.assign(MDCTextFieldIconFoundation.defaultAdapter, adapter));
-
-                /** @private {string?} */
-                this.savedTabIndex_ = null;
-
-                /** @private {function(!Event): undefined} */
-                this.interactionHandler_ = (evt) => this.handleInteraction(evt);
-              }
-
-              init() {
-                this.savedTabIndex_ = this.adapter_.getAttr('tabindex');
-
-                ['click', 'keydown'].forEach((evtType) => {
-                  this.adapter_.registerInteractionHandler(evtType, this.interactionHandler_);
-                });
-              }
-
-              destroy() {
-                ['click', 'keydown'].forEach((evtType) => {
-                  this.adapter_.deregisterInteractionHandler(evtType, this.interactionHandler_);
-                });
-              }
-
-              /**
-               * Sets the content of the helper text field.
-               * @param {boolean} disabled
-               */
-              setDisabled(disabled) {
-                if (!this.savedTabIndex_) {
-                  return;
-                }
-
-                if (disabled) {
-                  this.adapter_.setAttr('tabindex', '-1');
-                  this.adapter_.removeAttr('role');
-                } else {
-                  this.adapter_.setAttr('tabindex', this.savedTabIndex_);
-                  this.adapter_.setAttr('role', strings$16.ICON_ROLE);
-                }
-              }
-
-              /**
-               * Handles an interaction event
-               * @param {!Event} evt
-               */
-              handleInteraction(evt) {
-                if (evt.type === 'click' || evt.key === 'Enter' || evt.keyCode === 13) {
-                  this.adapter_.notifyIconAction();
-                }
-              }
-            }
-
-            /**
-             * @license
-             * Copyright 2017 Google Inc. All Rights Reserved.
-             *
-             * Licensed under the Apache License, Version 2.0 (the "License");
-             * you may not use this file except in compliance with the License.
-             * You may obtain a copy of the License at
-             *
-             *      http://www.apache.org/licenses/LICENSE-2.0
-             *
-             * Unless required by applicable law or agreed to in writing, software
-             * distributed under the License is distributed on an "AS IS" BASIS,
-             * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-             * See the License for the specific language governing permissions and
-             * limitations under the License.
-             */
-
-            /**
-             * @license
-             * Copyright 2016 Google Inc. All Rights Reserved.
-             *
-             * Licensed under the Apache License, Version 2.0 (the "License");
-             * you may not use this file except in compliance with the License.
-             * You may obtain a copy of the License at
-             *
-             *      http://www.apache.org/licenses/LICENSE-2.0
-             *
-             * Unless required by applicable law or agreed to in writing, software
-             * distributed under the License is distributed on an "AS IS" BASIS,
-             * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-             * See the License for the specific language governing permissions and
-             * limitations under the License.
-             */
-
-            /**
-             * @license
-             * Copyright 2017 Google Inc. All Rights Reserved.
-             *
-             * Licensed under the Apache License, Version 2.0 (the "License");
-             * you may not use this file except in compliance with the License.
-             * You may obtain a copy of the License at
-             *
-             *      http://www.apache.org/licenses/LICENSE-2.0
-             *
-             * Unless required by applicable law or agreed to in writing, software
-             * distributed under the License is distributed on an "AS IS" BASIS,
-             * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-             * See the License for the specific language governing permissions and
-             * limitations under the License.
-             */
-
-            /**
-             * @license
-             * Copyright 2017 Google Inc. All Rights Reserved.
-             *
-             * Licensed under the Apache License, Version 2.0 (the "License");
-             * you may not use this file except in compliance with the License.
-             * You may obtain a copy of the License at
-             *
-             *      http://www.apache.org/licenses/LICENSE-2.0
-             *
-             * Unless required by applicable law or agreed to in writing, software
-             * distributed under the License is distributed on an "AS IS" BASIS,
-             * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-             * See the License for the specific language governing permissions and
-             * limitations under the License.
-             */
-
-            /**
-             * @license
-             * Copyright 2016 Google Inc. All Rights Reserved.
-             *
-             * Licensed under the Apache License, Version 2.0 (the "License");
-             * you may not use this file except in compliance with the License.
-             * You may obtain a copy of the License at
-             *
-             *      http://www.apache.org/licenses/LICENSE-2.0
-             *
-             * Unless required by applicable law or agreed to in writing, software
-             * distributed under the License is distributed on an "AS IS" BASIS,
-             * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-             * See the License for the specific language governing permissions and
-             * limitations under the License.
-             */
-
-            function lineRippleFactory($el) {
-              return new MDCLineRippleFoundation({
-                addClass: className => $el.classList.add(className),
-                removeClass: className => $el.classList.remove(className),
-                hasClass: className => $el.classList.contains(className),
-                setStyle: (prop, value) => {
-                  $el.style[prop] = value;
-                },
-                registerEventHandler: (type, handler) => $el.addEventListener(type, handler),
-                deregisterEventHandler: (type, handler) => $el.removeEventListener(type, handler)
-              });
-            }
             function helperTextFactory(helperText) {
               // Check if helperText is really a helper text element
-              const $el = helperText.classList.contains('mdc-text-field-helper-text') ? helperText : null;
+              const $el = helperText && helperText.classList.contains('mdc-text-field-helper-text') ? helperText : null;
               if(!$el) return; // return undefined if a valid helperText doesn't exist
 
               return new MDCTextFieldHelperTextFoundation({
@@ -18353,7 +18840,20 @@
                 notifyIconAction
               });
             }
-            function labelFactory($el) {
+
+            /*export function lineRippleFactory($el) {
+              return new MDCLineRippleFoundation({
+                addClass: className => $el.classList.add(className),
+                removeClass: className => $el.classList.remove(className),
+                hasClass: className => $el.classList.contains(className),
+                setStyle: (prop, value) => {
+                  $el.style[prop] = value;
+                },
+                registerEventHandler: (type, handler) => $el.addEventListener(type, handler),
+                deregisterEventHandler: (type, handler) => $el.removeEventListener(type, handler)
+              });
+            }
+            export function labelFactory($el) {
               return new MDCFloatingLabelFoundation({
                 addClass: className => $el.classList.add(className),
                 removeClass: className => $el.classList.remove(className),
@@ -18362,7 +18862,7 @@
                 deregisterInteractionHandler: (evtType, handler) => $el.removeEventListener(evtType, handler)
               });
             }
-            function outlineFactory($el, { outlinePath, idleOutline }) {
+            export function outlineFactory($el, { outlinePath, idleOutline }) {
               const styles = idleOutline && window.getComputedStyle(idleOutline);
               
               return new MDCNotchedOutlineFoundation({
@@ -18373,126 +18873,143 @@
                 setOutlinePathAttr: value => outlinePath.setAttribute('d', value),
                 getIdleOutlineStyleValue: prop => styles && styles.getPropertyValue(prop)
               });
-            }
+            }*/
 
-            function getHelperText(helperText) {
-              return helperText.classList.contains('mdc-text-field-helper-text') ? helperText : null;
-            }
+            var MDCFloatingLabel$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('label',{staticClass:"mdc-floating-label",attrs:{"for":_vm.labelFor}},[_vm._v(_vm._s(_vm.label))])},staticRenderFns: [],
+              name: "MDCFloatingLabel",
+              props: {
+                label: {
+                  type: String,
+                  required: true
+                },
+                labelFor: String
+              },
 
-            var TextfieldMixin = {
               mounted() {
-                const { $el } = this.$el;
-                const { input } = this.$refs;
-                const styles = getComputedStyle($el);
-                
-                // Run each factory and save them into variables.
-                this._helperText = helperTextFactory(getHelperText(this.$el.nextElementSibling));
+                const { $el } = this;
 
-                if(this.$refs.lineRipple) {
-                  this._lineRipple = lineRippleFactory(this.$refs.lineRipple);
-                }
-                if(this.$refs.label) {
-                  this._label = labelFactory(this.$refs.label);
-                }
-                if(this.$refs.outline) {
-                  this._outline = outlineFactory(this.$refs.outline, this.$refs);
-                }
-                if(this.$refs.icon && this.hasIconListener) {
-                  this._icon = iconFactory(this.$refs.icon, () => this.$emit('icon'));
-                }
-              
-                this.foundation = new MDCTextFieldFoundation({
+                this.foundation = new MDCFloatingLabelFoundation({
                   addClass: className => $el.classList.add(className),
                   removeClass: className => $el.classList.remove(className),
-                  hasClass: className => $el.classList.contains(className),
-                  // Interactions
-                  registerTextFieldInteractionHandler: (type, handler) => $el.addEventListener(type, handler),
-                  deregisterTextFieldInteractionHandler: (type, handler) => $el.removeEventListener(type, handler),
-                  registerInputInteractionHandler: (type, handler) => input.addEventListener(type, handler),
-                  deregisterInputInteractionHandler: (type, handler) => input.removeEventListener(type, handler),
-                  registerValidationAttributeChangeHandler: handler => {
-                    const observer = new MutationObserver(handler);
-                    observer.observe(this.$refs.input, { attributes: true });
-                    return observer;
-                  },
-                  deregisterValidationAttributeChangeHandler: observer => observer.disconnect(),
-                  
-                  getNativeInput: () => input,
-                  isFocused: () => document.activeElement === input,
-                  isRtl: () => styles.direction === 'rtl',
-              
-                  // Line Ripple methods
-                  activateLineRipple: () => this._lineRipple && this._lineRipple.activate(),
-                  deactivateLineRipple: () => this._lineRipple && this._lineRipple.deactivate(),
-                  setLineRippleTransformOrigin: normalizedX => this._lineRipple && this._lineRipple.setRippleCenter(normalizedX),
-                  // Label methods
-                  shakeLabel: shouldShake => this._label.shake(shouldShake),
-                  floatLabel: shouldFloat => this._label.float(shouldFloat),
-                  hasLabel: () => !!this._label,
-                  getLabelWidth: () => this._label.getWidth(),
-                  // Outline methods
-                  hasOutline: () => !!this._outline,
-                  notchOutline: (labelWidth, isRtl) => this._outline.notch(labelWidth, isRtl),
-                  closeOutline: () => this._outline.closeNotch(),
-                }, { helperText: this._helperText, icon: this._icon });
+                  getWidth: () => $el.offsetWidth,
+                  registerInteractionHandler: (evtType, handler) => $el.addEventListener(evtType, handler),
+                  deregisterInteractionHandler: (evtType, handler) => $el.removeEventListener(evtType, handler)
+                });
 
                 this.foundation.init();
-                this.foundation.setDisabled(this.disabled);
               },
               beforeDestroy() {
                 this.foundation.destroy();
+              },
+              methods: {
+                shake(shouldShake) {
+                  this.foundation.shake(shouldShake);
+                },
+                float(shouldFloat) {
+                  this.foundation.float(shouldFloat);
+                },
+                getWidth() {
+                  return this.foundation.getWidth();
+                },
               }
             };
 
+            var MDCLineRipple$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-line-ripple"})},staticRenderFns: [],
+              name: "MDCLineRipple",
+
+              mounted() {
+                const { $el } = this;
+
+                this.foundation = new MDCLineRippleFoundation({
+                  addClass: className => $el.classList.add(className),
+                  removeClass: className => $el.classList.remove(className),
+                  hasClass: className => $el.classList.contains(className),
+                  setStyle: (prop, value) => $el.style.setProperty(value),
+                  registerEventHandler: (type, handler) => $el.addEventListener(type, handler),
+                  deregisterEventHandler: (type, handler) => $el.removeEventListener(type, handler)
+                });
+                this.foundation.init();
+              },
+              beforeDestroy() {
+                this.foundation.destroy();
+              },
+              methods: {
+                activate() {
+                  this.foundation.activate();
+                },
+                deactivate(){
+                  this.foundation.deactivate();
+                },
+                setRippleCenter(normalizedX) {
+                  this.foundation.setRippleCenter(normalizedX);
+                },
+              },
+            };
+
+            var MDCNotchedOutline$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{ref:"notchedOutline",staticClass:"mdc-notched-outline"},[_c('svg',[_c('path',{ref:"notchedOutlinePath",staticClass:"mdc-notched-outline__path"})])])},staticRenderFns: [],
+              name: "MDCNotchedOutline",
+
+              mounted() {
+                const { notchedOutline, notchedOutlinePath, notchedOutlineIdle } = this.$refs;
+                const styles = window.getComputedStyle(notchedOutlineIdle);
+              
+                this.foundation = new MDCNotchedOutlineFoundation({
+                  getWidth: () => notchedOutline.offsetWidth,
+                  getHeight: () => notchedOutline.offsetHeight,
+                  addClass: className => notchedOutline.classList.add(className),
+                  removeClass: className => notchedOutline.classList.remove(className),
+                  setOutlinePathAttr: value => notchedOutlinePath.setAttribute('d', value),
+                  getIdleOutlineStyleValue: prop => styles && styles.getPropertyValue(prop)
+                });
+                this.foundation.init();
+              },
+              beforeDestroy() {
+                this.foundation.destroy();
+              },
+              methods: {
+                notchOutline(labelWidth, isRtl) {
+                  this.foundation.notch(labelWidth, isRtl);
+                },
+                closeOutline() {
+                  this.foundation.closeNotch();
+                },
+              },
+            };
+
+            function getHelperText(helperText) {
+              return helperText && helperText.classList.contains('mdc-text-field-helper-text') ? helperText : null;
+            }
+            // Creates a uuid for the labelFor attribute.
             function uuid() {
               return '_mdtf_' + Math.random().toString(36).substr(2);
             }
 
-            var Textfield = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-text-field",class:_vm.cssClasses},[(_vm.leadingIcon)?_c('mdc-icon',{ref:"icon",attrs:{"name":"text-field","icon":_vm.leadingIcon}}):_vm._e(),(((_vm.inputAttrs).type)==='checkbox')?_c('input',_vm._b({directives:[{name:"model",rawName:"v-model",value:(_vm.model),expression:"model"}],ref:"input",staticClass:"mdc-text-field__input",attrs:{"type":"checkbox"},domProps:{"checked":Array.isArray(_vm.model)?_vm._i(_vm.model,null)>-1:(_vm.model)},on:{"change":function($event){var $$a=_vm.model,$$el=$event.target,$$c=$$el.checked?(true):(false);if(Array.isArray($$a)){var $$v=null,$$i=_vm._i($$a,$$v);if($$el.checked){$$i<0&&(_vm.model=$$a.concat([$$v]));}else{$$i>-1&&(_vm.model=$$a.slice(0,$$i).concat($$a.slice($$i+1)));}}else{_vm.model=$$c;}}}},'input',_vm.inputAttrs,false)):(((_vm.inputAttrs).type)==='radio')?_c('input',_vm._b({directives:[{name:"model",rawName:"v-model",value:(_vm.model),expression:"model"}],ref:"input",staticClass:"mdc-text-field__input",attrs:{"type":"radio"},domProps:{"checked":_vm._q(_vm.model,null)},on:{"change":function($event){_vm.model=null;}}},'input',_vm.inputAttrs,false)):_c('input',_vm._b({directives:[{name:"model",rawName:"v-model",value:(_vm.model),expression:"model"}],ref:"input",staticClass:"mdc-text-field__input",attrs:{"type":(_vm.inputAttrs).type},domProps:{"value":(_vm.model)},on:{"input":function($event){if($event.target.composing){ return; }_vm.model=$event.target.value;}}},'input',_vm.inputAttrs,false)),(!_vm.fullwidth)?_c('label',{ref:"label",staticClass:"mdc-floating-label",attrs:{"for":_vm.uuid}},[_vm._v(_vm._s(_vm.label))]):_vm._e(),(!_vm.leadingIcon && _vm.trailingIcon)?_c('mdc-icon',{ref:"icon",attrs:{"name":"text-field","icon":_vm.trailingIcon}}):_vm._e(),(!_vm.outlined)?_c('div',{ref:"lineRipple",staticClass:"mdc-line-ripple"}):[_c('div',{ref:"outline",staticClass:"mdc-text-field__outline"},[_c('svg',[_c('path',{ref:"outlinePath",staticClass:"mdc-text-field__outline-path"})])]),_c('div',{ref:"idleOutline",staticClass:"mdc-text-field__idle-outline"})]],2)},staticRenderFns: [],
-              name: 'MDCTextfield',
-              mixins: [ TextfieldMixin ],
-              components: { MdcIcon },
+            var TextfieldMixin = {
+              components: {
+                MdcFloatingLabel: MDCFloatingLabel$1,
+                MdcLineRipple: MDCLineRipple$1,
+                MdcNotchedOutline: MDCNotchedOutline$1,
+              },
               props: {
-                box: Boolean,
-                outlined: Boolean,
                 fullwidth: Boolean,
                 dense: Boolean,
-                required: Boolean,
                 disabled: Boolean,
+                required: Boolean,
 
                 id: String,
-                type: String,
                 value: String,
                 label: String,
+                name: String,
 
                 // Validation
                 pattern: String,
-                min: Number,
-                max: Number,
-                step: Number,
-                minlength: Number,
-                maxlength: Number,
-
-                // Icon definitions
-                trailingIcon: String,
-                leadingIcon: String
-              },
-              watch: {
-                disabled(value) {
-                  this.foundation.setDisabled(value);
-                }
+                min: [String, Number],
+                max: [String, Number],
+                step: [String, Number],
+                minlength: [String, Number],
+                maxlength: [String, Number],
               },
               computed: {
-                cssClasses() {
-                  return {
-                    'mdc-text-field--box': this.box,
-                    'mdc-text-field--outlined': this.outlined,
-                    'mdc-text-field--fullwidth': this.fullwidth,
-                    'mdc-text-field--dense': this.dense,
-                    'mdc-text-field--with-leading-icon': this.leadingIcon,
-                    'mdc-text-field--with-trailing-icon': !this.leadingIcon && this.trailingIcon
-                  };
-                },
                 hasIconListener() {
                   return !!(this.$listeners && this.$listeners.icon);
                 },
@@ -18511,6 +19028,7 @@
                     required: this.required,
                     placeholder: label,
                     ariaLabel: label,
+                    name: this.name,
 
                     // Validation
                     id: this.uuid,
@@ -18524,66 +19042,152 @@
                   };
                 }
               },
+              watch: {
+                disabled(value) {
+                  this.foundation.setDisabled(value);
+                }
+              },
               data() {
-                return { uuid: this.id || uuid()  };
+                return { uuid: this.id || uuid() };
+              },
+              
+              mounted() {
+                const { $el } = this;
+                const { input, lineRipple, notchedOutline, floatingLabel } = this.$refs;
+                const styles = window.getComputedStyle($el);
+                
+                // Run each factory and save them into variables.
+                this._helperText = helperTextFactory(getHelperText(this.$el.nextElementSibling));
+
+                if(this.$refs.icon && this.hasIconListener) {
+                  this._icon = iconFactory(this.$refs.icon, () => this.$emit('icon'));
+                }
+
+                /*if(this.$refs.lineRipple) {
+                  this._lineRipple = lineRippleFactory(this.$refs.lineRipple);
+                }
+                if(this.$refs.label) {
+                  this._label = labelFactory(this.$refs.label);
+                }
+                if(this.$refs.outline) {
+                  this._outline = outlineFactory(this.$refs.outline, this.$refs);
+                }*/
+              
+                this.foundation = new MDCTextFieldFoundation({
+                  addClass: className => $el.classList.add(className),
+                  removeClass: className => $el.classList.remove(className),
+                  hasClass: className => $el.classList.contains(className),
+                  // Interactions
+                  registerTextFieldInteractionHandler: (type, handler) => $el.addEventListener(type, handler),
+                  deregisterTextFieldInteractionHandler: (type, handler) => $el.removeEventListener(type, handler),
+                  registerInputInteractionHandler: (type, handler) => input.addEventListener(type, handler),
+                  deregisterInputInteractionHandler: (type, handler) => input.removeEventListener(type, handler),
+                  registerValidationAttributeChangeHandler: handler => {
+                    const observer = new MutationObserver(handler);
+                    observer.observe(input, { attributes: true });
+                    return observer;
+                  },
+                  deregisterValidationAttributeChangeHandler: observer => observer.disconnect(),
+                  
+                  getNativeInput: () => input,
+                  isFocused: () => document.activeElement === input,
+                  isRtl: () => styles.direction === 'rtl',
+                  
+                  // MDCLineRipple
+                  activateLineRipple: () => lineRipple && lineRipple.activate(),
+                  deactivateLineRipple: () => lineRipple && lineRipple.deactivate(),
+                  setLineRippleTransformOrigin: normalizedX => lineRipple && lineRipple.setRippleCenter(normalizedX),
+                  // MDCFloatingLabel
+                  shakeLabel: shouldShake => floatingLabel.shake(shouldShake),
+                  floatLabel: shouldFloat => floatingLabel.float(shouldFloat),
+                  hasLabel: () => !!floatingLabel,
+                  getLabelWidth: () => floatingLabel.getWidth(),
+                  // MDCNotchedOutline
+                  hasOutline: () => !!notchedOutline,
+                  notchOutline: (labelWidth, isRtl) => notchedOutline.notch(labelWidth, isRtl),
+                  closeOutline: () => notchedOutline.closeNotch(),
+              
+                  /* Line Ripple methods
+                  activateLineRipple: () => this._lineRipple && this._lineRipple.activate(),
+                  deactivateLineRipple: () => this._lineRipple && this._lineRipple.deactivate(),
+                  setLineRippleTransformOrigin: normalizedX => this._lineRipple && this._lineRipple.setRippleCenter(normalizedX),
+                  // Label methods
+                  shakeLabel: shouldShake => this._label.shake(shouldShake),
+                  floatLabel: shouldFloat => this._label.float(shouldFloat),
+                  hasLabel: () => !!this._label,
+                  getLabelWidth: () => this._label.getWidth(),
+                  // Outline methods
+                  hasOutline: () => !!this._outline,
+                  notchOutline: (labelWidth, isRtl) => this._outline.notch(labelWidth, isRtl),
+                  closeOutline: () => this._outline.closeNotch(),*/
+                }, { helperText: this._helperText, icon: this._icon });
+
+                this.foundation.init();
+                this.foundation.setDisabled(this.disabled);
+              },
+              beforeDestroy() {
+                if(this._helperText) {
+                  this._helperText.destroy();
+                }
+                if(this._icon) {
+                  this._icon.destroy();
+                }
+
+                this.foundation.destroy();
               }
             };
 
-            var Textarea = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-text-field mdc-text-field--textarea",class:_vm.cssClasses},[_c('textarea',_vm._b({directives:[{name:"model",rawName:"v-model",value:(_vm.model),expression:"model"}],ref:"input",staticClass:"mdc-text-field__input",attrs:{"label":_vm.fullwidth && _vm.label},domProps:{"value":(_vm.model)},on:{"input":function($event){if($event.target.composing){ return; }_vm.model=$event.target.value;}}},'textarea',_vm.$attrs,false)),(!_vm.fullwidth)?_c('label',{ref:"label",staticClass:"mdc-floating-label"},[_vm._v(_vm._s(_vm.label))]):_vm._e()])},staticRenderFns: [],
+            var MDCTextfield = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-text-field",class:_vm.cssClasses},[(_vm.leadingIcon)?_c('mdc-icon',{ref:"icon",attrs:{"name":"text-field","icon":_vm.leadingIcon}}):_vm._e(),(((_vm.inputAttrs).type)==='checkbox')?_c('input',_vm._b({directives:[{name:"model",rawName:"v-model",value:(_vm.model),expression:"model"}],ref:"input",staticClass:"mdc-text-field__input",attrs:{"type":"checkbox"},domProps:{"checked":Array.isArray(_vm.model)?_vm._i(_vm.model,null)>-1:(_vm.model)},on:{"change":function($event){var $$a=_vm.model,$$el=$event.target,$$c=$$el.checked?(true):(false);if(Array.isArray($$a)){var $$v=null,$$i=_vm._i($$a,$$v);if($$el.checked){$$i<0&&(_vm.model=$$a.concat([$$v]));}else{$$i>-1&&(_vm.model=$$a.slice(0,$$i).concat($$a.slice($$i+1)));}}else{_vm.model=$$c;}}}},'input',_vm.inputAttrs,false)):(((_vm.inputAttrs).type)==='radio')?_c('input',_vm._b({directives:[{name:"model",rawName:"v-model",value:(_vm.model),expression:"model"}],ref:"input",staticClass:"mdc-text-field__input",attrs:{"type":"radio"},domProps:{"checked":_vm._q(_vm.model,null)},on:{"change":function($event){_vm.model=null;}}},'input',_vm.inputAttrs,false)):_c('input',_vm._b({directives:[{name:"model",rawName:"v-model",value:(_vm.model),expression:"model"}],ref:"input",staticClass:"mdc-text-field__input",attrs:{"type":(_vm.inputAttrs).type},domProps:{"value":(_vm.model)},on:{"input":function($event){if($event.target.composing){ return; }_vm.model=$event.target.value;}}},'input',_vm.inputAttrs,false)),(!_vm.fullwidth)?_c('mdc-floating-label',{ref:"floatingLabel",attrs:{"label":_vm.label,"label-for":_vm.uuid}}):_vm._e(),(!_vm.leadingIcon && _vm.trailingIcon)?_c('mdc-icon',{ref:"icon",attrs:{"name":"text-field","icon":_vm.trailingIcon}}):_vm._e(),(!_vm.outlined)?_c('mdc-notched-outline',{ref:"notchedOutline"}):_c('mdc-line-ripple',{ref:"lineRipple"})],1)},staticRenderFns: [],
+              name: 'MDCTextfield',
+              mixins: [ TextfieldMixin ],
+              components: { MdcIcon: MDCIcon },
+              props: {
+                box: Boolean,
+                outlined: Boolean,
+                trailingIcon: String,
+                leadingIcon: String,
+              },
+              computed: {
+                cssClasses() {
+                  return {
+                    'mdc-text-field--box': this.box,
+                    'mdc-text-field--outlined': this.outlined,
+                    'mdc-text-field--fullwidth': this.fullwidth,
+                    'mdc-text-field--dense': this.dense,
+                    'mdc-text-field--with-leading-icon': this.leadingIcon,
+                    'mdc-text-field--with-trailing-icon': !this.leadingIcon && this.trailingIcon
+                  };
+                },
+              },
+            };
+
+            var MDCTextarea = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-text-field mdc-text-field--textarea",class:_vm.cssClasses},[_c('textarea',_vm._b({directives:[{name:"model",rawName:"v-model",value:(_vm.model),expression:"model"}],ref:"input",staticClass:"mdc-text-field__input",domProps:{"value":(_vm.model)},on:{"input":function($event){if($event.target.composing){ return; }_vm.model=$event.target.value;}}},'textarea',_vm.inputAttrs,false)),(!_vm.fullwidth)?_c('mdc-floating-label',{ref:"label",attrs:{"label":_vm.label,"label-for":_vm.uuid}}):_vm._e()],1)},staticRenderFns: [],
               name: 'MDCTextarea',
               mixins: [ TextfieldMixin ],
               inheritAttrs: false,
               props: {
-                fullwidth: Boolean,
-                disabled: Boolean,
-                dense: Boolean,
-                required: Boolean,
-                // For v-model
-                value: String,
-                label: String
-              },
-              watch: {
-                disabled(value) {
-                  this.foundation.setDisabled(value);
-                },
-                required(value) {
-                  this.foundation.setRequired(value);
-                }
+                rows: [String, Number],
+                cols: [String, Number]
               },
               computed: {
-                model: {
-                  get() {
-                    return this.value;
-                  },
-                  set(value) {
-                    this.$emit('input', value);
-                  }
-                },
                 cssClasses() {
                   return {
                     'mdc-text-field--fullwidth': this.fullwidth,
                     'mdc-text-field--dense': this.dense
                   };
-                }
+                },
               }
             };
 
-            var MDCTextfield = {
-              functional: true,
-              props: {
-                textarea: Boolean
-              },
-              render(h, ctx) {
-                let tag = ctx.props.textarea ? Textarea : Textfield;
-                return h(tag, ctx.data, ctx.children);
-              }
-            };
-
-            var MDCTextfieldHelpertext = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('p',{staticClass:"mdc-text-field-helper-text",class:_vm.cssClasses,attrs:{"aria-hidden":"true"}},[_vm._t("default")],2)},staticRenderFns: [],
+            var MDCTextfieldHelpertext = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('p',{staticClass:"mdc-text-field-helper-text",class:_vm.cssClasses,attrs:{"aria-hidden":"true"}},[_vm._v(_vm._s(_vm.text))])},staticRenderFns: [],
               name: 'MDCTextfieldHelpertext',
               props: {
+                text: {
+                  type: String,
+                  required: true
+                },
                 persistent: Boolean,
-                validation: Boolean
+                validation: Boolean,
               },
               computed: {
                 cssClasses() {
@@ -18591,18 +19195,29 @@
                     'mdc-text-field-helper-text--persistent': this.persistent,
                     'mdc-text-field-helper-text--validation-msg': this.validation
                   };
-                }
-              }
+                },
+              },
             };
 
+            // Used to easily separate the textarea and textfield components
+            const MDCTextfieldProxy = {
+              functional: true,
+              props: {
+                textarea: Boolean
+              },
+              render(h, ctx) {
+                const tag = ctx.props.textarea ? MDCTextarea : MDCTextfield;
+                return h(tag, ctx.data, ctx.children);
+              }
+            };
             function install$20(Vue, register) {
               register(MDCTextfieldHelpertext);
-              // Register Textfield like this for now
-              Vue.component("mdc-textfield", MDCTextfield);
+              // Register proxy component seperately
+              Vue.component('mdc-textfield', MDCTextfieldProxy);
             }
 
-            var Textfield$1 = /*#__PURE__*/Object.freeze({
-                        MDCTextfield: MDCTextfield,
+            var Textfield = /*#__PURE__*/Object.freeze({
+                        MDCTextfield: MDCTextfieldProxy,
                         MDCTextfieldHelpertext: MDCTextfieldHelpertext,
                         install: install$20
             });
@@ -18870,7 +19485,23 @@
               }
             }
 
-            var MDCToolbar = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('header',{staticClass:"mdc-toolbar",class:_vm.cssClasses},[_vm._t("default")],2)},staticRenderFns: [],
+            /**
+             * Copyright 2017 Google Inc. All Rights Reserved.
+             *
+             * Licensed under the Apache License, Version 2.0 (the "License");
+             * you may not use this file except in compliance with the License.
+             * You may obtain a copy of the License at
+             *
+             *      http://www.apache.org/licenses/LICENSE-2.0
+             *
+             * Unless required by applicable law or agreed to in writing, software
+             * distributed under the License is distributed on an "AS IS" BASIS,
+             * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+             * See the License for the specific language governing permissions and
+             * limitations under the License.
+             */
+
+            var MDCToolbar$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('header',{staticClass:"mdc-toolbar",class:_vm.cssClasses},[_vm._t("default")],2)},staticRenderFns: [],
               name: 'MDCToolbar',
               props: {
                 flexible: Boolean,
@@ -18940,11 +19571,11 @@
             };
 
             var MDCToolbarRow = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-toolbar__row"},[_vm._t("default")],2)},staticRenderFns: [],
-              name: "MDCToolbarRow"
+              name: 'MDCToolbarRow'
             };
 
             var MDCToolbarSection = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('section',{staticClass:"mdc-toolbar__section",class:_vm.cssClasses,attrs:{"role":"toolbar"}},[_vm._t("default")],2)},staticRenderFns: [],
-              name: "MDCToolbarSection",
+              name: 'MDCToolbarSection',
               props: {
                 alignStart: Boolean,
                 alignEnd: Boolean,
@@ -18953,21 +19584,21 @@
               computed: {
                 cssClasses() {
                   return {
-                    "mdc-toolbar__section--align-start": this.alignStart,
-                    "mdc-toolbar__section--align-end": this.alignEnd,
-                    "mdc-toolbar__section--shrink-to-fit": this.shrinkToFit,
+                    'mdc-toolbar__section--align-start': this.alignStart,
+                    'mdc-toolbar__section--align-end': this.alignEnd,
+                    'mdc-toolbar__section--shrink-to-fit': this.shrinkToFit,
                   };
                 }
               }
             };
 
             var MDCToolbarTitle = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('span',{staticClass:"mdc-toolbar__title"},[_vm._t("default")],2)},staticRenderFns: [],
-              name: "MDCToolbarTitle"
+              name: 'MDCToolbarTitle'
             };
 
             var MDCToolbarIcon = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('mdc-icon',{attrs:{"tag":_vm.tag,"name":"toolbar","icon":_vm.icon,"label":_vm.label,"href":_vm.link}},[_vm._v(_vm._s(_vm.icon))])},staticRenderFns: [],
-              name: "MDCToolbarIcon",
-              components: { MdcIcon },
+              name: 'MDCToolbarIcon',
+              components: { MdcIcon: MDCIcon },
               props: {
                 link: String,
                 label: String,
@@ -18978,29 +19609,29 @@
               },
               computed: {
                 tag() {
-                  return this.link ? "a" : "button";
+                  return this.link ? 'a' : 'button';
                 }
               }
             };
 
             var MDCToolbarMenuIcon = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c(_vm.tag,_vm._g({tag:"component",staticClass:"material-icons mdc-toolbar__menu-icon",attrs:{"href":_vm.link}},_vm.$listeners),[_vm._v("menu")])},staticRenderFns: [],
-              name: "MDCToolbarMenuIcon",
+              name: 'MDCToolbarMenuIcon',
               props: {
                 link: String
               },
               computed: {
                 tag() {
-                  return this.link ? "a" : "button";
+                  return this.link ? 'a' : 'button';
                 }
               }
             };
 
             function install$21(Vue, register) {
-              register(MDCToolbar, MDCToolbarRow, MDCToolbarSection, MDCToolbarTitle, MDCToolbarIcon, MDCToolbarMenuIcon);
+              register(MDCToolbar$1, MDCToolbarRow, MDCToolbarSection, MDCToolbarTitle, MDCToolbarIcon, MDCToolbarMenuIcon);
             }
 
             var Toolbar = /*#__PURE__*/Object.freeze({
-                        MDCToolbar: MDCToolbar,
+                        MDCToolbar: MDCToolbar$1,
                         MDCToolbarRow: MDCToolbarRow,
                         MDCToolbarSection: MDCToolbarSection,
                         MDCToolbarTitle: MDCToolbarTitle,
@@ -19008,23 +19639,6 @@
                         MDCToolbarMenuIcon: MDCToolbarMenuIcon,
                         install: install$21
             });
-
-            var Section = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('section',{staticClass:"mdc-top-app-bar__section",class:_vm.cssClasses},[_vm._t("default")],2)},staticRenderFns: [],
-              name: "MDCTopAppBarSection",
-              props: {
-                alignStart: Boolean,
-                alignEnd: Boolean,
-              },
-
-              computed: {
-                cssClasses() {
-                  return {
-                    "mdc-top-app-bar__section--align-start": this.alignStart,
-                    "mdc-top-app-bar__section--align-end": this.alignEnd
-                  };
-                }
-              }
-            };
 
             /**
              * @license
@@ -19527,6 +20141,23 @@
              * limitations under the License.
              */
 
+            var Section = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('section',{staticClass:"mdc-top-app-bar__section",class:_vm.cssClasses},[_vm._t("default")],2)},staticRenderFns: [],
+              name: 'MDCTopAppBarSection',
+              props: {
+                alignStart: Boolean,
+                alignEnd: Boolean,
+              },
+
+              computed: {
+                cssClasses() {
+                  return {
+                    'mdc-top-app-bar__section--align-start': this.alignStart,
+                    'mdc-top-app-bar__section--align-end': this.alignEnd
+                  };
+                }
+              }
+            };
+
             var MDCTopAppBar$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('header',{staticClass:"mdc-top-app-bar",class:_vm.cssClasses},[_c('div',{staticClass:"mdc-top-app-bar__row"},[_c('mdc-top-app-bar-section',{attrs:{"align-start":""}},[_c('a',{ref:"navIcon",staticClass:"material-icons mdc-top-app-bar__navigation-icon",attrs:{"href":"#"}},[_vm._v("menu")]),(_vm.title)?_c('span',{staticClass:"mdc-top-app-bar__title"},[_vm._v(_vm._s(_vm.title))]):_vm._e()]),(_vm.hasSlot)?_c('mdc-top-app-bar-section',{attrs:{"align-end":""}},[_vm._t("default")],2):_vm._e()],1)])},staticRenderFns: [],
               name: 'MDCTopAppBar',
               components: { MdcTopAppBarSection: Section },
@@ -19544,7 +20175,7 @@
                     return {
                       'mdc-top-app-bar--short': this.short,
                       'mdc-top-app-bar--short-collapsed': this.shortCollapsed,
-                    }
+                    };
                   }
 
                   return {
@@ -19601,7 +20232,7 @@
             };
 
             var MDCTopAppBarActionItem = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('mdc-icon',{staticClass:"mdc-top-app-bar__action-item",attrs:{"tag":"a","icon":_vm.icon,"label":_vm.label,"href":_vm.link}},[_vm._v(_vm._s(_vm.icon))])},staticRenderFns: [],
-              name: "MDCTopAppBarActionItem",
+              name: 'MDCTopAppBarActionItem',
               props: {
                 icon: {
                   type: String,
@@ -19624,7 +20255,7 @@
             });
 
             const DEFAULT_OPTS = {
-              theme: "",
+              theme: '',
               typography: false
             };
 
@@ -19637,7 +20268,7 @@
 
                 // Add typography on body
                 if (opts.typography) {
-                  body.classList.add("mdc-typography");
+                  body.classList.add('mdc-typography');
                 }
                 // Apply theme on body
                 if (opts.theme) {
@@ -19648,7 +20279,7 @@
                 const register = (...components) => {
                   components.forEach(component => {
                     const name = component.name.substr(3);
-                    Vue.component("Mdc" + name, component);
+                    Vue.component('Mdc' + name, component);
                   });
                 };
                 
@@ -19676,18 +20307,18 @@
                 Vue.use(Snackbar, register);
                 Vue.use(Switch, register);
                 //Vue.use(Tabs, register);
-                Vue.use(Textfield$1, register);
+                Vue.use(Textfield, register);
                 Vue.use(Toolbar, register);
                 Vue.use(TopAppBar, register);
               }
             };
 
             var Home = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _vm._m(0)},staticRenderFns: [function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('main',[_c('h1',[_vm._v("Vue MDC Web")]),_c('p',[_vm._v("This is a Vue Component wrapper for the official Material Design Components Web using the Foundation Adapters")]),_c('p',[_vm._v("Why this package over others? This package is focused of staying up to date and to follow the Vue Style Guides to ensure good Vue performance")]),_c('p',[_vm._v("All the props try to stay as close to the name of the MDC CSS class names so you can read both documentations without any abstraction so that both documentations can work together.")]),_c('p',[_vm._v("As the "),_c('a',{attrs:{"href":"//material.io/components/web/","target":"_blank"}},[_vm._v("material.io")]),_vm._v(" documentation is good to read to getmore in depth of the material design framework.")]),_c('p',[_vm._v("To download the package type this into npm")]),_c('p',[_vm._v("npm -i vue-mdc-web")]),_c('p',[_vm._v("Or if you use yarn type")]),_c('p',[_vm._v("yarn add vue-mdc-web")])])}],
-              name: "DemoHome"
+              name: 'DemoHome'
             };
 
             var Demo = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c(_vm.view,{tag:"component"})},staticRenderFns: [],
-              name: "DemoView",
+              name: 'DemoView',
               computed: {
                 view() {
                   const { view } = this.$route.params;
@@ -19705,11 +20336,11 @@
 
             var routes = [
               {
-                path: "/",
+                path: '/',
                 component: Home
               },
               {
-                path: "/demo/:view",
+                path: '/demo/:view',
                 component: Demo,
                 meta: {
                   title: (to, from) => pascal(to.params.view)
@@ -19725,39 +20356,39 @@
             ];
 
             var Layout = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('mdc-app',{attrs:{"flip":"","align-start":""}},[_c('mdc-toolbar',{attrs:{"slot":"toolbar"},slot:"toolbar"},[_c('mdc-toolbar-row',[_c('mdc-toolbar-section',{attrs:{"align-start":""}},[_c('mdc-toolbar-menu-icon',{on:{"click":_vm.toggleDrawer}}),_c('mdc-toolbar-title',[_vm._v(_vm._s(_vm.title))])],1)],1)],1),_c('mdc-drawer',{ref:"drawer",attrs:{"slot":"drawer","type":_vm.drawer,"open":_vm.drawerOpen,"header":"Components"},slot:"drawer"},[_c('mdc-drawer-item',{attrs:{"to":"/","exact":"","text":"Home"}}),_c('mdc-drawer-divider'),_vm._l((_vm.routes),function(n){return _c('mdc-drawer-item',{key:n,attrs:{"to":'/demo/' + _vm.kebab(n),"text":n}})})],2),_c('router-view')],1)},staticRenderFns: [],
-              name: "AppRoot",
+              name: 'AppRoot',
               data() {
                 return {
-                  title: "MDC Vue Demo",
-                  drawer: "persistent",
+                  title: 'MDC Vue Demo',
+                  drawer: 'persistent',
                   drawerOpen: false,
                   routes: [
-                    "App",
-                    "Button",
-                    "Card",
-                    "Checkbox",
-                    "Chips",
-                    "Dialog",
-                    "Drawer",
-                    "Elevation",
-                    "Fab",
-                    "FormField",
-                    "GridList",
-                    "IconToggle",
-                    "LayoutGrid",
-                    "LinearProgress",
-                    "List",
-                    "Menu",
-                    "Radio",
-                    "Ripple",
-                    "Select",
-                    "Slider",
-                    "Snackbar",
-                    "Switch",
-                    "Tabs",
-                    "Textfield",
-                    "Toolbar",
-                    "Typography"
+                    'App',
+                    'Button',
+                    'Card',
+                    'Checkbox',
+                    'Chips',
+                    'Dialog',
+                    'Drawer',
+                    'Elevation',
+                    'Fab',
+                    'FormField',
+                    'GridList',
+                    'IconToggle',
+                    'LayoutGrid',
+                    'LinearProgress',
+                    'List',
+                    'Menu',
+                    'Radio',
+                    'Ripple',
+                    'Select',
+                    'Slider',
+                    'Snackbar',
+                    'Switch',
+                    'Tabs',
+                    'Textfield',
+                    'Toolbar',
+                    'Typography'
                   ]
                 };
               },
@@ -19765,20 +20396,20 @@
               mounted() {
                 const isMobile = () => document.documentElement.clientWidth < 720;
                 if(isMobile()) {
-                  this.drawer = "temporary";
+                  this.drawer = 'temporary';
                 }
 
-                window.addEventListener("resize", () => {
+                window.addEventListener('resize', () => {
                   const mobile = isMobile();
-                  this.drawer = mobile ? "temporary" : "persistent";
+                  this.drawer = mobile ? 'temporary' : 'persistent';
                   this.drawerOpen = !mobile;
                 });
-                this.$state.$on("demoRouted", title => {
+                this.$state.$on('demoRouted', title => {
                   this.title = `MDC ${title}`;
                 });
               },
               beforeDestroy() {
-                this.$state.$off("demoRouted");
+                this.$state.$off('demoRouted');
               },
 
               methods: {
@@ -19797,10 +20428,10 @@
                   // Simple hack for toggling resize on elements when drawer is toggled
                   let event;
                   try {
-                    event = new Event("resize");
+                    event = new Event('resize');
                   } catch(ex) {
-                    event = document.createEvent("UIEvents");
-                    event.initUIEvent("resize", true, false, window, 0);
+                    event = document.createEvent('UIEvents');
+                    event.initUIEvent('resize', true, false, window, 0);
                   }
                   window.dispatchEvent(event);
                 }
@@ -19808,7 +20439,7 @@
             };
 
             var DemoTemplate = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('main',{staticClass:"demo-app"},[(_vm.hasHero)?_c('section',{staticClass:"demo-app__hero",class:_vm.cssClasses},[_vm._t("hero")],2):_vm._e(),_c('article',{staticClass:"demo-app__content"},[_c('section',{staticClass:"demo-app__usage"},[(_vm.getLink)?_c('h2',[_vm._v("Usage "),_c('a',{attrs:{"href":_vm.getLink,"target":"_blank"}},[_vm._v("#material.io")])]):_c('h2',[_vm._v("Usage")]),_c('p',[_vm._v("To use the component type this into your Vue Component")]),_vm._t("usage")],2),_c('section',{staticClass:"demo-app__data"},[(_vm.hasSlots)?[_c('h2',[_vm._v("Slots")]),_c('demo-table',{attrs:{"slots":""}},[_vm._t("slots")],2)]:_vm._e(),_c('h2',[_vm._v("Props")]),_c('demo-table',{attrs:{"props":""}},[_vm._t("props")],2),(_vm.hasEvents)?[_c('h2',[_vm._v("Events")]),_c('demo-table',{attrs:{"events":""}},[_vm._t("events")],2)]:_vm._e()],2)])])},staticRenderFns: [],
-              name: "DemoTemplate",
+              name: 'DemoTemplate',
               props: {
                 link: String,
                 stacked: Boolean
@@ -19842,28 +20473,28 @@
             };
 
             var Button$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('demo-template',{attrs:{"link":"buttons"}},[_c('mdc-button',{attrs:{"slot":"hero"},slot:"hero"},[_vm._v("Flat")]),_c('mdc-button',{attrs:{"slot":"hero","raised":""},slot:"hero"},[_vm._v("Raised")]),_c('mdc-button',{attrs:{"slot":"hero","icon":"favorite"},slot:"hero"},[_vm._v("Icon")]),_c('template',{slot:"usage"},[_c('demo-code',{attrs:{"lang":"markup","code":"\n<mdc-button>...text</mdc-button>"}})],1),_c('template',{slot:"events"},[_c('tr',[_c('td',[_vm._v("click")]),_c('td'),_c('td',[_vm._v("Triggers when button is clicked")])])]),_c('template',{slot:"props"},[_c('tr',[_c('td',[_vm._v("icon")]),_c('td',[_vm._v("String")]),_c('td',[_vm._v("\"\"")]),_c('td',[_vm._v("Add an icon according to the material-icons icon id")])]),_c('tr',[_c('td',[_vm._v("link")]),_c('td',[_vm._v("String")]),_c('td',[_vm._v("\"\"")]),_c('td',[_vm._v("Creates a link button using an anchor tag")])]),_c('tr',[_c('td',[_vm._v("raised")]),_c('td',[_vm._v("Boolean")]),_c('td',[_vm._v("false")]),_c('td',[_vm._v("Setting the button to be elevated upon the surface")])]),_c('tr',[_c('td',[_vm._v("unelevated")]),_c('td',[_vm._v("Boolean")]),_c('td',[_vm._v("false")]),_c('td',[_vm._v("Setting the button to be flush upon the surface")])]),_c('tr',[_c('td',[_vm._v("stroked")]),_c('td',[_vm._v("Boolean")]),_c('td',[_vm._v("false")]),_c('td',[_vm._v("Setting the button to be flush upon the surface and has a visible border")])]),_c('tr',[_c('td',[_vm._v("dense")]),_c('td',[_vm._v("Boolean")]),_c('td',[_vm._v("false")]),_c('td',[_vm._v("Compressing the buttons text to be slightly smaller")])]),_c('tr',[_c('td',[_vm._v("compact")]),_c('td',[_vm._v("Boolean")]),_c('td',[_vm._v("false")]),_c('td',[_vm._v("Reduces the horizontal padding on the button")])])])],2)},staticRenderFns: [],
-              name: "DemoButton",
+              name: 'DemoButton',
               components: { DemoTemplate }
             };
 
             var Card$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('demo-template',{attrs:{"link":"cards"}},[_c('mdc-card',{attrs:{"slot":"hero"},slot:"hero"},[_c('mdc-card-media',{attrs:{"image":"/images/16-9.jpg"}}),_c('mdc-card-actions',[_c('mdc-button',{attrs:{"slot":"button"},slot:"button"},[_vm._v("Click me")]),_c('mdc-button',{attrs:{"slot":"button"},slot:"button"},[_vm._v("Or me")]),_c('mdc-icon-toggle',{attrs:{"slot":"icon","on":{content: 'favorite', label: 'Add to favorites'},"off":{content: 'favorite_border', label: 'Remove from favorites'}},slot:"icon"}),_c('mdc-icon',{attrs:{"slot":"icon","icon":"share","label":"Share","ripple":"","action":""},slot:"icon"}),_c('mdc-icon',{attrs:{"slot":"icon","icon":"more_vert","label":"More Options","ripple":"","action":""},slot:"icon"})],1)],1),_c('template',{slot:"usage"},[_c('demo-code',{attrs:{"lang":"markup","code":"\n<mdc-card>\n  <mdc-card-media image=\"<image source>\"/>\n  <mdc-card-actions>\n    <mdc-button slot=\"button\">Click me</mdc-button>\n    <mdc-button slot=\"button\">Or me</mdc-button>\n\n    <mdc-icon-toggle slot=\"icon\" :on=\"{content: 'favorite', label: 'Add to favorites'}\" :off=\"{content: 'favorite_border', label: 'Remove from favorites'}\"/>\n  </mdc-card-actions>\n</mdc-form-field>"}})],1)],2)},staticRenderFns: [],
-              name: "DemoCard",
-              components: { DemoTemplate, MdcIcon }
+              name: 'DemoCard',
+              components: { DemoTemplate, MdcIcon: MDCIcon }
             };
 
             var Checkbox$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('demo-template',{attrs:{"link":"input-controls/checkboxes"}},[_c('mdc-form-field',{attrs:{"slot":"hero","label":"Checkbox"},slot:"hero"},[_c('mdc-checkbox')],1),_c('mdc-form-field',{attrs:{"slot":"hero","label":"Indeterminate"},slot:"hero"},[_c('mdc-checkbox',{attrs:{"indeterminate":""}})],1),_c('template',{slot:"usage"},[_c('demo-code',{attrs:{"lang":"markup","code":"\n<mdc-checkbox/>"}}),_c('p',[_vm._v("The MDC Checkbox can also be used together with a MDC Form Field to add a label to it.")]),_c('p',[_vm._v("The checkbox can also use a v-model directive to reactivly bind the value.")]),_c('demo-code',{attrs:{"lang":"markup","code":"\n<mdc-form-field label=\"My Checkbox\">\n  <mdc-checkbox v-model=\"checked\"/>\n</mdc-form-field>"}}),_c('p',[_vm._v("You also need to define the v-model value in your data on your parent component")]),_c('demo-code',{attrs:{"lang":"javascript","code":"\nexport default {\n  data() {\n    return { checked: false };\n  };\n}"}})],1),_c('template',{slot:"props"},[_c('tr',[_c('td',[_vm._v("checked")]),_c('td',[_vm._v("Boolean")]),_c('td',[_vm._v("false")]),_c('td',[_vm._v("Used to change the checked state of the checkbox")])]),_c('tr',[_c('td',[_vm._v("disabled")]),_c('td',[_vm._v("Boolean")]),_c('td',[_vm._v("false")]),_c('td',[_vm._v("Disables the checkbox from any input")])]),_c('tr',[_c('td',[_vm._v("indeterminate")]),_c('td',[_vm._v("Boolean")]),_c('td',[_vm._v("false")]),_c('td',[_vm._v("Changes the indetermined state of the checkbox")])])])],2)},staticRenderFns: [],
-              name: "DemoCheckbox",
+              name: 'DemoCheckbox',
               components: { DemoTemplate }
             };
 
             var Chips$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('demo-template',{attrs:{"stacked":"","link":"chips"}},[_c('template',{slot:"hero"},[_c('h3',[_vm._v("Basic")]),_c('mdc-chip-set',[_c('mdc-chip',{attrs:{"text":"Chip one"}}),_c('mdc-chip',{attrs:{"text":"Chip two"}}),_c('mdc-chip',{attrs:{"text":"Chip three","leading-icon":"bookmark"}})],1),_c('h3',[_vm._v("Input")]),_c('mdc-chip-set',{attrs:{"input":""}},_vm._l((_vm.chips),function(chip){return _c('mdc-chip',{key:chip,attrs:{"text":chip}})})),_c('h3',[_vm._v("Choice (selected: "+_vm._s(_vm.selectChoice)+")")]),_c('mdc-chip-set',{attrs:{"choice":""},model:{value:(_vm.selectChoice),callback:function ($$v) {_vm.selectChoice=$$v;},expression:"selectChoice"}},[_c('mdc-chip',{attrs:{"text":"Chip one"}}),_c('mdc-chip',{attrs:{"text":"Chip two","value":"chip 2"}}),_c('mdc-chip',{attrs:{"text":"Chip three","value":"bookmark","leading-icon":"bookmark"}})],1),_c('h3',[_vm._v("Filter (selected: "+_vm._s(_vm.selectFilter)+")")]),_c('mdc-chip-set',{attrs:{"filter":""},model:{value:(_vm.selectFilter),callback:function ($$v) {_vm.selectFilter=$$v;},expression:"selectFilter"}},[_c('mdc-chip',{attrs:{"text":"Chip 1"}}),_c('mdc-chip',{attrs:{"text":"Chip 2","value":"chip 2"}}),_c('mdc-chip',{attrs:{"text":"Chip 3","value":"bookmark","leading-icon":"bookmark"}})],1)],1),_c('template',{slot:"usage"},[_c('demo-code',{attrs:{"lang":"markup","code":"\n<mdc-chip text=\"My Chip\"/>"}}),_c('p',[_vm._v("It is also possible to use a MDCChipSet in order to view multiple chips in order like this.")]),_c('p',[_vm._v("Also when using a MDCChipSet you can use filtered and choice chips which lets you select either 1 or multiple chips for a v-model.")]),_c('demo-code',{attrs:{"lang":"markup","code":"\n<mdc-chip-set>\n  <mdc-chip text=\"Chip 1\"/>\n  <mdc-chip text=\"Chip 2\"/>\n  <mdc-chip text=\"Chip 3\"/>\n</mdc-chip-set>"}})],1),_c('template',{slot:"events"},[_c('tr',[_c('th',{attrs:{"colspan":"3"}},[_vm._v("MDCChip")])]),_c('tr',[_c('td',[_vm._v("click")]),_c('td'),_c('td',[_vm._v("Emits when the chip is clicked.")])]),_c('tr',[_c('td',[_vm._v("icon")]),_c('td'),_c('td',[_vm._v("Emits when the trailing icon of the chip is clicked. ")])]),_c('tr',[_c('th',{attrs:{"colspan":"3"}},[_vm._v("MDCChipSet")])]),_c('tr',[_c('td',[_vm._v("select")]),_c('td',[_vm._v("value")]),_c('td',[_vm._v("Emits when any chip is selected or deselected. "),_c('em',[_vm._v("value")]),_vm._v(" is a String or Array of selected chips value.")])])]),_c('template',{slot:"props"},[_c('tr',[_c('th',{attrs:{"colspan":"4"}},[_vm._v("MDCChip")])]),_c('tr',[_c('td',[_vm._v("text *")]),_c('td',[_vm._v("String")]),_c('td',[_vm._v("\"\"")]),_c('td',[_vm._v("Sets the text content of the chip")])]),_c('tr',[_c('td',[_vm._v("value")]),_c('td',[_vm._v("String")]),_c('td',[_vm._v("\"\"")]),_c('td',[_vm._v("Sets the value used in the v-model of the MDCChipSet. Defaults to text prop value.")])]),_c('tr',[_c('td',[_vm._v("leadingIcon")]),_c('td',[_vm._v("String")]),_c('td',[_vm._v("\"\"")]),_c('td',[_vm._v("Adds a icon from the material icons repo before the other content.")])]),_c('tr',[_c('td',[_vm._v("trailingIcon")]),_c('td',[_vm._v("String")]),_c('td',[_vm._v("\"\"")]),_c('td',[_vm._v("Adds a icon from the material icons repo after the other content.")])]),_c('tr',[_c('th',{attrs:{"colspan":"4"}},[_vm._v("MDCChipSet")])]),_c('tr',[_c('td',[_vm._v("input")]),_c('td',[_vm._v("Boolean")]),_c('td',[_vm._v("false")]),_c('td',[_vm._v("Adds entry and exit animation to chip. It's recommended to use v-for with a key on each MDCChip.")])]),_c('tr',[_c('td',[_vm._v("choice")]),_c('td',[_vm._v("Boolean")]),_c('td',[_vm._v("false")]),_c('td',[_vm._v("Adds single select. Also binds to model as the string value the selected chip possesses.")])]),_c('tr',[_c('td',[_vm._v("filter")]),_c('td',[_vm._v("Boolean")]),_c('td',[_vm._v("false")]),_c('td',[_vm._v("Adds multiple select. Also binds to v-model as the string values of the selected chips.")])]),_c('tr',[_c('td',[_vm._v("selected")]),_c('td',[_vm._v("Array, String")]),_c('td',[_vm._v("undefined")]),_c('td',[_vm._v("Adds a model for the select chips. Needs filter or choice to be set to work.")])])])],2)},staticRenderFns: [],
-              name: "DemoChips",
+              name: 'DemoChips',
               components: { DemoTemplate },
               data() {
                 return {
-                  chips: [ "Chip one", "Chip two", "Chip three" ],
+                  chips: [ 'Chip one', 'Chip two', 'Chip three' ],
                   selectFilter: [],
-                  selectChoice: "",
+                  selectChoice: '',
                   inputInterval: 0
                 };
               },
@@ -19874,7 +20505,7 @@
                   if(this.chips.length === 4) {
                     this.chips.splice(3, 1); // remove last chip
                   } else {
-                    this.chips.push("Chip four");
+                    this.chips.push('Chip four');
                   }
                   this.$nextTick(() => {
                     debugger;
@@ -19887,106 +20518,106 @@
             };
 
             var Dialog$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('demo-template',{attrs:{"link":"dialogs"}},[_c('mdc-button',{attrs:{"slot":"hero","raised":""},on:{"click":function($event){_vm.$refs.dialog.open();}},slot:"hero"},[_vm._v("Open dialog")]),_c('mdc-button',{attrs:{"slot":"hero","raised":""},on:{"click":function($event){_vm.$refs.scrollDialog.open();}},slot:"hero"},[_vm._v("Open scrolling dialog")]),_c('mdc-button',{attrs:{"slot":"hero","raised":""},on:{"click":_vm.openValidDialog},slot:"hero"},[_vm._v("Open validation dialog")]),_c('mdc-dialog',{ref:"dialog",attrs:{"slot":"hero","header":"This is a dialog"},slot:"hero"},[_vm._v("This is a demo dialog which you can accept or decline")]),_c('mdc-dialog',{ref:"scrollDialog",attrs:{"slot":"hero","scroll":"","header":"This is a scrolling dialog"},slot:"hero"},[_c('mdc-list',[_c('mdc-list-item',{attrs:{"text":"Green Eggs"}}),_c('mdc-list-item',{attrs:{"text":"Ham"}}),_c('mdc-list-item',{attrs:{"text":"Biscuits"}}),_c('mdc-list-item',{attrs:{"text":"Milk"}}),_c('mdc-list-item',{attrs:{"text":"Jam"}}),_c('mdc-list-item',{attrs:{"text":"Peanut Butter"}}),_c('mdc-list-item',{attrs:{"text":"Juice"}})],1)],1),_c('mdc-dialog',{ref:"validDialog",attrs:{"slot":"hero","header":"Select a fruit (not Kiwi)","valid":_vm.dialogValid},slot:"hero"},[_c('mdc-form-field',{attrs:{"label":"Banana"}},[_c('mdc-radio',{attrs:{"value":"Banana"},model:{value:(_vm.selectedItem),callback:function ($$v) {_vm.selectedItem=$$v;},expression:"selectedItem"}})],1),_c('mdc-form-field',{attrs:{"label":"Apple"}},[_c('mdc-radio',{attrs:{"value":"Apple"},model:{value:(_vm.selectedItem),callback:function ($$v) {_vm.selectedItem=$$v;},expression:"selectedItem"}})],1),_c('mdc-form-field',{attrs:{"label":"Peach"}},[_c('mdc-radio',{attrs:{"value":"Peach"},model:{value:(_vm.selectedItem),callback:function ($$v) {_vm.selectedItem=$$v;},expression:"selectedItem"}})],1),_c('mdc-form-field',{attrs:{"label":"Kiwi (yuck)"}},[_c('mdc-radio',{attrs:{"value":"Kiwi"},model:{value:(_vm.selectedItem),callback:function ($$v) {_vm.selectedItem=$$v;},expression:"selectedItem"}})],1)],1),_c('template',{slot:"usage"},[_c('demo-code',{attrs:{"lang":"markup","code":"\n<mdc-dialog ref=\"dialog\"/>\n"}}),_c('p',[_vm._v("You can then open the dialog using any interaction through javascript. Like in this example a mdc-button")]),_c('demo-code',{attrs:{"lang":"markup","code":"\n<mdc-dialog ref=\"dialog\"/>\n<mdc-button @click=\"$refs.dialog.open()\"/>\n"}})],1),_c('template',{slot:"props"},[_c('tr',[_c('td',[_vm._v("header")]),_c('td',[_vm._v("String")]),_c('td',[_vm._v("\"\"")]),_c('td',[_vm._v("Sets the text of the dialog header")])]),_c('tr',[_c('td',[_vm._v("scroll")]),_c('td',[_vm._v("Boolean")]),_c('td',[_vm._v("false")]),_c('td',[_vm._v("Sets the dialog to a set height and makes it scrollable")])]),_c('tr',[_c('td',[_vm._v("valid")]),_c('td',[_vm._v("Boolean")]),_c('td',[_vm._v("true")]),_c('td',[_vm._v("When false the accept button is disabled. Preventing accept button from being pressed.")])]),_c('tr',[_c('td',[_vm._v("acceptText")]),_c('td',[_vm._v("String")]),_c('td',[_vm._v("\"Ok\"")]),_c('td',[_vm._v("Sets the text of the accept button")])]),_c('tr',[_c('td',[_vm._v("cancelText")]),_c('td',[_vm._v("String")]),_c('td',[_vm._v("\"Cancel\"")]),_c('td',[_vm._v("Sets the text of the cancel button")])])]),_c('template',{slot:"events"},[_c('tr',[_c('td',[_vm._v("accept")]),_c('td'),_c('td',[_vm._v("Emitted when dialog accept button was pressed")])]),_c('tr',[_c('td',[_vm._v("cancel")]),_c('td'),_c('td',[_vm._v("Emitted when dialog canceled byt pressing the button, the backdrop or keys such as esc etc. ")])]),_c('tr',[_c('td',[_vm._v("action")]),_c('td',[_vm._v("action")]),_c('td',[_vm._v("Emitted before either \"cancel\" or \"accept\" is emitted. The parameter \"action\" is either \"cancel\" or \"accept\".")])])])],2)},staticRenderFns: [],
-              name: "DemoDialog",
+              name: 'DemoDialog',
               components: { DemoTemplate },
               computed: {
                 dialogValid() {
-                  return !!this.selectedItem && this.selectedItem !== "Kiwi";
+                  return !!this.selectedItem && this.selectedItem !== 'Kiwi';
                 }
               },
               data() {
-                return { selectedItem: "" };
+                return { selectedItem: '' };
               },
               methods: {
                 openValidDialog() {
-                  this.selectedItem = "";
+                  this.selectedItem = '';
                   this.$refs.validDialog.open();
                 }
               }
             };
 
             var Drawer$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('demo-template',{attrs:{"link":"drawers"}},[_c('mdc',{attrs:{"slot":"hero"},slot:"hero"}),_c('template',{slot:"usage"},[_c('demo-code',{attrs:{"lang":"markup","code":"\n<mdc/>\n"}})],1),_c('template',{slot:"props"},[_c('tr',[_c('td',[_vm._v("name")]),_c('td',[_vm._v("type")]),_c('td',[_vm._v("default")]),_c('td',[_vm._v("desc")])])])],2)},staticRenderFns: [],
-              name: "DemoDrawer",
+              name: 'DemoDrawer',
               components: { DemoTemplate }
             };
 
             var Fab$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('demo-template',{attrs:{"link":"buttons/floating-action-buttons"}},[_c('mdc',{attrs:{"slot":"hero"},slot:"hero"}),_c('template',{slot:"usage"},[_c('demo-code',{attrs:{"lang":"markup","code":"\n<mdc/>\n"}})],1),_c('template',{slot:"props"},[_c('tr',[_c('td',[_vm._v("name")]),_c('td',[_vm._v("type")]),_c('td',[_vm._v("default")]),_c('td',[_vm._v("desc")])])])],2)},staticRenderFns: [],
-              name: "DemoFab",
+              name: 'DemoFab',
               components: { DemoTemplate }
             };
 
             var FormField$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('demo-template',{attrs:{"link":"input-controls/form-fields"}},[_c('mdc',{attrs:{"slot":"hero"},slot:"hero"}),_c('template',{slot:"usage"},[_c('demo-code',{attrs:{"lang":"markup","code":"\n<mdc/>\n"}})],1),_c('template',{slot:"props"},[_c('tr',[_c('td',[_vm._v("name")]),_c('td',[_vm._v("type")]),_c('td',[_vm._v("default")]),_c('td',[_vm._v("desc")])])])],2)},staticRenderFns: [],
-              name: "DemoFormField",
+              name: 'DemoFormField',
               components: { DemoTemplate }
             };
 
             var GridList$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('demo-template',{attrs:{"link":"grid-lists"}},[_c('mdc',{attrs:{"slot":"hero"},slot:"hero"}),_c('template',{slot:"usage"},[_c('demo-code',{attrs:{"lang":"markup","code":"\n<mdc/>\n"}})],1),_c('template',{slot:"props"},[_c('tr',[_c('td',[_vm._v("name")]),_c('td',[_vm._v("type")]),_c('td',[_vm._v("default")]),_c('td',[_vm._v("desc")])])])],2)},staticRenderFns: [],
-              name: "DemoGridList",
+              name: 'DemoGridList',
               components: { DemoTemplate }
             };
 
             var IconToggle$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('demo-template',{attrs:{"link":"buttons/icon-toggle-buttons"}},[_c('mdc',{attrs:{"slot":"hero"},slot:"hero"}),_c('template',{slot:"usage"},[_c('demo-code',{attrs:{"lang":"markup","code":"\n<mdc/>\n"}})],1),_c('template',{slot:"props"},[_c('tr',[_c('td',[_vm._v("name")]),_c('td',[_vm._v("type")]),_c('td',[_vm._v("default")]),_c('td',[_vm._v("desc")])])])],2)},staticRenderFns: [],
-              name: "DemoIconToggle",
+              name: 'DemoIconToggle',
               components: { DemoTemplate }
             };
 
             var LayoutGrid$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('demo-template',{attrs:{"link":"layout-grid"}},[_c('mdc',{attrs:{"slot":"hero"},slot:"hero"}),_c('template',{slot:"usage"},[_c('demo-code',{attrs:{"lang":"markup","code":"\n<mdc/>\n"}})],1),_c('template',{slot:"props"},[_c('tr',[_c('td',[_vm._v("name")]),_c('td',[_vm._v("type")]),_c('td',[_vm._v("default")]),_c('td',[_vm._v("desc")])])])],2)},staticRenderFns: [],
-              name: "DemoLayoutGrid",
+              name: 'DemoLayoutGrid',
               components: { DemoTemplate }
             };
 
             var LinearProgress$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('demo-template',{attrs:{"link":"linear-progress"}},[_c('mdc',{attrs:{"slot":"hero"},slot:"hero"}),_c('template',{slot:"usage"},[_c('demo-code',{attrs:{"lang":"markup","code":"\n<mdc/>\n"}})],1),_c('template',{slot:"props"},[_c('tr',[_c('td',[_vm._v("name")]),_c('td',[_vm._v("type")]),_c('td',[_vm._v("default")]),_c('td',[_vm._v("desc")])])])],2)},staticRenderFns: [],
-              name: "DemoLinearProgress",
+              name: 'DemoLinearProgress',
               components: { DemoTemplate }
             };
 
             var List$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('demo-template',{attrs:{"link":"lists"}},[_c('mdc',{attrs:{"slot":"hero"},slot:"hero"}),_c('template',{slot:"usage"},[_c('demo-code',{attrs:{"lang":"markup","code":"\n<mdc/>\n"}})],1),_c('template',{slot:"props"},[_c('tr',[_c('td',[_vm._v("name")]),_c('td',[_vm._v("type")]),_c('td',[_vm._v("default")]),_c('td',[_vm._v("desc")])])])],2)},staticRenderFns: [],
-              name: "DemoList",
+              name: 'DemoList',
               components: { DemoTemplate }
             };
 
             var Menu$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('demo-template',{attrs:{"link":"menus"}},[_c('mdc',{attrs:{"slot":"hero"},slot:"hero"}),_c('template',{slot:"usage"},[_c('demo-code',{attrs:{"lang":"markup","code":"\n<mdc/>\n"}})],1),_c('template',{slot:"props"},[_c('tr',[_c('td',[_vm._v("name")]),_c('td',[_vm._v("type")]),_c('td',[_vm._v("default")]),_c('td',[_vm._v("desc")])])])],2)},staticRenderFns: [],
-              name: "DemoMenu",
+              name: 'DemoMenu',
               components: { DemoTemplate }
             };
 
             var Radio$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('demo-template',{attrs:{"link":"input-controls/radio-buttons"}},[_c('mdc',{attrs:{"slot":"hero"},slot:"hero"}),_c('template',{slot:"usage"},[_c('demo-code',{attrs:{"lang":"markup","code":"\n<mdc/>\n"}})],1),_c('template',{slot:"props"},[_c('tr',[_c('td',[_vm._v("name")]),_c('td',[_vm._v("type")]),_c('td',[_vm._v("default")]),_c('td',[_vm._v("desc")])])])],2)},staticRenderFns: [],
-              name: "DemoRadio",
+              name: 'DemoRadio',
               components: { DemoTemplate }
             };
 
             var Select = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('demo-template',{attrs:{"link":"input-controls/select-menus"}},[_c('mdc',{attrs:{"slot":"hero"},slot:"hero"}),_c('template',{slot:"usage"},[_c('demo-code',{attrs:{"lang":"markup","code":"\n<mdc/>\n"}})],1),_c('template',{slot:"props"},[_c('tr',[_c('td',[_vm._v("name")]),_c('td',[_vm._v("type")]),_c('td',[_vm._v("default")]),_c('td',[_vm._v("desc")])])])],2)},staticRenderFns: [],
-              name: "DemoSelect",
+              name: 'DemoSelect',
               components: { DemoTemplate }
             };
 
             var Slider = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('demo-template',{attrs:{"link":"input-controls/sliders"}},[_c('mdc',{attrs:{"slot":"hero"},slot:"hero"}),_c('template',{slot:"usage"},[_c('demo-code',{attrs:{"lang":"markup","code":"\n<mdc/>\n"}})],1),_c('template',{slot:"props"},[_c('tr',[_c('td',[_vm._v("name")]),_c('td',[_vm._v("type")]),_c('td',[_vm._v("default")]),_c('td',[_vm._v("desc")])])])],2)},staticRenderFns: [],
-              name: "DemoSlider",
+              name: 'DemoSlider',
               components: { DemoTemplate }
             };
 
             var Snackbar$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('demo-template',{attrs:{"link":"snackbars"}},[_c('mdc',{attrs:{"slot":"hero"},slot:"hero"}),_c('template',{slot:"usage"},[_c('demo-code',{attrs:{"lang":"markup","code":"\n<mdc/>\n"}})],1),_c('template',{slot:"props"},[_c('tr',[_c('td',[_vm._v("name")]),_c('td',[_vm._v("type")]),_c('td',[_vm._v("default")]),_c('td',[_vm._v("desc")])])])],2)},staticRenderFns: [],
-              name: "DemoSnackbar",
+              name: 'DemoSnackbar',
               components: { DemoTemplate }
             };
 
             var Switch$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('demo-template',{attrs:{"link":"input-controls/switches"}},[_c('mdc',{attrs:{"slot":"hero"},slot:"hero"}),_c('template',{slot:"usage"},[_c('demo-code',{attrs:{"lang":"markup","code":"\n<mdc/>\n"}})],1),_c('template',{slot:"props"},[_c('tr',[_c('td',[_vm._v("name")]),_c('td',[_vm._v("type")]),_c('td',[_vm._v("default")]),_c('td',[_vm._v("desc")])])])],2)},staticRenderFns: [],
-              name: "DemoSwitch",
+              name: 'DemoSwitch',
               components: { DemoTemplate }
             };
 
             var Tabs = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('demo-template',{attrs:{"link":"tabs"}},[_c('mdc',{attrs:{"slot":"hero"},slot:"hero"}),_c('template',{slot:"usage"},[_c('demo-code',{attrs:{"lang":"markup","code":"\n<mdc/>\n"}})],1),_c('template',{slot:"props"},[_c('tr',[_c('td',[_vm._v("name")]),_c('td',[_vm._v("type")]),_c('td',[_vm._v("default")]),_c('td',[_vm._v("desc")])])])],2)},staticRenderFns: [],
-              name: "DemoTabs",
+              name: 'DemoTabs',
               components: { DemoTemplate }
             };
 
-            var Textfield$2 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('demo-template',{attrs:{"link":"input-controls/text-field"}},[_c('mdc',{attrs:{"slot":"hero"},slot:"hero"}),_c('template',{slot:"usage"},[_c('demo-code',{attrs:{"lang":"markup","code":"\n<mdc/>\n"}})],1),_c('template',{slot:"props"},[_c('tr',[_c('td',[_vm._v("name")]),_c('td',[_vm._v("type")]),_c('td',[_vm._v("default")]),_c('td',[_vm._v("desc")])])])],2)},staticRenderFns: [],
-              name: "DemoTextfield",
+            var Textfield$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('demo-template',{attrs:{"link":"input-controls/text-field","stacked":""}},[_c('template',{slot:"hero"},[_c('mdc-textfield',{attrs:{"label":"Basic Textfield"}}),_c('mdc-textfield',{attrs:{"box":"","label":"Boxed Textfield"}}),_c('mdc-textfield',{attrs:{"outlined":"","label":"Outlined Textfield"}})],1),_c('template',{slot:"usage"},[_c('demo-code',{attrs:{"lang":"markup","code":"\n<mdc-textfield v-model=\"model\" label=\"My Textfield\"/>\n"}})],1),_c('template',{slot:"props"},[_c('tr',[_c('td',[_vm._v("name")]),_c('td',[_vm._v("type")]),_c('td',[_vm._v("default")]),_c('td',[_vm._v("desc")])])])],2)},staticRenderFns: [],
+              name: 'DemoTextfield',
               components: { DemoTemplate }
             };
 
             var Toolbar$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('demo-template',{attrs:{"link":"toolbar"}},[_c('mdc',{attrs:{"slot":"hero"},slot:"hero"}),_c('template',{slot:"usage"},[_c('demo-code',{attrs:{"lang":"markup","code":"\n<mdc/>\n"}})],1),_c('template',{slot:"props"},[_c('tr',[_c('td',[_vm._v("name")]),_c('td',[_vm._v("type")]),_c('td',[_vm._v("default")]),_c('td',[_vm._v("desc")])])])],2)},staticRenderFns: [],
-              name: "DemoToolbar",
+              name: 'DemoToolbar',
               components: { DemoTemplate }
             };
 
@@ -20013,7 +20644,7 @@
                 Vue.component(Snackbar$1.name, Snackbar$1);
                 Vue.component(Switch$1.name, Switch$1);
                 Vue.component(Tabs.name, Tabs);
-                Vue.component(Textfield$2.name, Textfield$2);
+                Vue.component(Textfield$1.name, Textfield$1);
                 Vue.component(Toolbar$1.name, Toolbar$1);
               }
             };
@@ -20896,7 +21527,7 @@
             });
 
             var DemoCode = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('pre',[_c('code',{ref:"code",class:_vm.cssClasses},[_vm._v(_vm._s(_vm.formatCode))])])},staticRenderFns: [],
-              name: "DemoCode",
+              name: 'DemoCode',
               props: {
                 lang: {
                   type: String,
@@ -20920,12 +21551,12 @@
               }
             };
 
-            const SLOT_HEADERS = [ "Slot", "Description" ];
-            const PROP_HEADERS = [ "Prop", "Type", "Default", "Description" ];
-            const EVENT_HEADERS = [ "Event", "Args", "Description" ];
+            const SLOT_HEADERS = [ 'Slot', 'Description' ];
+            const PROP_HEADERS = [ 'Prop', 'Type', 'Default', 'Description' ];
+            const EVENT_HEADERS = [ 'Event', 'Args', 'Description' ];
 
             var DemoTable = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('table',[_c('thead',[_c('tr',_vm._l((_vm.headers),function(header){return _c('th',[_vm._v(_vm._s(header))])}))]),_c('tbody',[_vm._t("default")],2)])},staticRenderFns: [],
-              name: "DemoTable",
+              name: 'DemoTable',
               props: {
                 props: Boolean,
                 slots: Boolean,
@@ -20960,39 +21591,39 @@
             Vue.use(Components);
 
             const Router = new VueRouter({
-              mode: "history",
+              mode: 'history',
               routes
             });
 
             // TODO: Move plugins to seperate file?
             // Define event bus as $state. No need for vuex
             const AppState = new Vue();
-            Object.defineProperty(Vue.prototype, "$state", {
+            Object.defineProperty(Vue.prototype, '$state', {
               value: AppState,
               wiritable: false
             });
 
             // Title plugin
             function titlePlugin(to, from) {
-              const prefix = "MDC Vue | ";
+              const prefix = 'MDC Vue | ';
               const match = to.matched.find(record => record.meta.title);
               let title = match && match.meta && match.meta.title;
               
               if(title) {
-                title = typeof title === "function" ? title(to, from) : title;
-                AppState.$emit("demoRouted", title);
+                title = typeof title === 'function' ? title(to, from) : title;
+                AppState.$emit('demoRouted', title);
 
                 title = prefix + title;
               } else {
-                title = "Vue MDC Web";
-                AppState.$emit("demoRouted", title);
+                title = 'Vue MDC Web';
+                AppState.$emit('demoRouted', title);
               }
               document.title = title;
             }
             Router.afterEach(titlePlugin);
 
             const vm = new Vue({
-              el: "#app",
+              el: '#app',
               router: Router,
               render: h => h(Layout)
             });

@@ -6,7 +6,7 @@
 </template>
 
 <script>
-import Foundation from '@material/snackbar/foundation';
+import { MDCSnackbarFoundation } from '@material/snackbar';
 import { getCorrectEventName } from '@material/animation';
 
 const transitionend = getCorrectEventName(window, 'transitionend');
@@ -31,7 +31,7 @@ export default {
     const { $el } = this;
     const { actionButton } = this.$refs;
 
-    this.foundation = new Foundation({
+    this.foundation = new MDCSnackbarFoundation({
       addClass: className => $el.classList.add(className),
       removeClass: className => $el.classList.remove(className),
       setAriaHidden: () => {

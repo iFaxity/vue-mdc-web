@@ -1,13 +1,13 @@
 <template lang="pug">
 .mdc-radio(:class="cssClasses")
-  input.mdc-radio__native-control(ref="input", v-model="model", v-bind="$attrs", type="radio", :value="value")
+  input.mdc-radio__native-control(ref="input", v-model="model", v-bind="$attrs", type="radio", :value="value", :disabled="disabled")
   .mdc-radio__background
     .mdc-radio__outer-circle
     .mdc-radio__inner-circle
 </template>
 
 <script>
-import Foundation from '@material/radio/foundation';
+import { MDCRadioFoundation } from '@material/radio';
 import { Ripple } from '../ripple';
 
 const rippleAdapter = {
@@ -49,26 +49,15 @@ export default {
       }
     }
   },
-  watch: {
-    disabled(value) {
-      this.foundation.setDisabled(value);
-    },
-    value(value) {
-      this.foundation.setValue(value);
-    }
-  },
   mounted() {
     const { $el } = this;
 
-    this.foundation = new Foundation({
+    this.foundation = new MDCRadioFoundation({
       addClass: className => $el.classList.add(className),
       removeClass: className => $el.classList.remove(className),
       getNativeControl: () => this.$refs.input
     });
     this.foundation.init();
-
-    this.foundation.setDisabled(this.disabled);
-    this.foundation.setValue(this.value);
   },
   beforeDestroy() {
     this.foundation.destroy();

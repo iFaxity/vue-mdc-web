@@ -9,7 +9,7 @@
 </template>
 
 <script>
-import Foundation from '@material/linear-progress/foundation';
+import { MDCLinearProgressFoundation } from '@material/linear-progress';
 
 function assertNumber(value, fn) {
   if(typeof value === 'string') {
@@ -59,7 +59,7 @@ export default {
     const { $el } = this;
     const { primary, buffer } = this.$refs;
 
-    this.foundation = new Foundation({
+    this.foundation = new MDCLinearProgressFoundation({
       addClass: className => $el.classList.add(className),
       removeClass: className => $el.classList.remove(className),
       hasClass: className => $el.classList.contains(className),

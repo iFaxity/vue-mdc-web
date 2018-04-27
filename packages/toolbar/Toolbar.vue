@@ -4,7 +4,7 @@ header.mdc-toolbar(:class="cssClasses")
 </template>
 
 <script>
-import Foundation from '@material/toolbar/foundation';
+import { MDCToolbarFoundation } from '@material/toolbar';
 
 export default {
   name: 'MDCToolbar',
@@ -45,7 +45,7 @@ export default {
     const findTitle = () => $el.querySelector('.mdc-toolbar__title');
     const findRow = () => $el.querySelector('.mdc-toolbar__row:first-child');
 
-    this.foundation = new Foundation({
+    this.foundation = new MDCToolbarFoundation({
       hasClass: className => $el.classList.contains(className),
       addClass: className => $el.classList.add(className),
       removeClass: className => $el.classList.remove(className),

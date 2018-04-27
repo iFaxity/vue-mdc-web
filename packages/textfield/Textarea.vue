@@ -1,7 +1,8 @@
 <template lang="pug">
 .mdc-text-field.mdc-text-field--textarea(:class="cssClasses")
   textarea.mdc-text-field__input(ref="input", v-model="model", v-bind="inputAttrs")
-  label.mdc-floating-label(v-if="!fullwidth", ref="label", :for="uuid") {{ label }}
+  mdc-floating-label(v-if="!fullwidth", ref="label", :label="label", :label-for="uuid")
+  //label.mdc-floating-label(v-if="!fullwidth", ref="label", :for="uuid") {{ label }}
 </template>
 
 <script>

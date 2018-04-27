@@ -10,8 +10,8 @@ header.mdc-top-app-bar(:class="cssClasses")
 </template>
 
 <script>
-import Section from './TopAppBarSection.vue';
 import { MDCTopAppBarFoundation, MDCFixedTopAppBarFoundation, MDCShortTopAppBarFoundation } from '@material/top-app-bar';
+import Section from './TopAppBarSection.vue';
 
 export default {
   name: 'MDCTopAppBar',

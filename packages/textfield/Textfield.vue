@@ -3,6 +3,21 @@
   // Leading Icon
   mdc-icon(v-if="leadingIcon", ref="icon", name="text-field", :icon="leadingIcon")
   input.mdc-text-field__input(ref="input", v-model="model", v-bind="inputAttrs")
+  mdc-floating-label(v-if="!fullwidth", ref="floatingLabel", :label="label", :label-for="uuid")
+
+  // Trailing Icon
+  mdc-icon(v-if="!leadingIcon && trailingIcon", ref="icon", name="text-field", :icon="trailingIcon")
+  mdc-notched-outline(v-if="!outlined", ref="notchedOutline")
+  mdc-line-ripple(v-else, ref="lineRipple")
+</template>
+
+<script>
+/*
+<template lang="pug">
+.mdc-text-field(:class="cssClasses")
+  // Leading Icon
+  mdc-icon(v-if="leadingIcon", ref="icon", name="text-field", :icon="leadingIcon")
+  input.mdc-text-field__input(ref="input", v-model="model", v-bind="inputAttrs")
   label.mdc-floating-label(v-if="!fullwidth", ref="label", :for="uuid") {{ label }}
   // Trailing Icon
   mdc-icon(v-if="!leadingIcon && trailingIcon", ref="icon", name="text-field", :icon="trailingIcon")
@@ -14,8 +29,8 @@
         path.mdc-text-field__outline-path(ref="outlinePath")
     .mdc-text-field__idle-outline(ref="idleOutline")
 </template>
+*/
 
-<script>
 import TextfieldMixin from './mixin';
 import MDCIcon from '../icon';
 

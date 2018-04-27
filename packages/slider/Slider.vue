@@ -13,7 +13,7 @@
 </template>
 
 <script>
-import Foundation from '@material/slider/foundation';
+import { MDCSliderFoundation } from '@material/slider';
 
 const LAST_MARKER_SELECTOR = '.mdc-slider__track-marker:last-child';
 function assertValue(value, fn) {
@@ -90,7 +90,7 @@ export default {
     const { track, thumbContainer } = this.$refs;
     const styles = getComputedStyle($el);
 
-    this.foundation = new Foundation({
+    this.foundation = new MDCSliderFoundation({
       hasClass: className => $el.classList.contains(className),
       addClass: className => $el.classList.add(className),
       removeClass: className => $el.classList.remove(className),
