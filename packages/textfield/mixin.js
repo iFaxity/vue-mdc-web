@@ -56,9 +56,6 @@ export default {
 
     // Validation
     pattern: String,
-    min: [String, Number],
-    max: [String, Number],
-    step: [String, Number],
     minlength: [String, Number],
     maxlength: [String, Number],
   },

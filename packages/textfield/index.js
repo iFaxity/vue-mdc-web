@@ -7,7 +7,7 @@ import '@material/textfield/mdc-text-field.scss';
 const MDCTextfieldProxy = {
   functional: true,
   props: {
-    textarea: Boolean
+    multiline: Boolean
   },
   render(h, ctx) {
     const tag = ctx.props.textarea ? MDCTextarea : MDCTextfield;

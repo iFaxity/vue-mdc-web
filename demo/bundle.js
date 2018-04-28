@@ -18922,14 +18922,14 @@
              * limitations under the License.
              */
 
-            var MDCFloatingLabel$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('label',{staticClass:"mdc-floating-label",attrs:{"for":_vm.labelFor}},[_vm._v(_vm._s(_vm.label))])},staticRenderFns: [],
+            var MDCFloatingLabel$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('label',{staticClass:"mdc-floating-label",attrs:{"for":_vm.id}},[_vm._v(_vm._s(_vm.label))])},staticRenderFns: [],
               name: "MDCFloatingLabel",
               props: {
                 label: {
                   type: String,
                   required: true
                 },
-                labelFor: String
+                id: String
               },
 
               mounted() {
@@ -18942,7 +18942,6 @@
                   registerInteractionHandler: (evtType, handler) => $el.addEventListener(evtType, handler),
                   deregisterInteractionHandler: (evtType, handler) => $el.removeEventListener(evtType, handler)
                 });
-
                 this.foundation.init();
               },
               beforeDestroy() {
@@ -19076,9 +19075,6 @@
 
                 // Validation
                 pattern: String,
-                min: [String, Number],
-                max: [String, Number],
-                step: [String, Number],
                 minlength: [String, Number],
                 maxlength: [String, Number],
               },
@@ -19186,7 +19182,9 @@
               }
             };
 
-            var MDCTextfield = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-text-field",class:_vm.cssClasses},[(_vm.leadingIcon)?_c('mdc-icon',{ref:"icon",attrs:{"name":"text-field","icon":_vm.leadingIcon}}):_vm._e(),(((_vm.inputAttrs).type)==='checkbox')?_c('input',_vm._b({directives:[{name:"model",rawName:"v-model",value:(_vm.model),expression:"model"}],ref:"input",staticClass:"mdc-text-field__input",attrs:{"type":"checkbox"},domProps:{"checked":Array.isArray(_vm.model)?_vm._i(_vm.model,null)>-1:(_vm.model)},on:{"change":function($event){var $$a=_vm.model,$$el=$event.target,$$c=$$el.checked?(true):(false);if(Array.isArray($$a)){var $$v=null,$$i=_vm._i($$a,$$v);if($$el.checked){$$i<0&&(_vm.model=$$a.concat([$$v]));}else{$$i>-1&&(_vm.model=$$a.slice(0,$$i).concat($$a.slice($$i+1)));}}else{_vm.model=$$c;}}}},'input',_vm.inputAttrs,false)):(((_vm.inputAttrs).type)==='radio')?_c('input',_vm._b({directives:[{name:"model",rawName:"v-model",value:(_vm.model),expression:"model"}],ref:"input",staticClass:"mdc-text-field__input",attrs:{"type":"radio"},domProps:{"checked":_vm._q(_vm.model,null)},on:{"change":function($event){_vm.model=null;}}},'input',_vm.inputAttrs,false)):_c('input',_vm._b({directives:[{name:"model",rawName:"v-model",value:(_vm.model),expression:"model"}],ref:"input",staticClass:"mdc-text-field__input",attrs:{"type":(_vm.inputAttrs).type},domProps:{"value":(_vm.model)},on:{"input":function($event){if($event.target.composing){ return; }_vm.model=$event.target.value;}}},'input',_vm.inputAttrs,false)),(!_vm.fullwidth)?_c('mdc-floating-label',{ref:"floatingLabel",attrs:{"label":_vm.label,"label-for":_vm.uuid}}):_vm._e(),(!_vm.leadingIcon && _vm.trailingIcon)?_c('mdc-icon',{ref:"icon",attrs:{"name":"text-field","icon":_vm.trailingIcon}}):_vm._e(),(_vm.outlined)?[_c('mdc-notched-outline',{ref:"notchedOutline"}),_c('div',{staticClass:"mdc-notched-outline__idle"})]:_c('mdc-line-ripple',{ref:"lineRipple"})],2)},staticRenderFns: [],
+            const INPUT_TYPES = [ '', 'email', 'number', 'date', 'month', 'tel', 'text', 'time', 'url', 'week', 'search' ];
+
+            var MDCTextfield = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-text-field",class:_vm.cssClasses},[(_vm.leadingIcon)?_c('mdc-icon',{ref:"icon",attrs:{"name":"text-field","icon":_vm.leadingIcon}}):_vm._e(),(((_vm.inputAttrs).type)==='checkbox')?_c('input',_vm._b({directives:[{name:"model",rawName:"v-model",value:(_vm.model),expression:"model"}],ref:"input",staticClass:"mdc-text-field__input",attrs:{"type":"checkbox"},domProps:{"checked":Array.isArray(_vm.model)?_vm._i(_vm.model,null)>-1:(_vm.model)},on:{"change":function($event){var $$a=_vm.model,$$el=$event.target,$$c=$$el.checked?(true):(false);if(Array.isArray($$a)){var $$v=null,$$i=_vm._i($$a,$$v);if($$el.checked){$$i<0&&(_vm.model=$$a.concat([$$v]));}else{$$i>-1&&(_vm.model=$$a.slice(0,$$i).concat($$a.slice($$i+1)));}}else{_vm.model=$$c;}}}},'input',_vm.inputAttrs,false)):(((_vm.inputAttrs).type)==='radio')?_c('input',_vm._b({directives:[{name:"model",rawName:"v-model",value:(_vm.model),expression:"model"}],ref:"input",staticClass:"mdc-text-field__input",attrs:{"type":"radio"},domProps:{"checked":_vm._q(_vm.model,null)},on:{"change":function($event){_vm.model=null;}}},'input',_vm.inputAttrs,false)):_c('input',_vm._b({directives:[{name:"model",rawName:"v-model",value:(_vm.model),expression:"model"}],ref:"input",staticClass:"mdc-text-field__input",attrs:{"type":(_vm.inputAttrs).type},domProps:{"value":(_vm.model)},on:{"input":function($event){if($event.target.composing){ return; }_vm.model=$event.target.value;}}},'input',_vm.inputAttrs,false)),(!_vm.fullwidth)?_c('mdc-floating-label',{ref:"floatingLabel",attrs:{"label":_vm.label,"id":_vm.uuid}}):_vm._e(),(!_vm.leadingIcon && _vm.trailingIcon)?_c('mdc-icon',{ref:"icon",attrs:{"name":"text-field","icon":_vm.trailingIcon}}):_vm._e(),(_vm.isOutlined)?[_c('mdc-notched-outline',{ref:"notchedOutline"}),_c('div',{staticClass:"mdc-notched-outline__idle"})]:_c('mdc-line-ripple',{ref:"lineRipple"})],2)},staticRenderFns: [],
               name: 'MDCTextfield',
               mixins: [ TextfieldMixin ],
               components: { MdcIcon: MDCIcon },
@@ -19195,22 +19193,36 @@
                 outlined: Boolean,
                 trailingIcon: String,
                 leadingIcon: String,
+
+                type: {
+                  type: String,
+                  validator: value => INPUT_TYPES.includes(value)
+                },
+                min: [String, Number],
+                max: [String, Number],
+                step: [String, Number],
               },
               computed: {
                 cssClasses() {
                   return {
-                    'mdc-text-field--box': this.boxed,
-                    'mdc-text-field--outlined': this.outlined,
+                    'mdc-text-field--box': this.isBoxed,
+                    'mdc-text-field--outlined': this.isOutlined,
                     'mdc-text-field--fullwidth': this.fullwidth,
                     'mdc-text-field--dense': this.dense,
                     'mdc-text-field--with-leading-icon': this.leadingIcon,
                     'mdc-text-field--with-trailing-icon': !this.leadingIcon && this.trailingIcon
                   };
                 },
+                isBoxed() {
+                  return !this.fullwidth && this.boxed;
+                },
+                isOutlined() {
+                  return !this.fullwidth && !this.boxed && this.outlined;
+                },
               },
             };
 
-            var MDCTextarea = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-text-field mdc-text-field--textarea",class:_vm.cssClasses},[_c('textarea',_vm._b({directives:[{name:"model",rawName:"v-model",value:(_vm.model),expression:"model"}],ref:"input",staticClass:"mdc-text-field__input",domProps:{"value":(_vm.model)},on:{"input":function($event){if($event.target.composing){ return; }_vm.model=$event.target.value;}}},'textarea',_vm.inputAttrs,false)),(!_vm.fullwidth)?_c('mdc-floating-label',{ref:"label",attrs:{"label":_vm.label,"label-for":_vm.uuid}}):_vm._e()],1)},staticRenderFns: [],
+            var MDCTextarea = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('div',{staticClass:"mdc-text-field mdc-text-field--textarea",class:_vm.cssClasses},[_c('textarea',_vm._b({directives:[{name:"model",rawName:"v-model",value:(_vm.model),expression:"model"}],ref:"input",staticClass:"mdc-text-field__input",domProps:{"value":(_vm.model)},on:{"input":function($event){if($event.target.composing){ return; }_vm.model=$event.target.value;}}},'textarea',_vm.inputAttrs,false)),(!_vm.fullwidth)?_c('mdc-floating-label',{ref:"label",attrs:{"label":_vm.label,"id":_vm.uuid}}):_vm._e()],1)},staticRenderFns: [],
               name: 'MDCTextarea',
               mixins: [ TextfieldMixin ],
               inheritAttrs: false,
@@ -19252,7 +19264,7 @@
             const MDCTextfieldProxy = {
               functional: true,
               props: {
-                textarea: Boolean
+                multiline: Boolean
               },
               render(h, ctx) {
                 const tag = ctx.props.textarea ? MDCTextarea : MDCTextfield;
@@ -20661,7 +20673,7 @@
               components: { DemoTemplate }
             };
 
-            var Textfield$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('demo-template',{attrs:{"link":"input-controls/text-field","stacked":""}},[_c('template',{slot:"hero"},[_c('mdc-textfield',{attrs:{"label":"Basic Textfield"}}),_c('mdc-textfield',{attrs:{"boxed":"","label":"Boxed Textfield"}}),_c('mdc-textfield',{attrs:{"outlined":"","label":"Outlined Textfield"}})],1),_c('template',{slot:"usage"},[_c('demo-code',{attrs:{"lang":"markup","code":"\n<mdc-textfield v-model=\"model\" label=\"My Textfield\"/>\n"}})],1),_c('template',{slot:"props"},[_c('tr',[_c('th',{attrs:{"colspan":"4"}},[_vm._v("Shared props")])]),_c('tr',[_c('th',{attrs:{"colspan":"4"}},[_vm._v("MDCTextfield")])]),_c('tr',[_c('th',{attrs:{"colspan":"4"}},[_vm._v("MDCTextarea")])]),_c('tr',[_c('td',[_vm._v("name")]),_c('td',[_vm._v("type")]),_c('td',[_vm._v("default")]),_c('td',[_vm._v("desc")])])])],2)},staticRenderFns: [],
+            var Textfield$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('demo-template',{attrs:{"link":"input-controls/text-field","stacked":""}},[_c('template',{slot:"hero"},[_c('mdc-textfield',{attrs:{"label":"Basic Textfield"}}),_c('mdc-textfield',{attrs:{"boxed":"","label":"Boxed Textfield"}}),_c('mdc-textfield',{attrs:{"outlined":"","label":"Outlined Textfield"}})],1),_c('template',{slot:"usage"},[_c('demo-code',{attrs:{"code":"<mdc-textfield v-model=\"value\" label=\"Basic Textfield\"/>"}}),_c('demo-code',{attrs:{"lang":"javascript","code":"\nexport default {\n  data() {\n    return { value: '' };\n  },\n};"}}),_c('p',[_vm._v("To use the boxed, outlined or multiline version add the supplied classes like so:")]),_c('demo-code',{attrs:{"code":"\n<mdc-textfield boxed v-model=\"value\" label=\"Boxed textfield\"/>\n<!-- Or -->\n<mdc-textfield outlined v-model=\"value\" label=\"Outlined textfield\"/>\n<!-- Or -->\n<mdc-textfield multiline v-model=\"value\" label=\"Multiline textfield\"/>"}}),_c('p',[_vm._v("However these version can't be used together with each other and should only be used seperately.")])],1),_c('template',{slot:"props"},[_c('tr',[_c('td',[_vm._v("multiline")]),_c('td',[_vm._v("Boolean")]),_c('td',[_vm._v("false")]),_c('td',[_vm._v("If true then the component will render a textarea with multiline support.")])]),_c('tr',[_c('td',[_vm._v("fullwidth")]),_c('td',[_vm._v("Boolean")]),_c('td',[_vm._v("false")]),_c('td',[_vm._v("Uses the full width of the container of this component. Also removes the floating label.")])]),_c('tr',[_c('td',[_vm._v("dense")]),_c('td',[_vm._v("Boolean")]),_c('td',[_vm._v("false")]),_c('td',[_vm._v("Halves the padding below the textfield. Also shrinks the font size of the label.")])]),_c('tr',[_c('td',[_vm._v("disabled")]),_c('td',[_vm._v("Boolean")]),_c('td',[_vm._v("false")]),_c('td',[_vm._v("Sets the disabled attribute to the internal input element. Prevents any input on the input element.")])]),_c('tr',[_c('td',[_vm._v("required")]),_c('td',[_vm._v("Boolean")]),_c('td',[_vm._v("false")]),_c('td',[_vm._v("Sets the required attribute to the internal input element.")])]),_c('tr',[_c('td',[_vm._v("id")]),_c('td',[_vm._v("String")]),_c('td'),_c('td',[_vm._v("Sets the id attribute to the internal input element. If none is used the component will generate an id to use internally.")])]),_c('tr',[_c('td',[_vm._v("value")]),_c('td',[_vm._v("String")]),_c('td'),_c('td',[_vm._v("Sets the value of the internal input element.")])]),_c('tr',[_c('td',[_vm._v("label")]),_c('td',[_vm._v("String")]),_c('td'),_c('td',[_vm._v("Sets the text on the label element.")])]),_c('tr',[_c('td',[_vm._v("name")]),_c('td',[_vm._v("String")]),_c('td'),_c('td',[_vm._v("Sets the name attribute to the internal input element.")])]),_c('tr',[_c('td',[_vm._v("pattern")]),_c('td',[_vm._v("String")]),_c('td'),_c('td',[_vm._v("Adds a regex pattern to validate against. Used for validation.")])]),_c('tr',[_c('td',[_vm._v("minlength")]),_c('td',[_vm._v("String, Number")]),_c('td'),_c('td',[_vm._v("Sets the allowed mininum length of the input value. Used for validation.")])]),_c('tr',[_c('td',[_vm._v("maxlength")]),_c('td',[_vm._v("String, Number")]),_c('td'),_c('td',[_vm._v("Sets the allowed maximum length of the input value. Used for validation.")])]),_c('tr',[_c('th',{attrs:{"colspan":"4"}},[_vm._v("MDCTextfield only")])]),_c('tr',[_c('td',[_vm._v("boxed")]),_c('td',[_vm._v("Boolean")]),_c('td',[_vm._v("false")]),_c('td',[_vm._v("Adds a visible box behind the textfield.")])]),_c('tr',[_c('td',[_vm._v("outlined")]),_c('td',[_vm._v("Boolean")]),_c('td',[_vm._v("false")]),_c('td',[_vm._v("Adds a rounded outline behind the textfield.")])]),_c('tr',[_c('td',[_vm._v("leadingIcon")]),_c('td',[_vm._v("String")]),_c('td'),_c('td',[_vm._v("Sets the material-icon used by name. Icon appears before the input element.")])]),_c('tr',[_c('td',[_vm._v("trailingIcon")]),_c('td',[_vm._v("String")]),_c('td'),_c('td',[_vm._v("Sets the material-icon used by name. Icon appears after the input element.")])]),_c('tr',[_c('td',[_vm._v("type")]),_c('td',[_vm._v("String")]),_c('td'),_c('td',[_vm._v("Sets the type of the input. Only allows textfield types like: 'number', 'email', 'password', .etc.")])]),_c('tr',[_c('td',[_vm._v("min")]),_c('td',[_vm._v("String, Number")]),_c('td'),_c('td',[_vm._v("Sets the minumum value allowed. Only used when type is 'number'.")])]),_c('tr',[_c('td',[_vm._v("max")]),_c('td',[_vm._v("String, Number")]),_c('td'),_c('td',[_vm._v("Sets the maximum value allowed. Only used when type is 'number'.")])]),_c('tr',[_c('td',[_vm._v("step")]),_c('td',[_vm._v("String, Number")]),_c('td'),_c('td',[_vm._v("Limit the values increments between min and max. Only used when type is 'number'. ")])]),_c('tr',[_c('th',{attrs:{"colspan":"4"}},[_vm._v("MDCTextarea only")])]),_c('tr',[_c('td',[_vm._v("rows")]),_c('td',[_vm._v("String, Number")]),_c('td'),_c('td',[_vm._v("Sets the elements width in amount of characters.")])]),_c('tr',[_c('td',[_vm._v("cols")]),_c('td',[_vm._v("String, Number")]),_c('td'),_c('td',[_vm._v("Sets the elements height in amount of characters.")])])])],2)},staticRenderFns: [],
               name: 'DemoTextfield',
               components: { DemoTemplate }
             };
@@ -21581,7 +21593,7 @@
               props: {
                 lang: {
                   type: String,
-                  required: true
+                  default: 'markup'
                 },
                 code: {
                   type: String,

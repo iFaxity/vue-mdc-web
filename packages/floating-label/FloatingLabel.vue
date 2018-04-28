@@ -1,5 +1,5 @@
 <template lang="pug">
-label.mdc-floating-label(:for="labelFor") {{ label }}
+label.mdc-floating-label(:for="id") {{ label }}
 </template>
 
 <script>
@@ -12,7 +12,7 @@ export default {
       type: String,
       required: true
     },
-    labelFor: String
+    id: String
   },
 
   mounted() {
@@ -25,7 +25,6 @@ export default {
       registerInteractionHandler: (evtType, handler) => $el.addEventListener(evtType, handler),
       deregisterInteractionHandler: (evtType, handler) => $el.removeEventListener(evtType, handler)
     });
-
     this.foundation.init();
   },
   beforeDestroy() {
