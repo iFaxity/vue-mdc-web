@@ -25,7 +25,6 @@ export default {
   props: {
     header: String,
     scroll: Boolean,
-    open: Boolean, // experimental
     valid: {
       type: Boolean,
       default: true
@@ -37,18 +36,7 @@ export default {
     cancelText: {
       type: String,
       default: 'Cancel'
-    }
-  },
-
-  watch: {
-    open(value, oldValue) {
-      const isOpen = this.foundation.isOpen();
-      if(value && !isOpen) {
-        this.foundation.open();
-      } else if(!value && isOpen) {
-        this.foundation.close();
-      }
-    }
+    },
   },
   computed: {
     cssBodyClasses() {
@@ -56,7 +44,7 @@ export default {
     },
     hasContent() {
       return !!this.$slots.default;
-    }
+    },
   },
 
   mounted() {
@@ -93,19 +81,16 @@ export default {
       isDialog: el => el === surface,
     });
     this.foundation.init();
-    this.open && this.foundation.open();
   },
   beforeDestroy() {
     this.foundation.destroy();
   },
   methods: {
-    toggle() {
-      if(this.foundation.isOpen()) {
-        this.foundation.close();
-      } else {
+    open() {
+      if(!this.foundation.isOpen()) {
         this.foundation.open();
       }
-    }
-  }
+    },
+  },
 };
 </script>

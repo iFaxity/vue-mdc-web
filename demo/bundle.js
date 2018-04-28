@@ -14013,7 +14013,6 @@
               props: {
                 header: String,
                 scroll: Boolean,
-                open: Boolean, // experimental
                 valid: {
                   type: Boolean,
                   default: true
@@ -14025,18 +14024,7 @@
                 cancelText: {
                   type: String,
                   default: 'Cancel'
-                }
-              },
-
-              watch: {
-                open(value, oldValue) {
-                  const isOpen = this.foundation.isOpen();
-                  if(value && !isOpen) {
-                    this.foundation.open();
-                  } else if(!value && isOpen) {
-                    this.foundation.close();
-                  }
-                }
+                },
               },
               computed: {
                 cssBodyClasses() {
@@ -14044,7 +14032,7 @@
                 },
                 hasContent() {
                   return !!this.$slots.default;
-                }
+                },
               },
 
               mounted() {
@@ -14081,20 +14069,17 @@
                   isDialog: el => el === surface,
                 });
                 this.foundation.init();
-                this.open && this.foundation.open();
               },
               beforeDestroy() {
                 this.foundation.destroy();
               },
               methods: {
-                toggle() {
-                  if(this.foundation.isOpen()) {
-                    this.foundation.close();
-                  } else {
+                open() {
+                  if(!this.foundation.isOpen()) {
                     this.foundation.open();
                   }
-                }
-              }
+                },
+              },
             };
 
             function install$6(Vue, register) {
@@ -20534,7 +20519,7 @@
               components: { DemoTemplate }
             };
 
-            var Button$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('demo-template',{attrs:{"link":"buttons"}},[_c('mdc-button',{attrs:{"slot":"hero"},slot:"hero"},[_vm._v("Flat")]),_c('mdc-button',{attrs:{"slot":"hero","raised":""},slot:"hero"},[_vm._v("Raised")]),_c('mdc-button',{attrs:{"slot":"hero","icon":"favorite"},slot:"hero"},[_vm._v("Icon")]),_c('template',{slot:"usage"},[_c('demo-code',{attrs:{"lang":"markup","code":"\n<mdc-button>...text</mdc-button>"}})],1),_c('template',{slot:"events"},[_c('tr',[_c('td',[_vm._v("click")]),_c('td'),_c('td',[_vm._v("Triggers when button is clicked")])])]),_c('template',{slot:"props"},[_c('tr',[_c('td',[_vm._v("icon")]),_c('td',[_vm._v("String")]),_c('td',[_vm._v("\"\"")]),_c('td',[_vm._v("Add an icon according to the material-icons icon id")])]),_c('tr',[_c('td',[_vm._v("link")]),_c('td',[_vm._v("String")]),_c('td',[_vm._v("\"\"")]),_c('td',[_vm._v("Creates a link button using an anchor tag")])]),_c('tr',[_c('td',[_vm._v("raised")]),_c('td',[_vm._v("Boolean")]),_c('td',[_vm._v("false")]),_c('td',[_vm._v("Setting the button to be elevated upon the surface")])]),_c('tr',[_c('td',[_vm._v("unelevated")]),_c('td',[_vm._v("Boolean")]),_c('td',[_vm._v("false")]),_c('td',[_vm._v("Setting the button to be flush upon the surface")])]),_c('tr',[_c('td',[_vm._v("stroked")]),_c('td',[_vm._v("Boolean")]),_c('td',[_vm._v("false")]),_c('td',[_vm._v("Setting the button to be flush upon the surface and has a visible border")])]),_c('tr',[_c('td',[_vm._v("dense")]),_c('td',[_vm._v("Boolean")]),_c('td',[_vm._v("false")]),_c('td',[_vm._v("Compressing the buttons text to be slightly smaller")])]),_c('tr',[_c('td',[_vm._v("compact")]),_c('td',[_vm._v("Boolean")]),_c('td',[_vm._v("false")]),_c('td',[_vm._v("Reduces the horizontal padding on the button")])])])],2)},staticRenderFns: [],
+            var Button$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('demo-template',{attrs:{"link":"buttons"}},[_c('mdc-button',{attrs:{"slot":"hero"},slot:"hero"},[_vm._v("Flat")]),_c('mdc-button',{attrs:{"slot":"hero","raised":""},slot:"hero"},[_vm._v("Raised")]),_c('mdc-button',{attrs:{"slot":"hero","icon":"favorite"},slot:"hero"},[_vm._v("Icon")]),_c('template',{slot:"usage"},[_c('demo-code',{attrs:{"lang":"markup","code":"<mdc-button>...text</mdc-button>"}})],1),_c('template',{slot:"events"},[_c('tr',[_c('td',[_vm._v("click")]),_c('td'),_c('td',[_vm._v("Triggers when button is clicked")])])]),_c('template',{slot:"props"},[_c('tr',[_c('td',[_vm._v("icon")]),_c('td',[_vm._v("String")]),_c('td',[_vm._v("\"\"")]),_c('td',[_vm._v("Add an icon according to the material-icons icon id.")])]),_c('tr',[_c('td',[_vm._v("link")]),_c('td',[_vm._v("String")]),_c('td',[_vm._v("\"\"")]),_c('td',[_vm._v("Creates a link button using an anchor tag.")])]),_c('tr',[_c('td',[_vm._v("raised")]),_c('td',[_vm._v("Boolean")]),_c('td',[_vm._v("false")]),_c('td',[_vm._v("Setting the button to be elevated upon the surface.")])]),_c('tr',[_c('td',[_vm._v("unelevated")]),_c('td',[_vm._v("Boolean")]),_c('td',[_vm._v("false")]),_c('td',[_vm._v("Setting the button to be flush upon the surface.")])]),_c('tr',[_c('td',[_vm._v("stroked")]),_c('td',[_vm._v("Boolean")]),_c('td',[_vm._v("false")]),_c('td',[_vm._v("Setting the button to be flush upon the surface and has a visible border.")])]),_c('tr',[_c('td',[_vm._v("dense")]),_c('td',[_vm._v("Boolean")]),_c('td',[_vm._v("false")]),_c('td',[_vm._v("Compressing the buttons text to be slightly smaller.")])]),_c('tr',[_c('td',[_vm._v("compact")]),_c('td',[_vm._v("Boolean")]),_c('td',[_vm._v("false")]),_c('td',[_vm._v("Reduces the horizontal padding on the button.")])])])],2)},staticRenderFns: [],
               name: 'DemoButton',
               components: { DemoTemplate }
             };
@@ -20544,7 +20529,7 @@
               components: { DemoTemplate, MdcIcon: MDCIcon }
             };
 
-            var Checkbox$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('demo-template',{attrs:{"link":"input-controls/checkboxes"}},[_c('mdc-form-field',{attrs:{"slot":"hero","label":"Checkbox"},slot:"hero"},[_c('mdc-checkbox')],1),_c('mdc-form-field',{attrs:{"slot":"hero","label":"Indeterminate"},slot:"hero"},[_c('mdc-checkbox',{attrs:{"indeterminate":""}})],1),_c('template',{slot:"usage"},[_c('demo-code',{attrs:{"lang":"markup","code":"\n<mdc-checkbox/>"}}),_c('p',[_vm._v("The MDC Checkbox can also be used together with a MDC Form Field to add a label to it.")]),_c('p',[_vm._v("The checkbox can also use a v-model directive to reactivly bind the value.")]),_c('demo-code',{attrs:{"lang":"markup","code":"\n<mdc-form-field label=\"My Checkbox\">\n  <mdc-checkbox v-model=\"checked\"/>\n</mdc-form-field>"}}),_c('p',[_vm._v("You also need to define the v-model value in your data on your parent component")]),_c('demo-code',{attrs:{"lang":"javascript","code":"\nexport default {\n  data() {\n    return { checked: false };\n  };\n}"}})],1),_c('template',{slot:"props"},[_c('tr',[_c('td',[_vm._v("checked")]),_c('td',[_vm._v("Boolean")]),_c('td',[_vm._v("false")]),_c('td',[_vm._v("Used to change the checked state of the checkbox")])]),_c('tr',[_c('td',[_vm._v("disabled")]),_c('td',[_vm._v("Boolean")]),_c('td',[_vm._v("false")]),_c('td',[_vm._v("Disables the checkbox from any input")])]),_c('tr',[_c('td',[_vm._v("indeterminate")]),_c('td',[_vm._v("Boolean")]),_c('td',[_vm._v("false")]),_c('td',[_vm._v("Changes the indetermined state of the checkbox")])])])],2)},staticRenderFns: [],
+            var Checkbox$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('demo-template',{attrs:{"link":"input-controls/checkboxes"}},[_c('mdc-form-field',{attrs:{"slot":"hero","label":"Checkbox"},slot:"hero"},[_c('mdc-checkbox')],1),_c('mdc-form-field',{attrs:{"slot":"hero","label":"Indeterminate"},slot:"hero"},[_c('mdc-checkbox',{attrs:{"indeterminate":""}})],1),_c('template',{slot:"usage"},[_c('demo-code',{attrs:{"lang":"markup","code":"<mdc-checkbox/>"}}),_c('p',[_vm._v("The MDC Checkbox can also be used together with a MDC Form Field to add a label to it.")]),_c('p',[_vm._v("The checkbox can also use a v-model directive to reactivly bind the value.")]),_c('demo-code',{attrs:{"code":"\n<mdc-form-field label=\"My Checkbox\">\n  <mdc-checkbox v-model=\"checked\"/>\n</mdc-form-field>"}}),_c('p',[_vm._v("You also need to define the v-model value in your data on your parent component")]),_c('demo-code',{attrs:{"lang":"javascript","code":"\nexport default {\n  data() {\n    return { checked: false };\n  };\n}"}})],1),_c('template',{slot:"props"},[_c('tr',[_c('td',[_vm._v("checked")]),_c('td',[_vm._v("Boolean")]),_c('td',[_vm._v("false")]),_c('td',[_vm._v("Used to change the checked state of the checkbox.")])]),_c('tr',[_c('td',[_vm._v("disabled")]),_c('td',[_vm._v("Boolean")]),_c('td',[_vm._v("false")]),_c('td',[_vm._v("Disables the checkbox from any input.")])]),_c('tr',[_c('td',[_vm._v("indeterminate")]),_c('td',[_vm._v("Boolean")]),_c('td',[_vm._v("false")]),_c('td',[_vm._v("Used to change the indetermined state of the checkbox.")])])])],2)},staticRenderFns: [],
               name: 'DemoCheckbox',
               components: { DemoTemplate }
             };
@@ -20579,23 +20564,25 @@
               }
             };
 
-            var Dialog$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('demo-template',{attrs:{"link":"dialogs"}},[_c('mdc-button',{attrs:{"slot":"hero","raised":""},on:{"click":function($event){_vm.$refs.dialog.open();}},slot:"hero"},[_vm._v("Open dialog")]),_c('mdc-button',{attrs:{"slot":"hero","raised":""},on:{"click":function($event){_vm.$refs.scrollDialog.open();}},slot:"hero"},[_vm._v("Open scrolling dialog")]),_c('mdc-button',{attrs:{"slot":"hero","raised":""},on:{"click":_vm.openValidDialog},slot:"hero"},[_vm._v("Open validation dialog")]),_c('mdc-dialog',{ref:"dialog",attrs:{"slot":"hero","header":"This is a dialog"},slot:"hero"},[_vm._v("This is a demo dialog which you can accept or decline")]),_c('mdc-dialog',{ref:"scrollDialog",attrs:{"slot":"hero","scroll":"","header":"This is a scrolling dialog"},slot:"hero"},[_c('mdc-list',[_c('mdc-list-item',{attrs:{"text":"Green Eggs"}}),_c('mdc-list-item',{attrs:{"text":"Ham"}}),_c('mdc-list-item',{attrs:{"text":"Biscuits"}}),_c('mdc-list-item',{attrs:{"text":"Milk"}}),_c('mdc-list-item',{attrs:{"text":"Jam"}}),_c('mdc-list-item',{attrs:{"text":"Peanut Butter"}}),_c('mdc-list-item',{attrs:{"text":"Juice"}})],1)],1),_c('mdc-dialog',{ref:"validDialog",attrs:{"slot":"hero","header":"Select a fruit (not Kiwi)","valid":_vm.dialogValid},slot:"hero"},[_c('mdc-form-field',{attrs:{"label":"Banana"}},[_c('mdc-radio',{attrs:{"value":"Banana"},model:{value:(_vm.selectedItem),callback:function ($$v) {_vm.selectedItem=$$v;},expression:"selectedItem"}})],1),_c('mdc-form-field',{attrs:{"label":"Apple"}},[_c('mdc-radio',{attrs:{"value":"Apple"},model:{value:(_vm.selectedItem),callback:function ($$v) {_vm.selectedItem=$$v;},expression:"selectedItem"}})],1),_c('mdc-form-field',{attrs:{"label":"Peach"}},[_c('mdc-radio',{attrs:{"value":"Peach"},model:{value:(_vm.selectedItem),callback:function ($$v) {_vm.selectedItem=$$v;},expression:"selectedItem"}})],1),_c('mdc-form-field',{attrs:{"label":"Kiwi (yuck)"}},[_c('mdc-radio',{attrs:{"value":"Kiwi"},model:{value:(_vm.selectedItem),callback:function ($$v) {_vm.selectedItem=$$v;},expression:"selectedItem"}})],1)],1),_c('template',{slot:"usage"},[_c('demo-code',{attrs:{"lang":"markup","code":"\n<mdc-dialog ref=\"dialog\"/>\n"}}),_c('p',[_vm._v("You can then open the dialog using any interaction through javascript. Like in this example a mdc-button")]),_c('demo-code',{attrs:{"lang":"markup","code":"\n<mdc-dialog ref=\"dialog\"/>\n<mdc-button @click=\"$refs.dialog.open()\"/>\n"}})],1),_c('template',{slot:"props"},[_c('tr',[_c('td',[_vm._v("header")]),_c('td',[_vm._v("String")]),_c('td',[_vm._v("\"\"")]),_c('td',[_vm._v("Sets the text of the dialog header")])]),_c('tr',[_c('td',[_vm._v("scroll")]),_c('td',[_vm._v("Boolean")]),_c('td',[_vm._v("false")]),_c('td',[_vm._v("Sets the dialog to a set height and makes it scrollable")])]),_c('tr',[_c('td',[_vm._v("valid")]),_c('td',[_vm._v("Boolean")]),_c('td',[_vm._v("true")]),_c('td',[_vm._v("When false the accept button is disabled. Preventing accept button from being pressed.")])]),_c('tr',[_c('td',[_vm._v("acceptText")]),_c('td',[_vm._v("String")]),_c('td',[_vm._v("\"Ok\"")]),_c('td',[_vm._v("Sets the text of the accept button")])]),_c('tr',[_c('td',[_vm._v("cancelText")]),_c('td',[_vm._v("String")]),_c('td',[_vm._v("\"Cancel\"")]),_c('td',[_vm._v("Sets the text of the cancel button")])])]),_c('template',{slot:"events"},[_c('tr',[_c('td',[_vm._v("accept")]),_c('td'),_c('td',[_vm._v("Emitted when dialog accept button was pressed")])]),_c('tr',[_c('td',[_vm._v("cancel")]),_c('td'),_c('td',[_vm._v("Emitted when dialog canceled byt pressing the button, the backdrop or keys such as esc etc. ")])]),_c('tr',[_c('td',[_vm._v("action")]),_c('td',[_vm._v("action")]),_c('td',[_vm._v("Emitted before either \"cancel\" or \"accept\" is emitted. The parameter \"action\" is either \"cancel\" or \"accept\".")])])])],2)},staticRenderFns: [],
+            var Dialog$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('demo-template',{attrs:{"link":"dialogs"}},[_c('mdc-button',{attrs:{"slot":"hero","raised":""},on:{"click":function($event){_vm.$refs.dialog.show();}},slot:"hero"},[_vm._v("Open dialog")]),_c('mdc-button',{attrs:{"slot":"hero","raised":""},on:{"click":function($event){_vm.$refs.scrollDialog.show();}},slot:"hero"},[_vm._v("Open scrolling dialog")]),_c('mdc-button',{attrs:{"slot":"hero","raised":""},on:{"click":_vm.openValidDialog},slot:"hero"},[_vm._v("Open validation dialog")]),_c('mdc-dialog',{ref:"dialog",attrs:{"slot":"hero","header":"This is a dialog"},slot:"hero"},[_vm._v("This is a demo dialog which you can accept or decline")]),_c('mdc-dialog',{ref:"scrollDialog",attrs:{"slot":"hero","scroll":"","header":"This is a scrolling dialog"},slot:"hero"},[_c('mdc-list',[_c('mdc-list-item',{attrs:{"text":"Green Eggs"}}),_c('mdc-list-item',{attrs:{"text":"Ham"}}),_c('mdc-list-item',{attrs:{"text":"Biscuits"}}),_c('mdc-list-item',{attrs:{"text":"Milk"}}),_c('mdc-list-item',{attrs:{"text":"Jam"}}),_c('mdc-list-item',{attrs:{"text":"Peanut Butter"}}),_c('mdc-list-item',{attrs:{"text":"Juice"}})],1)],1),_c('mdc-dialog',{ref:"validDialog",attrs:{"slot":"hero","header":"Select a fruit (not Kiwi)","valid":_vm.dialogValid},slot:"hero"},[_c('mdc-form-field',{attrs:{"label":"Banana"}},[_c('mdc-radio',{attrs:{"value":"Banana"},model:{value:(_vm.selectedItem),callback:function ($$v) {_vm.selectedItem=$$v;},expression:"selectedItem"}})],1),_c('mdc-form-field',{attrs:{"label":"Apple"}},[_c('mdc-radio',{attrs:{"value":"Apple"},model:{value:(_vm.selectedItem),callback:function ($$v) {_vm.selectedItem=$$v;},expression:"selectedItem"}})],1),_c('mdc-form-field',{attrs:{"label":"Peach"}},[_c('mdc-radio',{attrs:{"value":"Peach"},model:{value:(_vm.selectedItem),callback:function ($$v) {_vm.selectedItem=$$v;},expression:"selectedItem"}})],1),_c('mdc-form-field',{attrs:{"label":"Kiwi (yuck)"}},[_c('mdc-radio',{attrs:{"value":"Kiwi"},model:{value:(_vm.selectedItem),callback:function ($$v) {_vm.selectedItem=$$v;},expression:"selectedItem"}})],1)],1),_c('template',{slot:"usage"},[_c('demo-code',{attrs:{"lang":"markup","code":"<mdc-dialog ref=\"dialog\"/>"}}),_c('p',[_vm._v("You can then open the dialog using any interaction through javascript. Like in this example with a MDCButton:")]),_c('demo-code',{attrs:{"lang":"markup","code":"\n<mdc-dialog ref=\"dialog\"/>\n<mdc-button @click=\"$refs.dialog.open()\"/>"}})],1),_c('template',{slot:"props"},[_c('tr',[_c('td',[_vm._v("header")]),_c('td',[_vm._v("String")]),_c('td'),_c('td',[_vm._v("Sets the text of the dialog header")])]),_c('tr',[_c('td',[_vm._v("scroll")]),_c('td',[_vm._v("Boolean")]),_c('td',[_vm._v("false")]),_c('td',[_vm._v("Sets the dialog to a set height and makes it scrollable")])]),_c('tr',[_c('td',[_vm._v("valid")]),_c('td',[_vm._v("Boolean")]),_c('td',[_vm._v("true")]),_c('td',[_vm._v("When false the accept button is disabled. Preventing accept button from being pressed.")])]),_c('tr',[_c('td',[_vm._v("acceptText")]),_c('td',[_vm._v("String")]),_c('td',[_vm._v("'Ok'")]),_c('td',[_vm._v("Sets the text of the accept button")])]),_c('tr',[_c('td',[_vm._v("cancelText")]),_c('td',[_vm._v("String")]),_c('td',[_vm._v("'Cancel'")]),_c('td',[_vm._v("Sets the text of the cancel button")])])]),_c('template',{slot:"events"},[_c('tr',[_c('td',[_vm._v("accept")]),_c('td'),_c('td',[_vm._v("Emitted when dialog accept button was pressed")])]),_c('tr',[_c('td',[_vm._v("cancel")]),_c('td'),_c('td',[_vm._v("Emitted when dialog canceled byt pressing the button, the backdrop or keys such as esc etc. ")])]),_c('tr',[_c('td',[_vm._v("action")]),_c('td',[_vm._v("action")]),_c('td',[_vm._v("Emitted before either \"cancel\" or \"accept\" is emitted. "),_c('em',[_vm._v("action")]),_vm._v(" can be either \"cancel\" or \"accept\".")])])])],2)},staticRenderFns: [],
               name: 'DemoDialog',
               components: { DemoTemplate },
+
               computed: {
                 dialogValid() {
                   return !!this.selectedItem && this.selectedItem !== 'Kiwi';
-                }
+                },
               },
               data() {
                 return { selectedItem: '' };
               },
+
               methods: {
                 openValidDialog() {
                   this.selectedItem = '';
                   this.$refs.validDialog.open();
-                }
-              }
+                },
+              },
             };
 
             var Drawer$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('demo-template',{attrs:{"link":"drawers"}},[_c('mdc',{attrs:{"slot":"hero"},slot:"hero"}),_c('template',{slot:"usage"},[_c('demo-code',{attrs:{"lang":"markup","code":"\n<mdc/>\n"}})],1),_c('template',{slot:"props"},[_c('tr',[_c('td',[_vm._v("name")]),_c('td',[_vm._v("type")]),_c('td',[_vm._v("default")]),_c('td',[_vm._v("desc")])])])],2)},staticRenderFns: [],
@@ -20603,9 +20590,18 @@
               components: { DemoTemplate }
             };
 
-            var Fab$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('demo-template',{attrs:{"link":"buttons/floating-action-buttons"}},[_c('mdc',{attrs:{"slot":"hero"},slot:"hero"}),_c('template',{slot:"usage"},[_c('demo-code',{attrs:{"lang":"markup","code":"\n<mdc/>\n"}})],1),_c('template',{slot:"props"},[_c('tr',[_c('td',[_vm._v("name")]),_c('td',[_vm._v("type")]),_c('td',[_vm._v("default")]),_c('td',[_vm._v("desc")])])])],2)},staticRenderFns: [],
+            var Fab$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('demo-template',{attrs:{"link":"buttons/floating-action-buttons"}},[_c('template',{slot:"hero"},[_c('mdc-fab',{attrs:{"exited":_vm.exited,"icon":"favorite_border","label":"Like"}}),_c('mdc-fab',{attrs:{"mini":"","exited":_vm.exited,"icon":"favorite_border","label":"Like"}}),_c('mdc-button',{on:{"click":function($event){_vm.exited = !_vm.exited;}}},[_vm._v(_vm._s(_vm.buttonText))])],1),_c('template',{slot:"usage"},[_c('demo-code',{attrs:{"lang":"markup","code":"<mdc-fab icon=\"icon\" label=\"label\"/>"}})],1),_c('template',{slot:"props"},[_c('tr',[_c('td',[_vm._v("icon*")]),_c('td',[_vm._v("String")]),_c('td'),_c('td',[_vm._v("Material icons icon name")])]),_c('tr',[_c('td',[_vm._v("label*")]),_c('td',[_vm._v("String")]),_c('td'),_c('td',[_vm._v("Text used in popup title and ARIA label. Required because of screen readers.")])]),_c('tr',[_c('td',[_vm._v("mini")]),_c('td',[_vm._v("Boolean")]),_c('td',[_vm._v("false")]),_c('td',[_vm._v("Decreases the size of the button.")])]),_c('tr',[_c('td',[_vm._v("exited")]),_c('td',[_vm._v("Boolean")]),_c('td',[_vm._v("false")]),_c('td',[_vm._v("Hides the button. A transition also applies when the property is toggled.")])])])],2)},staticRenderFns: [],
               name: 'DemoFab',
-              components: { DemoTemplate }
+              components: { DemoTemplate },
+
+              computed: {
+                buttonText() {
+                  return this.exited ? 'Show FAB' : 'Hide FAB';
+                }
+              },
+              data() {
+                return { exited: false };
+              },
             };
 
             var FormField$1 = {render: function(){var _vm=this;var _h=_vm.$createElement;var _c=_vm._self._c||_h;return _c('demo-template',{attrs:{"link":"input-controls/form-fields"}},[_c('mdc',{attrs:{"slot":"hero"},slot:"hero"}),_c('template',{slot:"usage"},[_c('demo-code',{attrs:{"lang":"markup","code":"\n<mdc/>\n"}})],1),_c('template',{slot:"props"},[_c('tr',[_c('td',[_vm._v("name")]),_c('td',[_vm._v("type")]),_c('td',[_vm._v("default")]),_c('td',[_vm._v("desc")])])])],2)},staticRenderFns: [],

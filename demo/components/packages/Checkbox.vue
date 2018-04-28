@@ -6,12 +6,11 @@ demo-template(link="input-controls/checkboxes")
     mdc-checkbox(indeterminate)
 
   template(slot="usage")
-    demo-code(lang="markup", code=`
-<mdc-checkbox/>`)
+    demo-code(lang="markup", code=`<mdc-checkbox/>`)
 
     p The MDC Checkbox can also be used together with a MDC Form Field to add a label to it.
     p The checkbox can also use a v-model directive to reactivly bind the value.
-    demo-code(lang="markup", code=`
+    demo-code(code=`
 <mdc-form-field label="My Checkbox">
   <mdc-checkbox v-model="checked"/>
 </mdc-form-field>`)
@@ -29,17 +28,17 @@ export default {
       td checked
       td Boolean
       td false
-      td Used to change the checked state of the checkbox
+      td Used to change the checked state of the checkbox.
     tr
       td disabled
       td Boolean
       td false
-      td Disables the checkbox from any input
+      td Disables the checkbox from any input.
     tr
       td indeterminate
       td Boolean
       td false
-      td Changes the indetermined state of the checkbox
+      td Used to change the indetermined state of the checkbox.
 </template>
 
 <script>

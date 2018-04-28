@@ -1,7 +1,7 @@
 <template lang="pug">
 demo-template(link="dialogs")
-  mdc-button(slot="hero", raised, @click="$refs.dialog.open()") Open dialog
-  mdc-button(slot="hero", raised, @click="$refs.scrollDialog.open()") Open scrolling dialog
+  mdc-button(slot="hero", raised, @click="$refs.dialog.show()") Open dialog
+  mdc-button(slot="hero", raised, @click="$refs.scrollDialog.show()") Open scrolling dialog
   mdc-button(slot="hero", raised, @click="openValidDialog") Open validation dialog
 
   // <dialogs>
@@ -29,21 +29,18 @@ demo-template(link="dialogs")
   // </dialogs>
 
   template(slot="usage")
-    demo-code(lang="markup", code=`
-<mdc-dialog ref="dialog"/>
-`)
+    demo-code(lang="markup", code=`<mdc-dialog ref="dialog"/>`)
 
-    p You can then open the dialog using any interaction through javascript. Like in this example a mdc-button
+    p You can then open the dialog using any interaction through javascript. Like in this example with a MDCButton:
     demo-code(lang="markup", code=`
 <mdc-dialog ref="dialog"/>
-<mdc-button @click="$refs.dialog.open()"/>
-`)
+<mdc-button @click="$refs.dialog.open()"/>`)
 
   template(slot="props")
     tr
       td header
       td String
-      td ""
+      td
       td Sets the text of the dialog header
     tr
       td scroll
@@ -58,12 +55,12 @@ demo-template(link="dialogs")
     tr
       td acceptText
       td String
-      td "Ok"
+      td 'Ok'
       td Sets the text of the accept button
     tr
       td cancelText
       td String
-      td "Cancel"
+      td 'Cancel'
       td Sets the text of the cancel button
 
   template(slot="events")
@@ -78,7 +75,7 @@ demo-template(link="dialogs")
     tr
       td action
       td action
-      td Emitted before either "cancel" or "accept" is emitted. The parameter "action" is either "cancel" or "accept".
+      td Emitted before either "cancel" or "accept" is emitted. #[em action] can be either "cancel" or "accept".
 </template>
 
 <script>
@@ -87,19 +84,21 @@ import DemoTemplate from '../DemoTemplate.vue';
 export default {
   name: 'DemoDialog',
   components: { DemoTemplate },
+
   computed: {
     dialogValid() {
       return !!this.selectedItem && this.selectedItem !== 'Kiwi';
-    }
+    },
   },
   data() {
     return { selectedItem: '' };
   },
+
   methods: {
     openValidDialog() {
       this.selectedItem = '';
       this.$refs.validDialog.open();
-    }
-  }
+    },
+  },
 };
 </script>
