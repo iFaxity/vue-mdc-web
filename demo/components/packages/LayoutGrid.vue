@@ -1,25 +1,27 @@
 <template lang="pug">
-demo-template(link="layout-grid")
-  mdc(slot="hero")
+demo-template(link="layout-grid", :details="details")
+  template(slot="hero")
 
   template(slot="usage")
-    demo-code(lang="markup", code=`
-<mdc/>
-`)
-
-  template(slot="props")
-    tr
-      td name
-      td type
-      td default
-      td desc
+    demo-code(code=`<mdc/>`)
 </template>
 
 <script>
 import DemoTemplate from '../DemoTemplate.vue';
 
+const DATA = {
+  slots: [],
+  props: [],
+  events: [],
+};
+
 export default {
   name: 'DemoLayoutGrid',
-  components: { DemoTemplate }
+  components: { DemoTemplate },
+  data() {
+    return {
+      details: DATA,
+    };
+  }
 };
 </script>

@@ -10,7 +10,7 @@ const MDCTextfieldProxy = {
     multiline: Boolean
   },
   render(h, ctx) {
-    const tag = ctx.props.textarea ? MDCTextarea : MDCTextfield;
+    const tag = ctx.props.multiline ? MDCTextarea : MDCTextfield;
     return h(tag, ctx.data, ctx.children);
   }
 };

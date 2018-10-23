@@ -42,6 +42,7 @@ th {
 
 pre[class*='language-'] {
   padding-right: 2em !important;
+  background: rgba(0,0,0, 13 / 255) !important;
 
   &, code[class*='language-'] {  
     font-family: 'Roboto Mono', 'Consolas', 'Monaco', 'Ubuntu Mono', monospace;
@@ -84,13 +85,25 @@ pre[class*='language-'] {
     &--stacked {
       flex-direction: column;
     }
-    & > * {
+    & > *:not(p) {
       margin: 0 1em;
+    }
+    & > p {
+      font-size: .8em;
     }
   }
 
   &__content {
     margin: 0 auto;
+  }
+
+  &__data {
+    display: flex;
+    flex-direction: column;
+
+    & > table {
+      margin: 0 auto;
+    }
   }
   
   &__usage, &__data, &__header {

@@ -16,7 +16,7 @@ import * as List from './packages/list';
 import * as Menu from './packages/menu';
 import * as Radio from './packages/radio';
 //import * as Shape from './packages/shape';
-//import * as Select from './packages/select';
+import * as Select from './packages/select';
 //import * as Slider from './packages/slider';
 import * as Snackbar from './packages/snackbar';
 import * as Switch from './packages/switch';
@@ -75,7 +75,7 @@ export default {
     Vue.use(Menu, register);
     Vue.use(Radio, register);
     //Vue.use(Shape, register);
-    //Vue.use(Select, register);
+    Vue.use(Select, register);
     //Vue.use(Slider);
     Vue.use(Snackbar, register);
     Vue.use(Switch, register);

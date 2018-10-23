@@ -1,5 +1,5 @@
 <template lang="pug">
-demo-template
+demo-template(:details="details")
   template(slot="usage")
     demo-code(lang="markup", code=`
 <mdc-app>
@@ -16,38 +16,30 @@ demo-template
 
   ...other content such as footer etc
 </mdc-app>`)
-
-  template(slot="slots")
-    tr
-      td toolbar
-      td Used to slot the mdc-toolbar component to be inserted correctly
-    tr
-      td drawer
-      td Used to slot the mdc-drawer component to be inserted correctly
-
-  template(slot="props")
-    tr
-      td flip
-      td Boolean
-      td false
-      td Used to flip the positioning of the toolbar and the drawer.
-    tr
-      td drawer-hide-mobile
-      td Boolean
-      td false
-      td Hide the drawer if the width is below 720px.
-    tr
-      td align-start
-      td Boolean
-      td false
-      td Removes the center alignment on the main content.
 </template>
 
 <script>
 import DemoTemplate from '../DemoTemplate.vue';
 
+const DATA = {
+  slots: [
+    { name: 'toolbar', desc: 'Used to slot the MDCToolbar component into the correct position.' },
+    { name: 'drawer', desc: 'Used to slot the MDCDrawer component into the correct position.' },
+  ],
+  props: [
+    { name: 'flip', type: 'Boolean', desc: 'Used to flip the positioning of the toolbar and the drawer.' },
+    { name: 'drawer-hide-mobile', type: 'Boolean', desc: 'Hide the drawer if the width is below 720px.' },
+    { name: 'align-start', type: 'Boolean', desc: 'Removes the center alignment on the main content.' },
+  ],
+};
+
 export default {
   name: 'DemoApp',
-  components: { DemoTemplate }
+  components: { DemoTemplate },
+  data() {
+    return {
+      details: DATA,
+    };
+  },
 };
 </script>

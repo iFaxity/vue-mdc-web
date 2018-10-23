@@ -89,10 +89,11 @@ export default {
     },
     onChange(e) {
       const { value } = this;
+      const { checked } = e.target;
       this.$emit('update:indeterminate', this.foundation.isIndeterminate());
 
-      const newValue = handleModel($_vm.selected, value, { checked: e.target.checked, value });
-      $_vm.$emit('change', newValue);
+      const newValue = handleModel(this.checked, checked, { checked, value });
+      this.$emit('change', newValue);
 
       /*if(Array.isArray(this.checked)) {
         checked = this.checked;

@@ -1,17 +1,17 @@
 <template lang="pug">
-li.mdc-list-item(role="option", :aria-disabled="disabled && 'true'", :tabindex="disabled ? '-1' : '0'", :data-value="value") {{ label }}
+option(:value="value || label", :disabled="disabled") {{ label }}
 </template>
 
 <script>
 export default {
   name: 'MDCSelectItem',
   props: {
-    disabled: Boolean,
-    value: String,
     label: {
-      type: String,
-      required: true
-    }
+      type: [String, Number],
+      required: true,
+    },
+    disabled: Boolean,
+    value: [String, Number],
   }
 };
 </script>

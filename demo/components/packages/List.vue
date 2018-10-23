@@ -1,25 +1,27 @@
 <template lang="pug">
-demo-template(link="lists")
-  mdc(slot="hero")
+demo-template(link="lists", :details="details")
+  template(slot="hero")
 
   template(slot="usage")
-    demo-code(lang="markup", code=`
-<mdc/>
-`)
-
-  template(slot="props")
-    tr
-      td name
-      td type
-      td default
-      td desc
+    demo-code(code=`<mdc/>`)
 </template>
 
 <script>
 import DemoTemplate from '../DemoTemplate.vue';
 
+const DATA = {
+  slots: [],
+  props: [],
+  events: [],
+};
+
 export default {
   name: 'DemoList',
-  components: { DemoTemplate }
+  components: { DemoTemplate },
+  data() {
+    return {
+      details: DATA,
+    };
+  }
 };
 </script>

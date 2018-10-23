@@ -1,5 +1,5 @@
 <template lang="pug">
-demo-template(stacked, link="chips")
+demo-template(stacked, link="chips", :details="details")
   template(slot="hero")
     h3 Basic
     mdc-chip-set
@@ -32,75 +32,34 @@ demo-template(stacked, link="chips")
   <mdc-chip text="Chip 2"/>
   <mdc-chip text="Chip 3"/>
 </mdc-chip-set>`)
-
-  template(slot="events")
-    tr
-      th(colspan="3") MDCChip
-    tr
-      td click
-      td
-      td Emits when the chip is clicked.
-    tr
-      td icon
-      td
-      td Emits when the trailing icon of the chip is clicked.  
-    tr
-      th(colspan="3") MDCChipSet
-    tr
-      td select
-      td value
-      td Emits when any chip is selected or deselected. #[em value] is a String or Array of selected chips value.
-
-  template(slot="props")
-    tr
-      th(colspan="4") MDCChip
-    tr
-      td text *
-      td String
-      td ""
-      td Sets the text content of the chip
-    tr
-      td value
-      td String
-      td ""
-      td Sets the value used in the v-model of the MDCChipSet. Defaults to text prop value.
-    tr
-      td leadingIcon
-      td String
-      td ""
-      td Adds a icon from the material icons repo before the other content.
-    tr
-      td trailingIcon
-      td String
-      td ""
-      td Adds a icon from the material icons repo after the other content.
-    tr
-      th(colspan="4") MDCChipSet
-    tr
-      td input
-      td Boolean
-      td false
-      td Adds entry and exit animation to chip. It's recommended to use v-for with a key on each MDCChip.
-    tr
-      td choice
-      td Boolean
-      td false
-      td Adds single select. Also binds to model as the string value the selected chip possesses.
-    tr
-      td filter
-      td Boolean
-      td false
-      td Adds multiple select. Also binds to v-model as the string values of the selected chips.
-    tr
-      td selected
-      td Array, String
-      td undefined
-      td Adds a model for the select chips. Needs filter or choice to be set to work.
-
 </template>
 
 <script>
 import DemoTemplate from '../DemoTemplate.vue';
+
+const DATA = {
+  props: [
+    { header: 'MDCChip' },
+    { name: 'text*', type: 'String', desc: 'Sets the text content of the chip.' },
+    { name: 'value', type: 'String', desc: 'Sets the value used in the v-model of the MDCChipSet. Defaults to text prop value.' },
+    { name: 'leading-icon', type: 'String', desc: 'Adds a icon from the material icons repo before the other content.' },
+    { name: 'trailing-icon', type: 'String', desc: 'Adds a icon from the material icons repo after the other content.' },
+
+    { header: 'MDCChipSet' },
+    { name: 'input', type: 'Boolean', desc: 'Adds entry and exit animation to chip. It\'s recommended to use v-for with a key on each MDCChip.' },
+    { name: 'choice', type: 'Boolean', desc: 'Adds single select. Also binds to model as the string value the selected chip possesses.' },
+    { name: 'filter', type: 'Boolean', desc: 'Adds multiple select. Also binds to v-model as the string values of the selected chips.' },
+    { name: 'selected', type: 'Array, String', default: 'undefined', desc: 'Adds a model for the select chips. Needs filter or choice to be set to work.' },
+  ],
+  events: [
+    { header: 'MDCChip' },
+    { name: 'click', args: '', desc: 'Emits when the chip is clicked.' },
+    { name: 'icon', args: '', desc: 'Emits when any chip is selected or deselected. <em>value</em> is a String or Array of selected chips value.' },
+
+    { header: 'MDCChipSet' },
+    { name: 'select', args: 'value', desc: 'Emits when the trailing icon of the chip is clicked. ' },
+  ],
+};
 
 export default {
   name: 'DemoChips',
@@ -110,7 +69,8 @@ export default {
       chips: [ 'Chip one', 'Chip two', 'Chip three' ],
       selectFilter: [],
       selectChoice: '',
-      inputInterval: 0
+      inputInterval: 0,
+      details: DATA,
     };
   },
 
@@ -122,9 +82,6 @@ export default {
       } else {
         this.chips.push('Chip four');
       }
-      this.$nextTick(() => {
-        debugger;
-      });
     }, 3000);
   },
   beforeDestroy() {

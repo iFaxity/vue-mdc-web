@@ -9,24 +9,11 @@ aside.mdc-drawer.mdc-drawer--temporary
 
 <script>
 import { MDCTemporaryDrawerFoundation, util } from '@material/drawer';
+import DrawerMixin from './mixin';
 
 export default {
   name: 'MDCTemporaryDrawer',
-  props: {
-    open: Boolean,
-    spacer: Boolean,
-    header: String
-  },
-  watch: {
-    open(value) {
-      const isOpen = this.foundation.isOpen();
-      if(value && !isOpen) {
-        this.foundation.open();
-      } else if(!value && isOpen) {
-        this.foundation.close();
-      }
-    },
-  },
+  mixins: [ DrawerMixin ],
 
   mounted() {
     const { $el } = this;
@@ -76,15 +63,6 @@ export default {
 
     // Initial open state
     this.open && this.foundation.open();
-  },
-  methods: {
-    toggle() {
-      if (this.foundation.isOpen()) {
-        this.foundation.close();
-      } else {
-        this.foundation.open();
-      }
-    }
   }
 };
 </script>

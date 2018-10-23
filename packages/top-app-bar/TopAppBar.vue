@@ -2,7 +2,7 @@
 header.mdc-top-app-bar(:class="cssClasses")
   .mdc-top-app-bar__row
     mdc-top-app-bar-section(align-start)
-      a.material-icons.mdc-top-app-bar__navigation-icon(ref="navIcon", href="#") menu
+      a.material-icons.mdc-top-app-bar__navigation-icon(v-if="navIcon", ref="navIcon", href="#") {{ navIcon }}
       span.mdc-top-app-bar__title(v-if="title") {{ title }}
 
     mdc-top-app-bar-section(v-if="hasSlot", align-end)
@@ -13,6 +13,14 @@ header.mdc-top-app-bar(:class="cssClasses")
 import { MDCTopAppBarFoundation, MDCFixedTopAppBarFoundation, MDCShortTopAppBarFoundation } from '@material/top-app-bar';
 import Section from './TopAppBarSection.vue';
 
+const FIXED_ADJUST_CLASSES = [
+  'fixed-adjust',
+  'dense-fixed-adjust',
+  'short-fixed-adjust',
+  'prominent-fixed-adjust',
+  'dense-prominent-fixed-adjust',
+];
+
 export default {
   name: 'MDCTopAppBar',
   components: { MdcTopAppBarSection: Section },
@@ -20,7 +28,12 @@ export default {
     short: Boolean,
     shortCollapsed: Boolean,
     fixed: Boolean,
-    prominent: Boolean
+    prominent: Boolean,
+    title: String,
+    navIcon: {
+      type: String,
+      default: 'menu'
+    },
   },
 
   computed: {
@@ -54,12 +67,14 @@ export default {
       setStyle: (prop, value) => $el.style.setProperty(prop, value),
       getTopAppBarHeight: () => $el.clientHeight,
       registerNavigationIconInteractionHandler: (type, handler) => {
-        this.$refs.navIcon.addEventListener(type, handler);
+        const { navIcon } = this.$refs;
+        navIcon && navIcon.addEventListener(type, handler);
       },
       deregisterNavigationIconInteractionHandler: (type, handler) => {
-        this.$refs.navIcon.removeEventListener(type, handler);
+        const { navIcon } = this.$refs;
+        navIcon && navIcon.removeEventListener(type, handler);
       },
-      notifyNavigationIconClicked: () => this.emit('nav'),
+      notifyNavigationIconClicked: () => this.$emit('nav'),
       registerScrollHandler: handler => window.addEventListener('scroll', handler),
       deregisterScrollHandler: handler => window.removeEventListener('scroll', handler),
       registerResizeHandler: handler => window.addEventListener('resize', handler),
@@ -79,10 +94,33 @@ export default {
       this.foundation = new MDCTopAppBarFoundation(adapter);
     }
 
+    this.$_addAdjustClass();
     this.foundation.init();
   },
   beforeDestroy() {
+    if(this.$_fixedAdjust) {
+      this.$_fixedAdjust.classList.remove(this.$_fixedAdjustClass);
+    }
     this.foundation.destroy();
+  },
+  methods: {
+    $_addAdjustClass() {
+      // Add fixed adjust class
+      if(!this.$el.nextElementSibling) return;
+
+      let adjustClassIndex = 0;
+      if(this.short) {
+        adjustClassIndex = 2;
+      } else if(this.dense) {
+        adjustClassIndex = this.prominent ? 4 : 1;
+      } else if(this.prominent) {
+        adjustClassIndex = 3
+      }
+      
+      this.$_fixedAdjustClass = 'mdc-top-app-bar--' + FIXED_ADJUST_CLASSES[adjustClassIndex];
+      this.$_fixedAdjust = this.$el.nextElementSibling;
+      this.$_fixedAdjust.classList.add(this.$_fixedAdjustClass);
+    }
   }
 };
 </script>

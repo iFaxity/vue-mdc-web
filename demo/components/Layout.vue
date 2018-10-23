@@ -84,18 +84,8 @@ export default {
       return res.toLowerCase();
     },
     toggleDrawer() {
-      this.$refs.drawer.toggle();
-
       // Trigger resize on toggle
-      // Simple hack for toggling resize on elements when drawer is toggled
-      let event;
-      try {
-        event = new Event('resize');
-      } catch(ex) {
-        event = document.createEvent('UIEvents');
-        event.initUIEvent('resize', true, false, window, 0);
-      }
-      window.dispatchEvent(event);
+      this.$refs.drawer.toggle(true);
     }
   }
 };

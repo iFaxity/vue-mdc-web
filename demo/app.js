@@ -40,6 +40,7 @@ function titlePlugin(to, from) {
     title = 'Vue MDC Web';
     AppState.$emit('demoRouted', title);
   }
+
   document.title = title;
 }
 Router.afterEach(titlePlugin);

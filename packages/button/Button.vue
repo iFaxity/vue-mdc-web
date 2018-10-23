@@ -14,7 +14,7 @@ export default {
     icon: String,
     raised: Boolean,
     unelevated: Boolean,
-    stroked: Boolean,
+    outlined: Boolean,
     dense: Boolean,
     compact: Boolean,
     disabled: Boolean,
@@ -26,7 +26,7 @@ export default {
       return {
         'mdc-button--raised': this.raised,
         'mdc-button--unelevated': this.unelevated,
-        'mdc-button--stroked': this.stroked,
+        'mdc-button--outlined': this.outlined,
         'mdc-button--dense': this.dense,
         'mdc-button--compact': this.compact
       };

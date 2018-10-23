@@ -1,7 +1,7 @@
 <template lang="pug">
-demo-template(link="dialogs")
-  mdc-button(slot="hero", raised, @click="$refs.dialog.show()") Open dialog
-  mdc-button(slot="hero", raised, @click="$refs.scrollDialog.show()") Open scrolling dialog
+demo-template(link="dialogs", :details="details")
+  mdc-button(slot="hero", raised, @click="$refs.dialog.open()") Open dialog
+  mdc-button(slot="hero", raised, @click="$refs.scrollDialog.open()") Open scrolling dialog
   mdc-button(slot="hero", raised, @click="openValidDialog") Open validation dialog
 
   // <dialogs>
@@ -35,51 +35,28 @@ demo-template(link="dialogs")
     demo-code(lang="markup", code=`
 <mdc-dialog ref="dialog"/>
 <mdc-button @click="$refs.dialog.open()"/>`)
-
-  template(slot="props")
-    tr
-      td header
-      td String
-      td
-      td Sets the text of the dialog header
-    tr
-      td scroll
-      td Boolean
-      td false
-      td Sets the dialog to a set height and makes it scrollable
-    tr
-      td valid
-      td Boolean
-      td true
-      td When false the accept button is disabled. Preventing accept button from being pressed.
-    tr
-      td acceptText
-      td String
-      td 'Ok'
-      td Sets the text of the accept button
-    tr
-      td cancelText
-      td String
-      td 'Cancel'
-      td Sets the text of the cancel button
-
-  template(slot="events")
-    tr
-      td accept
-      td
-      td Emitted when dialog accept button was pressed
-    tr
-      td cancel
-      td
-      td Emitted when dialog canceled byt pressing the button, the backdrop or keys such as esc etc.  
-    tr
-      td action
-      td action
-      td Emitted before either "cancel" or "accept" is emitted. #[em action] can be either "cancel" or "accept".
 </template>
 
 <script>
 import DemoTemplate from '../DemoTemplate.vue';
+
+const DATA = {
+  slots: [
+    { name: 'default', desc: 'Content that goes into the body of the dialog.' },
+  ],
+  props: [
+    { name: 'header', type: 'String', desc: 'Sets the text of the dialog header.' },
+    { name: 'scroll', type: 'Boolean', desc: 'Sets the dialog to a set height and makes it scrollable.' },
+    { name: 'valid', type: 'Boolean', desc: 'When false the accept button is disabled. Preventing accept button from being pressed.' },
+    { name: 'accept-text', type: 'String', default: '"Ok"', desc: 'Sets the text of the accept button.' },
+    { name: 'cancel-text', type: 'String', default: '"Cancel"', desc: 'Sets the text of the cancel button.' },
+  ],
+  events: [
+    { name: 'accept', args: '', desc: 'Emitted when the dialog accept button was pressed.' },
+    { name: 'cancel', args: '', desc: 'Emitted when the dialog canceled byt pressing the button, the backdrop or keys such as "esc" etc.  ' },
+    { name: 'action', args: 'action', desc: 'Emitted before either "cancel" or "accept" is emitted. <em>action</em> can be either "cancel" or "accept".' },
+  ],
+};
 
 export default {
   name: 'DemoDialog',
@@ -91,7 +68,10 @@ export default {
     },
   },
   data() {
-    return { selectedItem: '' };
+    return {
+      selectedItem: '',
+      details: DATA,
+    };
   },
 
   methods: {

@@ -1,8 +1,8 @@
 <template lang="pug">
 .mdc-select(:class="cssClasses")
-  select.mdc-select__native-control(v-model="model", ref="select", :disabled="disabled")
+  select.mdc-select__native-control(ref="select", v-model="model", :disabled="disabled")
     slot
-  mdc-floating-label(ref="floatingLabel")
+  mdc-floating-label(ref="floatingLabel", :label="label")
   mdc-line-ripple(ref="lineRipple")
 </template>
 
@@ -12,7 +12,6 @@ import { MDCFloatingLabel } from '../floating-label';
 import { MDCLineRipple } from '../line-ripple';
 
 export default {
-  // Component Properties
   name: 'MDCSelect',
   components: {
     MdcFloatingLabel: MDCFloatingLabel,
@@ -23,19 +22,21 @@ export default {
     event: 'select',
   },
   props: {
-    box: Boolean,
-    disabled: Boolean,
-    selected: String,
     label: {
       type: String,
       required: true
     },
+    boxed: Boolean,
+    disabled: Boolean,
+    selected: [String, Number],
   },
 
-  // Reactive Properties
   computed: {
     cssClasses() {
-      return this.box && 'mdc-select--box';
+      return {
+        'mdc-select--box': this.boxed,
+        'mdc-select--disabled': this.disabled,
+      };
     },
     model: {
       get() {
@@ -47,18 +48,19 @@ export default {
     },
   },
 
-  // Component Methods
   mounted() {
     const { $el } = this;
     const { select, floatingLabel, lineRipple } = this.$refs;
 
     this.foundation = new MDCSelectFoundation({
-      addClass: className => this.root_.classList.add(className),
-      removeClass: className => this.root_.classList.remove(className),
-      floatLabel: value => floatingLabel.float(value),
+      addClass: className => $el.classList.add(className),
+      removeClass: className => $el.classList.remove(className),
+      floatLabel: shouldFloat => floatingLabel.float(shouldFloat),
       activateBottomLine: () => lineRipple.activate(),
       deactivateBottomLine: () => lineRipple.deactivate(),
-      setDisabled: disabled => select.disabled = disabled,
+      setDisabled: disabled => {
+        select.disabled = disabled;
+      },
       registerInteractionHandler: (type, handler) => select.addEventListener(type, handler),
       deregisterInteractionHandler: (type, handler) => select.removeEventListener(type, handler),
       getSelectedIndex: () => select.selectedIndex,

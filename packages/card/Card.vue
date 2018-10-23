@@ -7,11 +7,11 @@
 export default {
   name: 'MDCCard',
   props: {
-    stroked: Boolean
+    outlined: Boolean
   },
   computed: {
     cssClasses() {
-      return this.stroked && 'mdc-card--stroked';
+      return this.outlined && 'mdc-card--outlined';
     }
   }
 };

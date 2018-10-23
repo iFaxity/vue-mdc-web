@@ -1,14 +1,16 @@
 <template lang="pug">
-demo-template(link="cards")
+demo-template(link="cards", :details="details")
   mdc-card(slot="hero")
     mdc-card-media(image="/images/16-9.jpg")
     mdc-card-actions
-      mdc-button(slot="button") Click me
-      mdc-button(slot="button") Or me
+      template(slot="button")
+        mdc-button Click me
+        mdc-button Or me
 
-      mdc-icon-toggle(slot="icon", :on="{content: 'favorite', label: 'Add to favorites'}", :off="{content: 'favorite_border', label: 'Remove from favorites'}")
-      mdc-icon(slot="icon", icon="share", label="Share", ripple, action)
-      mdc-icon(slot="icon", icon="more_vert", label="More Options", ripple, action)
+      template(slot="icon")
+        mdc-icon-toggle(:on="{content: 'favorite', label: 'Add to favorites'}", :off="{content: 'favorite_border', label: 'Remove from favorites'}")
+        mdc-card-icon(icon="share", label="Share")
+        mdc-card-icon(icon="more_vert", label="More Options")
 
   template(slot="usage")
     demo-code(lang="markup", code=`
@@ -19,34 +21,39 @@ demo-template(link="cards")
     <mdc-button slot="button">Or me</mdc-button>
 
     <mdc-icon-toggle slot="icon" :on="{content: 'favorite', label: 'Add to favorites'}" :off="{content: 'favorite_border', label: 'Remove from favorites'}"/>
+    <mdc-card-icon slot="icon", icon="more_vert", label="More Options"/>
   </mdc-card-actions>
 </mdc-form-field>`)
-
-  // TODO: add data
-  //template(slot="props")
-    tr
-      td checked
-      td Boolean
-      td false
-      td Used to change the checked state of the checkbox
-    tr
-      td disabled
-      td Boolean
-      td false
-      td Disables the checkbox from any input
-    tr
-      td indeterminate
-      td Boolean
-      td false
-      td Changes the indetermined state of the checkbox
 </template>
 
 <script>
 import DemoTemplate from '../DemoTemplate.vue';
-import MdcIcon from '../../../packages/icon';
+
+const DATA = {
+  props: [
+    { header: 'MDCCard' },
+    { name: 'outlined', type: 'Boolean', desc: '' },
+
+    { header: 'MDCCardMedia' },
+    { name: 'square', type: 'Boolean', desc: '' },
+    { name: 'image', type: 'String', desc: '' },
+
+    { header: 'MDCCardActions' },
+    { name: 'fullBleed', type: 'Boolean', desc: '' },
+
+    { header: 'MDCCardIcon' },
+    { name: 'icon*', type: 'String', desc: '' },
+    { name: 'label', type: 'String', desc: '' },
+  ],
+};
 
 export default {
   name: 'DemoCard',
-  components: { DemoTemplate, MdcIcon }
+  components: { DemoTemplate },
+  data() {
+    return {
+      details: DATA,
+    };
+  },
 };
 </script>

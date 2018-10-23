@@ -1,5 +1,5 @@
 <template lang="pug">
-demo-template(link="input-controls/checkboxes")
+demo-template(link="input-controls/checkboxes", :details="details")
   mdc-form-field(slot="hero", label="Checkbox")
     mdc-checkbox
   mdc-form-field(slot="hero", label="Indeterminate")
@@ -22,30 +22,26 @@ export default {
     return { checked: false };
   };
 }`)
-
-  template(slot="props")
-    tr
-      td checked
-      td Boolean
-      td false
-      td Used to change the checked state of the checkbox.
-    tr
-      td disabled
-      td Boolean
-      td false
-      td Disables the checkbox from any input.
-    tr
-      td indeterminate
-      td Boolean
-      td false
-      td Used to change the indetermined state of the checkbox.
 </template>
 
 <script>
 import DemoTemplate from '../DemoTemplate.vue';
 
+const DATA = {
+  props: [
+    { name: 'checked', type: 'Boolean', desc: 'Used to change the checked state of the checkbox.' },
+    { name: 'disabled', type: 'Boolean', desc: 'Disables the checkbox from any input.' },
+    { name: 'indeterminate', type: 'Boolean', desc: 'Used to change the indetermined state of the checkbox.' },
+  ],
+};
+
 export default {
   name: 'DemoCheckbox',
-  components: { DemoTemplate }
+  components: { DemoTemplate },
+  data() {
+    return {
+      details: DATA,
+    };
+  },
 };
 </script>

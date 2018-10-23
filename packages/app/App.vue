@@ -1,6 +1,6 @@
 <template lang="pug">
 .mdc-app.mdc-typography(:class="cssClasses")
-  slot(:name="headerSlot")
+  slot(:name="navSlot")
 
   .mdc-app__content(:class="contentCssClasses")
     slot(:name="contentSlot")
@@ -16,11 +16,11 @@ export default {
     alignStart: Boolean
   },
   computed: {
-    headerSlot() {
-      return this.flip ? 'drawer' : 'toolbar';
+    navSlot() {
+      return this.flip ? 'drawer' : 'nav';
     },
     contentSlot() {
-      return this.flip ? 'toolbar' : 'drawer';
+      return this.flip ? 'nav' : 'drawer';
     },
     cssClasses() {
       return {

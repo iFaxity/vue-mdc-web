@@ -1,7 +1,7 @@
 <template lang="pug">
 .mdc-text-field.mdc-text-field--textarea(:class="cssClasses")
-  textarea.mdc-text-field__input(ref="input", v-model="model", v-bind="inputAttrs")
-  mdc-floating-label(v-if="!fullwidth", ref="label", :label="label", :id="uuid")
+  textarea.mdc-text-field__input(ref="input", v-model="model", v-bind="inputAttrs", :rows="rows", :cols="cols")
+  mdc-floating-label(v-if="!fullwidth", ref="floatingLabel", :label="label", :id="uuid")
 </template>
 
 <script>
@@ -13,7 +13,7 @@ export default {
   inheritAttrs: false,
   props: {
     rows: [String, Number],
-    cols: [String, Number]
+    cols: [String, Number],
   },
   computed: {
     cssClasses() {

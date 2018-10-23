@@ -5,12 +5,12 @@
  * @param {String | Boolean | Number} primitivevalue - Value used in model to check if it is needed to be set or not.
  */
 export function handleModel(model, primitiveValue, { checked, value }) {
-  let newModel = model;
+  let newModel = Array.isArray(model) ? Array.from(model) : model;
 
   if(Array.isArray(model)) {
-    const index = model.indexOf(value);
+    const index = newModel.indexOf(value);
     // Used to force a value if not an array. Used in only ChipSet v-model.
-    const isChecked = typeof checked === "boolean" ? checked : index >= 0;
+    const isChecked = typeof checked == 'boolean' ? checked : index >= 0;
 
     if(isChecked) {
       newModel.splice(index, 1);

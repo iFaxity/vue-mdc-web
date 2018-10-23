@@ -1,5 +1,5 @@
 <template lang="pug">
-component.material-icons(:is="tag", :class="cssClasses", :tabindex="action && '0'", :role="action && 'button'", :aria-hidden="!action && 'true'", :aria-label="label", title="label") {{ icon }}
+component.material-icons(:is="tag", :class="cssClasses", :tabindex="button && '0'", :role="button && 'button'", :aria-hidden="!button && 'true'", :aria-label="label", title="label") {{ icon }}
 </template>
 
 <script>
@@ -21,7 +21,7 @@ export default {
     },
     
     ripple: Boolean,
-    action: Boolean
+    button: Boolean
   },
   computed: {
     cssClasses() {

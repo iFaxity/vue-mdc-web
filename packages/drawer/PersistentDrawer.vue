@@ -1,6 +1,6 @@
 <template lang="pug">
 aside.mdc-drawer.mdc-drawer--persistent
-  nav.mdc-drawer__drawer(ref="drawer") 
+  nav.mdc-drawer__drawer(ref="drawer")
     .mdc-drawer__toolbar-spacer(v-if="spacer")
     header.mdc-drawer__header(v-if="header")
       .mdc-drawer__header-content {{ header }}
@@ -10,25 +10,12 @@ aside.mdc-drawer.mdc-drawer--persistent
 
 <script>
 import { MDCPersistentDrawerFoundation, util } from '@material/drawer';
+import DrawerMixin from './mixin';
 
 export default {
   name: 'MDCPersistentDrawer',
-  props: {
-    open: Boolean,
-    spacer: Boolean,
-    header: String
-  },
-  watch: {
-    open(value, oldValue) {
-      const isOpen = this.foundation.isOpen();
-      
-      if(value && !isOpen) {
-        this.foundation.open();
-      } else if(!value && isOpen) {
-        this.foundation.close();
-      }
-    }
-  },
+  mixins: [ DrawerMixin ],
+
   mounted() {
     const { $el } = this;
     const { drawer } = this.$refs;
@@ -70,14 +57,5 @@ export default {
     // Initial open state
     this.open && this.foundation.open();
   },
-  methods: {
-    toggle() {
-      if (this.foundation.isOpen()) {
-        this.foundation.close();
-      } else {
-        this.foundation.open();
-      }
-    }
-  }
 };
 </script>

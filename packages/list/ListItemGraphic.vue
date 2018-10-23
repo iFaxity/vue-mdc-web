@@ -9,6 +9,7 @@ export default {
     icon: String,
     label: String,
     src: String,
+    title: String,
   },
   computed: {
     cssClasses() {

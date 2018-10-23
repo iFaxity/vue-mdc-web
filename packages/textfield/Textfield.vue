@@ -17,7 +17,7 @@
 import TextfieldMixin from './mixin';
 import MDCIcon from '../icon';
 
-const INPUT_TYPES = [ '', 'email', 'number', 'date', 'month', 'tel', 'text', 'time', 'url', 'week', 'search' ];
+const INPUT_TYPES = [ '', 'password', 'email', 'number', 'date', 'month', 'tel', 'text', 'time', 'url', 'week', 'search' ];
 
 export default {
   name: 'MDCTextfield',

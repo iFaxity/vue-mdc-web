@@ -1,5 +1,5 @@
 <template lang="pug">
-mdc-icon(action, :icon="icon", :label="label") {{ icon }}
+mdc-icon(button, ripple, :icon="icon", :label="label") {{ icon }}
 </template>
 
 <script>

@@ -12,31 +12,17 @@ import { handleModel } from '../util';
 export default {
   name: 'MDCChipSet',
   provide() {
-    const $_vm = this;
     return {
       MDCChipSet: {
         filter: this.filter,
         choice: this.choice,
-        select(value) {
-          const newValue = handleModel($_vm.selected, value, { checked: false, value });
-          $_vm.$emit('select', newValue);
-          /*if(Array.isArray($_vm.selected)) {
-            value = $_vm.selected.concat(value);
-          }
-          $_vm.$emit('select', value);*/
+        select: value => {
+          const newValue = handleModel(this.selected, value, { checked: false, value });
+          this.$emit('select', newValue);
         },
-        deselect(value) {
-          const newValue = handleModel($_vm.selected, '', { checked: true, value });
-          $_vm.$emit('select', newValue);
-
-          /*if(Array.isArray($_vm.selected)) {
-            const index = $_vm.selected.indexOf(value);
-            $_vm.selected.splice(index, 1);
-            value = $_vm.selected;
-          } else {
-            value = '';
-          }
-          $_vm.$emit('select', value);*/
+        deselect: value => {
+          const newValue = handleModel(this.selected, '', { checked: true, value });
+          this.$emit('select', newValue);
         }
       }
     }

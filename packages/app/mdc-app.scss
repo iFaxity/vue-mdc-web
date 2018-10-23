@@ -30,14 +30,16 @@ html, body {
     height: 100%;
     box-sizing: border-box;
 
-    & > * {
+    & > main {
       flex: 1;
-      margin: 0 auto;
+      margin-right: auto;
+      margin-left: auto;
       padding: 0 1em;
     }
     
-    &--align-start > * {
-      margin: 0;
+    &--align-start > main {
+      margin-right: 0;
+      margin-left: 0;
     }
   }
 }

@@ -83,6 +83,9 @@ export default {
   },
   methods: {
     show(data) {
+      if(typeof data === 'string') {
+        data = { message: data };
+      }
       this.foundation.show(data);
     }
   }
