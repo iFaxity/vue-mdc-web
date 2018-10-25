@@ -81,7 +81,7 @@ __vue_render__._withStripped = true;
     const component = (typeof script$$1 === 'function' ? script$$1.options : script$$1) || {};
 
     // For security concerns, we use only base name in production mode.
-    component.__file = "C:\\Users\\Christian\\Documents\\GitHub\\vue-mdc-web\\packages\\app\\App.vue";
+    component.__file = "c:\\Users\\Christian\\GitHub\\vue-mdc-web\\packages\\app\\App.vue";
 
     if (!component.render) {
       component.render = template.render;
@@ -1139,7 +1139,7 @@ __vue_render__$1._withStripped = true;
     const component = (typeof script === 'function' ? script.options : script) || {};
 
     // For security concerns, we use only base name in production mode.
-    component.__file = "C:\\Users\\Christian\\Documents\\GitHub\\vue-mdc-web\\packages\\button\\Button.vue";
+    component.__file = "c:\\Users\\Christian\\GitHub\\vue-mdc-web\\packages\\button\\Button.vue";
 
     if (!component.render) {
       component.render = template.render;
@@ -1232,7 +1232,7 @@ __vue_render__$2._withStripped = true;
     const component = (typeof script === 'function' ? script.options : script) || {};
 
     // For security concerns, we use only base name in production mode.
-    component.__file = "C:\\Users\\Christian\\Documents\\GitHub\\vue-mdc-web\\packages\\card\\Card.vue";
+    component.__file = "c:\\Users\\Christian\\GitHub\\vue-mdc-web\\packages\\card\\Card.vue";
 
     if (!component.render) {
       component.render = template.render;
@@ -1355,7 +1355,7 @@ __vue_render__$3._withStripped = true;
     const component = (typeof script === 'function' ? script.options : script) || {};
 
     // For security concerns, we use only base name in production mode.
-    component.__file = "C:\\Users\\Christian\\Documents\\GitHub\\vue-mdc-web\\packages\\card\\CardActions.vue";
+    component.__file = "c:\\Users\\Christian\\GitHub\\vue-mdc-web\\packages\\card\\CardActions.vue";
 
     if (!component.render) {
       component.render = template.render;
@@ -1463,7 +1463,7 @@ __vue_render__$4._withStripped = true;
     const component = (typeof script === 'function' ? script.options : script) || {};
 
     // For security concerns, we use only base name in production mode.
-    component.__file = "C:\\Users\\Christian\\Documents\\GitHub\\vue-mdc-web\\packages\\icon\\Icon.vue";
+    component.__file = "c:\\Users\\Christian\\GitHub\\vue-mdc-web\\packages\\icon\\Icon.vue";
 
     if (!component.render) {
       component.render = template.render;
@@ -1549,7 +1549,7 @@ __vue_render__$5._withStripped = true;
     const component = (typeof script === 'function' ? script.options : script) || {};
 
     // For security concerns, we use only base name in production mode.
-    component.__file = "C:\\Users\\Christian\\Documents\\GitHub\\vue-mdc-web\\packages\\card\\CardIcon.vue";
+    component.__file = "c:\\Users\\Christian\\GitHub\\vue-mdc-web\\packages\\card\\CardIcon.vue";
 
     if (!component.render) {
       component.render = template.render;
@@ -1654,7 +1654,7 @@ __vue_render__$6._withStripped = true;
     const component = (typeof script === 'function' ? script.options : script) || {};
 
     // For security concerns, we use only base name in production mode.
-    component.__file = "C:\\Users\\Christian\\Documents\\GitHub\\vue-mdc-web\\packages\\card\\CardMedia.vue";
+    component.__file = "c:\\Users\\Christian\\GitHub\\vue-mdc-web\\packages\\card\\CardMedia.vue";
 
     if (!component.render) {
       component.render = template.render;
@@ -2494,7 +2494,7 @@ __vue_render__$7._withStripped = true;
     const component = (typeof script === 'function' ? script.options : script) || {};
 
     // For security concerns, we use only base name in production mode.
-    component.__file = "C:\\Users\\Christian\\Documents\\GitHub\\vue-mdc-web\\packages\\checkbox\\Checkbox.vue";
+    component.__file = "c:\\Users\\Christian\\GitHub\\vue-mdc-web\\packages\\checkbox\\Checkbox.vue";
 
     if (!component.render) {
       component.render = template.render;
@@ -3168,7 +3168,7 @@ __vue_render__$8._withStripped = true;
     const component = (typeof script === 'function' ? script.options : script) || {};
 
     // For security concerns, we use only base name in production mode.
-    component.__file = "C:\\Users\\Christian\\Documents\\GitHub\\vue-mdc-web\\packages\\chips\\Chip.vue";
+    component.__file = "c:\\Users\\Christian\\GitHub\\vue-mdc-web\\packages\\chips\\Chip.vue";
 
     if (!component.render) {
       component.render = template.render;
@@ -3317,7 +3317,7 @@ __vue_render__$9._withStripped = true;
     const component = (typeof script === 'function' ? script.options : script) || {};
 
     // For security concerns, we use only base name in production mode.
-    component.__file = "C:\\Users\\Christian\\Documents\\GitHub\\vue-mdc-web\\packages\\chips\\ChipSet.vue";
+    component.__file = "c:\\Users\\Christian\\GitHub\\vue-mdc-web\\packages\\chips\\ChipSet.vue";
 
     if (!component.render) {
       component.render = template.render;
@@ -4124,7 +4124,7 @@ __vue_render__$a._withStripped = true;
     const component = (typeof script === 'function' ? script.options : script) || {};
 
     // For security concerns, we use only base name in production mode.
-    component.__file = "C:\\Users\\Christian\\Documents\\GitHub\\vue-mdc-web\\packages\\dialog\\Dialog.vue";
+    component.__file = "c:\\Users\\Christian\\GitHub\\vue-mdc-web\\packages\\dialog\\Dialog.vue";
 
     if (!component.render) {
       component.render = template.render;
@@ -4249,7 +4249,7 @@ __vue_render__$b._withStripped = true;
     const component = (typeof script === 'function' ? script.options : script) || {};
 
     // For security concerns, we use only base name in production mode.
-    component.__file = "C:\\Users\\Christian\\Documents\\GitHub\\vue-mdc-web\\packages\\drawer\\PermanentDrawer.vue";
+    component.__file = "c:\\Users\\Christian\\GitHub\\vue-mdc-web\\packages\\drawer\\PermanentDrawer.vue";
 
     if (!component.render) {
       component.render = template.render;
@@ -5051,7 +5051,7 @@ __vue_render__$c._withStripped = true;
     const component = (typeof script === 'function' ? script.options : script) || {};
 
     // For security concerns, we use only base name in production mode.
-    component.__file = "C:\\Users\\Christian\\Documents\\GitHub\\vue-mdc-web\\packages\\drawer\\PersistentDrawer.vue";
+    component.__file = "c:\\Users\\Christian\\GitHub\\vue-mdc-web\\packages\\drawer\\PersistentDrawer.vue";
 
     if (!component.render) {
       component.render = template.render;
@@ -5185,7 +5185,7 @@ __vue_render__$d._withStripped = true;
     const component = (typeof script === 'function' ? script.options : script) || {};
 
     // For security concerns, we use only base name in production mode.
-    component.__file = "C:\\Users\\Christian\\Documents\\GitHub\\vue-mdc-web\\packages\\drawer\\TemporaryDrawer.vue";
+    component.__file = "c:\\Users\\Christian\\GitHub\\vue-mdc-web\\packages\\drawer\\TemporaryDrawer.vue";
 
     if (!component.render) {
       component.render = template.render;
@@ -5327,7 +5327,7 @@ __vue_render__$e._withStripped = true;
     const component = (typeof script === 'function' ? script.options : script) || {};
 
     // For security concerns, we use only base name in production mode.
-    component.__file = "C:\\Users\\Christian\\Documents\\GitHub\\vue-mdc-web\\packages\\drawer\\DrawerItem.vue";
+    component.__file = "c:\\Users\\Christian\\GitHub\\vue-mdc-web\\packages\\drawer\\DrawerItem.vue";
 
     if (!component.render) {
       component.render = template.render;
@@ -5397,7 +5397,7 @@ __vue_render__$f._withStripped = true;
     const component = (typeof script === 'function' ? script.options : script) || {};
 
     // For security concerns, we use only base name in production mode.
-    component.__file = "C:\\Users\\Christian\\Documents\\GitHub\\vue-mdc-web\\packages\\drawer\\DrawerDivider.vue";
+    component.__file = "c:\\Users\\Christian\\GitHub\\vue-mdc-web\\packages\\drawer\\DrawerDivider.vue";
 
     if (!component.render) {
       component.render = template.render;
@@ -5508,7 +5508,7 @@ __vue_render__$g._withStripped = true;
     const component = (typeof script === 'function' ? script.options : script) || {};
 
     // For security concerns, we use only base name in production mode.
-    component.__file = "C:\\Users\\Christian\\Documents\\GitHub\\vue-mdc-web\\packages\\fab\\Fab.vue";
+    component.__file = "c:\\Users\\Christian\\GitHub\\vue-mdc-web\\packages\\fab\\Fab.vue";
 
     if (!component.render) {
       component.render = template.render;
@@ -5607,7 +5607,7 @@ __vue_render__$h._withStripped = true;
     const component = (typeof script === 'function' ? script.options : script) || {};
 
     // For security concerns, we use only base name in production mode.
-    component.__file = "C:\\Users\\Christian\\Documents\\GitHub\\vue-mdc-web\\packages\\form-field\\FormField.vue";
+    component.__file = "c:\\Users\\Christian\\GitHub\\vue-mdc-web\\packages\\form-field\\FormField.vue";
 
     if (!component.render) {
       component.render = template.render;
@@ -5834,7 +5834,7 @@ __vue_render__$i._withStripped = true;
     const component = (typeof script === 'function' ? script.options : script) || {};
 
     // For security concerns, we use only base name in production mode.
-    component.__file = "C:\\Users\\Christian\\Documents\\GitHub\\vue-mdc-web\\packages\\grid-list\\GridList.vue";
+    component.__file = "c:\\Users\\Christian\\GitHub\\vue-mdc-web\\packages\\grid-list\\GridList.vue";
 
     if (!component.render) {
       component.render = template.render;
@@ -5954,7 +5954,7 @@ __vue_render__$j._withStripped = true;
     const component = (typeof script === 'function' ? script.options : script) || {};
 
     // For security concerns, we use only base name in production mode.
-    component.__file = "C:\\Users\\Christian\\Documents\\GitHub\\vue-mdc-web\\packages\\grid-list\\GridTile.vue";
+    component.__file = "c:\\Users\\Christian\\GitHub\\vue-mdc-web\\packages\\grid-list\\GridTile.vue";
 
     if (!component.render) {
       component.render = template.render;
@@ -6390,7 +6390,7 @@ __vue_render__$k._withStripped = true;
     const component = (typeof script === 'function' ? script.options : script) || {};
 
     // For security concerns, we use only base name in production mode.
-    component.__file = "C:\\Users\\Christian\\Documents\\GitHub\\vue-mdc-web\\packages\\icon-toggle\\IconToggle.vue";
+    component.__file = "c:\\Users\\Christian\\GitHub\\vue-mdc-web\\packages\\icon-toggle\\IconToggle.vue";
 
     if (!component.render) {
       component.render = template.render;
@@ -6487,7 +6487,7 @@ __vue_render__$l._withStripped = true;
     const component = (typeof script === 'function' ? script.options : script) || {};
 
     // For security concerns, we use only base name in production mode.
-    component.__file = "C:\\Users\\Christian\\Documents\\GitHub\\vue-mdc-web\\packages\\layout-grid\\LayoutGrid.vue";
+    component.__file = "c:\\Users\\Christian\\GitHub\\vue-mdc-web\\packages\\layout-grid\\LayoutGrid.vue";
 
     if (!component.render) {
       component.render = template.render;
@@ -6604,7 +6604,7 @@ __vue_render__$m._withStripped = true;
     const component = (typeof script === 'function' ? script.options : script) || {};
 
     // For security concerns, we use only base name in production mode.
-    component.__file = "C:\\Users\\Christian\\Documents\\GitHub\\vue-mdc-web\\packages\\layout-grid\\LayoutCell.vue";
+    component.__file = "c:\\Users\\Christian\\GitHub\\vue-mdc-web\\packages\\layout-grid\\LayoutCell.vue";
 
     if (!component.render) {
       component.render = template.render;
@@ -6680,7 +6680,7 @@ __vue_render__$n._withStripped = true;
     const component = (typeof script === 'function' ? script.options : script) || {};
 
     // For security concerns, we use only base name in production mode.
-    component.__file = "C:\\Users\\Christian\\Documents\\GitHub\\vue-mdc-web\\packages\\layout-grid\\LayoutInner.vue";
+    component.__file = "c:\\Users\\Christian\\GitHub\\vue-mdc-web\\packages\\layout-grid\\LayoutInner.vue";
 
     if (!component.render) {
       component.render = template.render;
@@ -6993,7 +6993,7 @@ __vue_render__$o._withStripped = true;
     const component = (typeof script === 'function' ? script.options : script) || {};
 
     // For security concerns, we use only base name in production mode.
-    component.__file = "C:\\Users\\Christian\\Documents\\GitHub\\vue-mdc-web\\packages\\linear-progress\\LinearProgress.vue";
+    component.__file = "c:\\Users\\Christian\\GitHub\\vue-mdc-web\\packages\\linear-progress\\LinearProgress.vue";
 
     if (!component.render) {
       component.render = template.render;
@@ -7092,7 +7092,7 @@ __vue_render__$p._withStripped = true;
     const component = (typeof script === 'function' ? script.options : script) || {};
 
     // For security concerns, we use only base name in production mode.
-    component.__file = "C:\\Users\\Christian\\Documents\\GitHub\\vue-mdc-web\\packages\\list\\List.vue";
+    component.__file = "c:\\Users\\Christian\\GitHub\\vue-mdc-web\\packages\\list\\List.vue";
 
     if (!component.render) {
       component.render = template.render;
@@ -7187,7 +7187,7 @@ __vue_render__$q._withStripped = true;
     const component = (typeof script === 'function' ? script.options : script) || {};
 
     // For security concerns, we use only base name in production mode.
-    component.__file = "C:\\Users\\Christian\\Documents\\GitHub\\vue-mdc-web\\packages\\list\\ListItem.vue";
+    component.__file = "c:\\Users\\Christian\\GitHub\\vue-mdc-web\\packages\\list\\ListItem.vue";
 
     if (!component.render) {
       component.render = template.render;
@@ -7269,7 +7269,7 @@ __vue_render__$r._withStripped = true;
     const component = (typeof script === 'function' ? script.options : script) || {};
 
     // For security concerns, we use only base name in production mode.
-    component.__file = "C:\\Users\\Christian\\Documents\\GitHub\\vue-mdc-web\\packages\\list\\ListDivider.vue";
+    component.__file = "c:\\Users\\Christian\\GitHub\\vue-mdc-web\\packages\\list\\ListDivider.vue";
 
     if (!component.render) {
       component.render = template.render;
@@ -7367,7 +7367,7 @@ __vue_render__$s._withStripped = true;
     const component = (typeof script === 'function' ? script.options : script) || {};
 
     // For security concerns, we use only base name in production mode.
-    component.__file = "C:\\Users\\Christian\\Documents\\GitHub\\vue-mdc-web\\packages\\list\\ListItemGraphic.vue";
+    component.__file = "c:\\Users\\Christian\\GitHub\\vue-mdc-web\\packages\\list\\ListItemGraphic.vue";
 
     if (!component.render) {
       component.render = template.render;
@@ -7469,7 +7469,7 @@ __vue_render__$t._withStripped = true;
     const component = (typeof script === 'function' ? script.options : script) || {};
 
     // For security concerns, we use only base name in production mode.
-    component.__file = "C:\\Users\\Christian\\Documents\\GitHub\\vue-mdc-web\\packages\\list\\ListItemMeta.vue";
+    component.__file = "c:\\Users\\Christian\\GitHub\\vue-mdc-web\\packages\\list\\ListItemMeta.vue";
 
     if (!component.render) {
       component.render = template.render;
@@ -7540,7 +7540,7 @@ __vue_render__$u._withStripped = true;
     const component = (typeof script === 'function' ? script.options : script) || {};
 
     // For security concerns, we use only base name in production mode.
-    component.__file = "C:\\Users\\Christian\\Documents\\GitHub\\vue-mdc-web\\packages\\list\\group\\ListGroup.vue";
+    component.__file = "c:\\Users\\Christian\\GitHub\\vue-mdc-web\\packages\\list\\group\\ListGroup.vue";
 
     if (!component.render) {
       component.render = template.render;
@@ -7618,7 +7618,7 @@ __vue_render__$v._withStripped = true;
     const component = (typeof script === 'function' ? script.options : script) || {};
 
     // For security concerns, we use only base name in production mode.
-    component.__file = "C:\\Users\\Christian\\Documents\\GitHub\\vue-mdc-web\\packages\\list\\group\\ListGroupDivider.vue";
+    component.__file = "c:\\Users\\Christian\\GitHub\\vue-mdc-web\\packages\\list\\group\\ListGroupDivider.vue";
 
     if (!component.render) {
       component.render = template.render;
@@ -7696,7 +7696,7 @@ __vue_render__$w._withStripped = true;
     const component = (typeof script === 'function' ? script.options : script) || {};
 
     // For security concerns, we use only base name in production mode.
-    component.__file = "C:\\Users\\Christian\\Documents\\GitHub\\vue-mdc-web\\packages\\list\\group\\ListGroupSubheader.vue";
+    component.__file = "c:\\Users\\Christian\\GitHub\\vue-mdc-web\\packages\\list\\group\\ListGroupSubheader.vue";
 
     if (!component.render) {
       component.render = template.render;
@@ -8680,7 +8680,7 @@ __vue_render__$x._withStripped = true;
     const component = (typeof script === 'function' ? script.options : script) || {};
 
     // For security concerns, we use only base name in production mode.
-    component.__file = "C:\\Users\\Christian\\Documents\\GitHub\\vue-mdc-web\\packages\\menu\\Menu.vue";
+    component.__file = "c:\\Users\\Christian\\GitHub\\vue-mdc-web\\packages\\menu\\Menu.vue";
 
     if (!component.render) {
       component.render = template.render;
@@ -8763,7 +8763,7 @@ __vue_render__$y._withStripped = true;
     const component = (typeof script === 'function' ? script.options : script) || {};
 
     // For security concerns, we use only base name in production mode.
-    component.__file = "C:\\Users\\Christian\\Documents\\GitHub\\vue-mdc-web\\packages\\menu\\MenuItem.vue";
+    component.__file = "c:\\Users\\Christian\\GitHub\\vue-mdc-web\\packages\\menu\\MenuItem.vue";
 
     if (!component.render) {
       component.render = template.render;
@@ -9080,7 +9080,7 @@ __vue_render__$z._withStripped = true;
     const component = (typeof script === 'function' ? script.options : script) || {};
 
     // For security concerns, we use only base name in production mode.
-    component.__file = "C:\\Users\\Christian\\Documents\\GitHub\\vue-mdc-web\\packages\\radio\\Radio.vue";
+    component.__file = "c:\\Users\\Christian\\GitHub\\vue-mdc-web\\packages\\radio\\Radio.vue";
 
     if (!component.render) {
       component.render = template.render;
@@ -9663,7 +9663,7 @@ __vue_render__$A._withStripped = true;
     const component = (typeof script === 'function' ? script.options : script) || {};
 
     // For security concerns, we use only base name in production mode.
-    component.__file = "C:\\Users\\Christian\\Documents\\GitHub\\vue-mdc-web\\packages\\floating-label\\FloatingLabel.vue";
+    component.__file = "c:\\Users\\Christian\\GitHub\\vue-mdc-web\\packages\\floating-label\\FloatingLabel.vue";
 
     if (!component.render) {
       component.render = template.render;
@@ -9758,7 +9758,7 @@ __vue_render__$B._withStripped = true;
     const component = (typeof script === 'function' ? script.options : script) || {};
 
     // For security concerns, we use only base name in production mode.
-    component.__file = "C:\\Users\\Christian\\Documents\\GitHub\\vue-mdc-web\\packages\\line-ripple\\LineRipple.vue";
+    component.__file = "c:\\Users\\Christian\\GitHub\\vue-mdc-web\\packages\\line-ripple\\LineRipple.vue";
 
     if (!component.render) {
       component.render = template.render;
@@ -9933,7 +9933,7 @@ __vue_render__$C._withStripped = true;
     const component = (typeof script === 'function' ? script.options : script) || {};
 
     // For security concerns, we use only base name in production mode.
-    component.__file = "C:\\Users\\Christian\\Documents\\GitHub\\vue-mdc-web\\packages\\select\\Select.vue";
+    component.__file = "c:\\Users\\Christian\\GitHub\\vue-mdc-web\\packages\\select\\Select.vue";
 
     if (!component.render) {
       component.render = template.render;
@@ -10018,7 +10018,7 @@ __vue_render__$D._withStripped = true;
     const component = (typeof script === 'function' ? script.options : script) || {};
 
     // For security concerns, we use only base name in production mode.
-    component.__file = "C:\\Users\\Christian\\Documents\\GitHub\\vue-mdc-web\\packages\\select\\SelectItem.vue";
+    component.__file = "c:\\Users\\Christian\\GitHub\\vue-mdc-web\\packages\\select\\SelectItem.vue";
 
     if (!component.render) {
       component.render = template.render;
@@ -10095,7 +10095,7 @@ __vue_render__$E._withStripped = true;
     const component = (typeof script === 'function' ? script.options : script) || {};
 
     // For security concerns, we use only base name in production mode.
-    component.__file = "C:\\Users\\Christian\\Documents\\GitHub\\vue-mdc-web\\packages\\select\\SelectItemGroup.vue";
+    component.__file = "c:\\Users\\Christian\\GitHub\\vue-mdc-web\\packages\\select\\SelectItemGroup.vue";
 
     if (!component.render) {
       component.render = template.render;
@@ -10575,7 +10575,7 @@ __vue_render__$F._withStripped = true;
     const component = (typeof script === 'function' ? script.options : script) || {};
 
     // For security concerns, we use only base name in production mode.
-    component.__file = "C:\\Users\\Christian\\Documents\\GitHub\\vue-mdc-web\\packages\\snackbar\\Snackbar.vue";
+    component.__file = "c:\\Users\\Christian\\GitHub\\vue-mdc-web\\packages\\snackbar\\Snackbar.vue";
 
     if (!component.render) {
       component.render = template.render;
@@ -10737,7 +10737,7 @@ __vue_render__$G._withStripped = true;
     const component = (typeof script === 'function' ? script.options : script) || {};
 
     // For security concerns, we use only base name in production mode.
-    component.__file = "C:\\Users\\Christian\\Documents\\GitHub\\vue-mdc-web\\packages\\switch\\Switch.vue";
+    component.__file = "c:\\Users\\Christian\\GitHub\\vue-mdc-web\\packages\\switch\\Switch.vue";
 
     if (!component.render) {
       component.render = template.render;
@@ -11868,7 +11868,7 @@ __vue_render__$H._withStripped = true;
     const component = (typeof script === 'function' ? script.options : script) || {};
 
     // For security concerns, we use only base name in production mode.
-    component.__file = "C:\\Users\\Christian\\Documents\\GitHub\\vue-mdc-web\\packages\\notched-outline\\NotchedOutline.vue";
+    component.__file = "c:\\Users\\Christian\\GitHub\\vue-mdc-web\\packages\\notched-outline\\NotchedOutline.vue";
 
     if (!component.render) {
       component.render = template.render;
@@ -11989,7 +11989,18 @@ var TextfieldMixin = {
   watch: {
     disabled(value) {
       this.foundation.setDisabled(value);
-    }
+    },
+    value(value) {
+      const { floatingLabel } = this.$refs;
+
+      if(value && floatingLabel) {
+        this.$nextTick(() => {
+          const { shouldFloat } = this.foundation;
+          floatingLabel.float(shouldFloat);
+          this.foundation.notchOutline(shouldFloat);
+        });
+      }
+    },
   },
   data() {
     return { uuid: this.id || uuid() };
@@ -12265,7 +12276,7 @@ __vue_render__$I._withStripped = true;
     const component = (typeof script === 'function' ? script.options : script) || {};
 
     // For security concerns, we use only base name in production mode.
-    component.__file = "C:\\Users\\Christian\\Documents\\GitHub\\vue-mdc-web\\packages\\textfield\\Textfield.vue";
+    component.__file = "c:\\Users\\Christian\\GitHub\\vue-mdc-web\\packages\\textfield\\Textfield.vue";
 
     if (!component.render) {
       component.render = template.render;
@@ -12391,7 +12402,7 @@ __vue_render__$J._withStripped = true;
     const component = (typeof script === 'function' ? script.options : script) || {};
 
     // For security concerns, we use only base name in production mode.
-    component.__file = "C:\\Users\\Christian\\Documents\\GitHub\\vue-mdc-web\\packages\\textfield\\Textarea.vue";
+    component.__file = "c:\\Users\\Christian\\GitHub\\vue-mdc-web\\packages\\textfield\\Textarea.vue";
 
     if (!component.render) {
       component.render = template.render;
@@ -12485,7 +12496,7 @@ __vue_render__$K._withStripped = true;
     const component = (typeof script === 'function' ? script.options : script) || {};
 
     // For security concerns, we use only base name in production mode.
-    component.__file = "C:\\Users\\Christian\\Documents\\GitHub\\vue-mdc-web\\packages\\textfield\\TextfieldHelpertext.vue";
+    component.__file = "c:\\Users\\Christian\\GitHub\\vue-mdc-web\\packages\\textfield\\TextfieldHelpertext.vue";
 
     if (!component.render) {
       component.render = template.render;
@@ -12925,7 +12936,7 @@ __vue_render__$L._withStripped = true;
     const component = (typeof script === 'function' ? script.options : script) || {};
 
     // For security concerns, we use only base name in production mode.
-    component.__file = "C:\\Users\\Christian\\Documents\\GitHub\\vue-mdc-web\\packages\\toolbar\\Toolbar.vue";
+    component.__file = "c:\\Users\\Christian\\GitHub\\vue-mdc-web\\packages\\toolbar\\Toolbar.vue";
 
     if (!component.render) {
       component.render = template.render;
@@ -12996,7 +13007,7 @@ __vue_render__$M._withStripped = true;
     const component = (typeof script === 'function' ? script.options : script) || {};
 
     // For security concerns, we use only base name in production mode.
-    component.__file = "C:\\Users\\Christian\\Documents\\GitHub\\vue-mdc-web\\packages\\toolbar\\ToolbarRow.vue";
+    component.__file = "c:\\Users\\Christian\\GitHub\\vue-mdc-web\\packages\\toolbar\\ToolbarRow.vue";
 
     if (!component.render) {
       component.render = template.render;
@@ -13090,7 +13101,7 @@ __vue_render__$N._withStripped = true;
     const component = (typeof script === 'function' ? script.options : script) || {};
 
     // For security concerns, we use only base name in production mode.
-    component.__file = "C:\\Users\\Christian\\Documents\\GitHub\\vue-mdc-web\\packages\\toolbar\\ToolbarSection.vue";
+    component.__file = "c:\\Users\\Christian\\GitHub\\vue-mdc-web\\packages\\toolbar\\ToolbarSection.vue";
 
     if (!component.render) {
       component.render = template.render;
@@ -13166,7 +13177,7 @@ __vue_render__$O._withStripped = true;
     const component = (typeof script === 'function' ? script.options : script) || {};
 
     // For security concerns, we use only base name in production mode.
-    component.__file = "C:\\Users\\Christian\\Documents\\GitHub\\vue-mdc-web\\packages\\toolbar\\ToolbarTitle.vue";
+    component.__file = "c:\\Users\\Christian\\GitHub\\vue-mdc-web\\packages\\toolbar\\ToolbarTitle.vue";
 
     if (!component.render) {
       component.render = template.render;
@@ -13259,7 +13270,7 @@ __vue_render__$P._withStripped = true;
     const component = (typeof script === 'function' ? script.options : script) || {};
 
     // For security concerns, we use only base name in production mode.
-    component.__file = "C:\\Users\\Christian\\Documents\\GitHub\\vue-mdc-web\\packages\\toolbar\\ToolbarIcon.vue";
+    component.__file = "c:\\Users\\Christian\\GitHub\\vue-mdc-web\\packages\\toolbar\\ToolbarIcon.vue";
 
     if (!component.render) {
       component.render = template.render;
@@ -13348,7 +13359,7 @@ __vue_render__$Q._withStripped = true;
     const component = (typeof script === 'function' ? script.options : script) || {};
 
     // For security concerns, we use only base name in production mode.
-    component.__file = "C:\\Users\\Christian\\Documents\\GitHub\\vue-mdc-web\\packages\\toolbar\\ToolbarMenuIcon.vue";
+    component.__file = "c:\\Users\\Christian\\GitHub\\vue-mdc-web\\packages\\toolbar\\ToolbarMenuIcon.vue";
 
     if (!component.render) {
       component.render = template.render;
@@ -13952,7 +13963,7 @@ __vue_render__$R._withStripped = true;
     const component = (typeof script === 'function' ? script.options : script) || {};
 
     // For security concerns, we use only base name in production mode.
-    component.__file = "C:\\Users\\Christian\\Documents\\GitHub\\vue-mdc-web\\packages\\top-app-bar\\TopAppBarSection.vue";
+    component.__file = "c:\\Users\\Christian\\GitHub\\vue-mdc-web\\packages\\top-app-bar\\TopAppBarSection.vue";
 
     if (!component.render) {
       component.render = template.render;
@@ -14169,7 +14180,7 @@ __vue_render__$S._withStripped = true;
     const component = (typeof script === 'function' ? script.options : script) || {};
 
     // For security concerns, we use only base name in production mode.
-    component.__file = "C:\\Users\\Christian\\Documents\\GitHub\\vue-mdc-web\\packages\\top-app-bar\\TopAppBar.vue";
+    component.__file = "c:\\Users\\Christian\\GitHub\\vue-mdc-web\\packages\\top-app-bar\\TopAppBar.vue";
 
     if (!component.render) {
       component.render = template.render;
@@ -14252,7 +14263,7 @@ __vue_render__$T._withStripped = true;
     const component = (typeof script === 'function' ? script.options : script) || {};
 
     // For security concerns, we use only base name in production mode.
-    component.__file = "C:\\Users\\Christian\\Documents\\GitHub\\vue-mdc-web\\packages\\top-app-bar\\TopAppBarActionItem.vue";
+    component.__file = "c:\\Users\\Christian\\GitHub\\vue-mdc-web\\packages\\top-app-bar\\TopAppBarActionItem.vue";
 
     if (!component.render) {
       component.render = template.render;

@@ -95,7 +95,18 @@ export default {
   watch: {
     disabled(value) {
       this.foundation.setDisabled(value);
-    }
+    },
+    value(value) {
+      const { floatingLabel } = this.$refs;
+
+      if(value && floatingLabel) {
+        this.$nextTick(() => {
+          const { shouldFloat } = this.foundation;
+          floatingLabel.float(shouldFloat);
+          this.foundation.notchOutline(shouldFloat);
+        });
+      }
+    },
   },
   data() {
     return { uuid: this.id || uuid() };
